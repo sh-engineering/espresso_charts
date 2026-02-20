@@ -1,0 +1,5 @@
+color_blue   = '#3F5B83'
+color_orange = '#DD6B20'
+color_green  = '#4D5523'
+color_sand   = '#CDAF7B'
+face_color   = '#F5F0E6'
