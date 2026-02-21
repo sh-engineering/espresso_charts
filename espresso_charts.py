@@ -2670,8 +2670,8 @@ def eGenerateVoiceover(
 # GENERATE MUSIC (Music API — streaming endpoint)
 # ============================================================================
 def eGenerateMusic(
-    prompt,
     api_key,
+    prompt=None,
     output_file="background_music.mp3",
     duration_ms=15000,
     force_instrumental=True,
