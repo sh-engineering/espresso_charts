@@ -123,8 +123,8 @@ def eSingleBarChartNewInstagram(
     font='DejaVu Sans',
     suptitle_font='DejaVu Serif',
     subtitle_font='DejaVu Sans',
-    suptitle_y_custom=None,
-    subtitle_pad_custom=None,
+    suptitle_y_custom=1,
+    subtitle_pad_custom=40,
 
     # --- ZERO LINE ---
     show_zero_line=False,
