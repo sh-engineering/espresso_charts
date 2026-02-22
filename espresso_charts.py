@@ -3055,7 +3055,7 @@ class GitHubUploader:
 
     def _get_sha(self, path: str):
         url = f"https://api.github.com/repos/{self.owner}/{self.repo}/contents/{path}"
-        r   = requests.get(url, headers=self._headers())
+        r   = requests.get(url, headers=self._headers(), params={"ref": self.branch})
         return r.json().get("sha") if r.ok else None
 
     def _push(self, path: str, content_b64: str, commit_msg: str):
