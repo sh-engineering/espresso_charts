@@ -247,7 +247,7 @@ After running, check the generated assets in Colab:
 
 - **Covers:** Headline readable, accent line visible, text well-positioned
 - **Charts:** Data labels not overlapping, source attribution present, bars sorted correctly
-- **Reels:** Headings inside the safe zone (not hidden by Instagram UI), animation smooth
+- **Reels:** Must have both cover title card AND chart animation. Headings inside the safe zone (not hidden by Instagram UI). Total video duration at least 3 seconds longer than voiceover. Animation smooth.
 - **Audio:** Voiceover synced with animation, music fades in/out correctly
 
 If anything needs adjustment, edit the relevant params in the config cell and re-run that story.
