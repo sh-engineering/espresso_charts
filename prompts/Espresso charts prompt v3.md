@@ -108,8 +108,30 @@ Produce **1–2 charts** per story. Each chart should have one main takeaway.
 
 Each story needs a Reel script with:
 - **Voiceover text** (15–20 seconds spoken, ~50 words)
-- **Animated charts** (cover animation + 1–2 chart animations)
+- **Animated charts** (cover animation + chart animation — both required)
 - **Music preset** (`lofi_coffee`, `upbeat_data`, or `editorial_minimal`)
+
+### REEL STRUCTURE (mandatory)
+
+Every reel must contain exactly this sequence:
+
+1. **`cover_animate`** — the story headline as a title card (3–4 second hold)
+2. **At least 1 chart animation** (`bar_animate`, `line_animate`, `stem_animate`, or `donut_animate`) — the data visualization that builds on screen
+
+A reel without a cover looks like it starts mid-story. A reel without a chart is just a title card with no data. Both are required.
+
+### REEL TIMING
+
+The reel video must be longer than the spoken voiceover. If the voiceover runs short and the video is still animating, that is fine (music fills the gap). If the voiceover runs long and gets cut off, that is broken.
+
+**Rule:** Total reel duration must exceed voiceover duration by at least 3 seconds.
+
+How to calculate:
+- **Voiceover duration** ≈ word count / 2.5 words per second (at 0.95 speed). A 50-word voiceover ≈ 20 seconds.
+- **Reel duration** = cover hold (3–4s) + chart animation `duration` + hold frames (hold_frames / 24 fps ≈ 6s at 150 frames).
+- Example: 4s cover + 12s animation + 6s hold = 22s total. A 50-word voiceover ≈ 20s. 22 > 20 + 3? No — increase `duration` to 14 or `hold_frames` to 200.
+
+**Set `music.duration_ms`** to match or slightly exceed the total reel duration (e.g., if reel is 22s, set `duration_ms: 24000`).
 
 ### ⚠️ CRITICAL: REEL SAFE ZONES
 
@@ -211,12 +233,12 @@ Each story in the `stories` array:
     }
   ],
   "reel": {
-    "animated_charts": [
+    "animated_charts": [                          
       { "type": "cover_animate", "params": { "...cover params + suptitle_y: 0.65..." } },
       { "type": "bar_animate|line_animate|stem_animate", "data": {...}, "params": { "...chart params + lowered suptitle_y + duration + hold_frames..." } }
     ],
     "voiceover": { "text": "~50 word voiceover script." },
-    "music": { "preset": "lofi_coffee", "duration_ms": 20000 }
+    "music": { "preset": "lofi_coffee", "duration_ms": 24000 }
   },
   "story_files": [ [1, 0, "chart", "png"], [1, 1, "chart", "png"], [1, 3, "reel_with_voice", "mp4"] ],
   "copy": {
@@ -227,6 +249,8 @@ Each story in the `stories` array:
   }
 }
 ```
+
+> **REEL REQUIREMENTS:** `animated_charts` must always contain both a `cover_animate` entry AND at least one chart animation. A reel missing either is invalid. Set `music.duration_ms` to at least 3000ms more than the estimated voiceover length (word count / 2.5 × 1000).
 
 ### Chart Parameter Reference by Type
 
@@ -601,6 +625,9 @@ face_color = '#F5F0E6'
 - [ ] All text uses `\n` for line breaks
 - [ ] Colors as strings: `"color_blue"`, `"color_green"`, etc.
 - [ ] Voiceover ~50 words each
+- [ ] Every reel has both `cover_animate` AND at least 1 chart animation
+- [ ] Reel total duration > voiceover duration + 3 seconds
+- [ ] `music.duration_ms` matches or exceeds total reel duration
 - [ ] Reel `cover_animate` uses `suptitle_y: 0.65` or lower (safe zone)
 - [ ] Reel chart animations use lower `suptitle_y` than static versions
 - [ ] `copy` includes: `instagram`, `instagram_reel`, `substack_article`, `substack_note`
