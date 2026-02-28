@@ -14,6 +14,16 @@ Published on [Instagram](https://instagram.com/espressocharts) and [Substack](ht
 | **Sat** | Carousel 13:00 | Source Spotlight |
 | **Sun** | — | Source Spotlight |
 
+### Story Publishing Map
+
+Each week has 3 stories. Every story appears twice on Instagram (Reel → Carousel) and once on Substack (Newsletter for Story 2 only).
+
+| Story | Reel | Carousel | Newsletter |
+|-------|------|----------|------------|
+| **Story 1** | Mon 11:00 | Tue 11:00 | — |
+| **Story 2** | Wed 11:00 | — | Thu 07:00 |
+| **Story 3** | Fri 11:00 | Sat 13:00 | — |
+
 ---
 
 ## Repository Structure
