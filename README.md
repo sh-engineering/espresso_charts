@@ -31,35 +31,35 @@ Each week has 3 stories. Every story appears twice on Instagram (Reel → Carous
 ```
 espresso_charts_stories/
 ├── README.md
-├── 2026/
-│   └── 02/
-│       ├── 23_ai_energy/
-│       │   ├── assets/
-│       │   │   ├── cover.png
-│       │   │   ├── chart1_grid_mix.png
-│       │   │   ├── chart2_demand.png
-│       │   │   └── reel_demand.mp4
-│       │   └── weekly_pack.md
-│       ├── 25_world_cup_economics/
-│       │   ├── assets/
-│       │   │   ├── cover.png
-│       │   │   ├── chart1_cities.png
-│       │   │   ├── chart2_spending.png
-│       │   │   └── reel_cities.mp4
-│       │   └── ...
-│       └── 27_nvidia_revenue/
-│           └── ...
+├── assets/
+│   └── 2026/
+│       └── 02/
+│           ├── 23/
+│           │   ├── cover.png
+│           │   ├── chart1_grid_mix.png
+│           │   ├── chart2_demand.png
+│           │   ├── reel_demand.mp4
+│           │   └── reel_with_voice.mp4
+│           ├── 25/
+│           │   ├── cover.png
+│           │   ├── chart1_cities.png
+│           │   └── ...
+│           └── 27/
+│               └── ...
+└── weekly_packs/
+    └── 2026_02_23.md
 ```
 
-Each story lives in a folder named `DD_topic_slug/` under its publication month. The `weekly_pack.md` file in the first story folder of each week contains the full editorial calendar for that week.
+Each story's assets live in `assets/YYYY/MM/DD/` where DD is the day the Reel publishes. The `weekly_packs/` folder holds the editorial calendars, named by the Monday of each week.
 
 ### Naming Conventions
 
-- **Folders:** `DD_snake_case_slug/` where DD is the day the Reel publishes
-- **Covers:** `assets/cover.png`
-- **Charts:** `assets/chart1_descriptor.png`, `assets/chart2_descriptor.png`
-- **Reels:** `assets/reel_descriptor.mp4`
-- **Audio:** `assets/reel_with_voice.mp4` (final mixed version)
+- **Folders:** `assets/YYYY/MM/DD/` — one folder per story, dated to Reel publish day
+- **Covers:** `cover.png`
+- **Charts:** `chart1_descriptor.png`, `chart2_descriptor.png`
+- **Reels:** `reel_descriptor.mp4`
+- **Audio:** `reel_with_voice.mp4` (final mixed version)
+- **Weekly packs:** `weekly_packs/YYYY_MM_DD.md`
 
 ---
 
@@ -177,25 +177,22 @@ The full editorial calendar with every caption, voiceover script, Note, and Stor
 
 ---
 
-### Step 2: Set Up the Week's Folder (GitHub)
+### Step 2: Set Up the Week's Folders (GitHub)
 
-Create the week's story folders in the repo:
+Create a folder for each story under `assets/`:
 
 ```
-espresso_charts_stories/
+assets/
 └── YYYY/
     └── MM/
-        ├── DD_story1_slug/
-        │   └── assets/
-        ├── DD_story2_slug/
-        │   └── assets/
-        └── DD_story3_slug/
-            └── assets/
+        ├── DD/   ← Story 1 (Monday Reel)
+        ├── DD/   ← Story 2 (Wednesday Reel)
+        └── DD/   ← Story 3 (Friday Reel)
 ```
 
-Use the `slug` values from the JSON config. DD = the day the Reel publishes (Mon, Wed, Fri).
+DD = the day the Reel publishes (Mon, Wed, Fri).
 
-Save `weekly_pack.md` in the first story folder of the week.
+Save the `weekly_pack.md` in `weekly_packs/YYYY_MM_DD.md` (named by the Monday of that week).
 
 ---
 
@@ -259,16 +256,15 @@ If anything needs adjustment, edit the relevant params in the config cell and re
 
 ### Step 5: Push to GitHub
 
-Download the generated assets from Colab and place them in the story folders:
+Download the generated assets from Colab and place them in the date folders:
 
 ```
-YYYY/MM/DD_slug/
-└── assets/
-    ├── cover.png
-    ├── chart1_descriptor.png
-    ├── chart2_descriptor.png
-    ├── reel_descriptor.mp4
-    └── reel_with_voice.mp4
+assets/YYYY/MM/DD/
+├── cover.png
+├── chart1_descriptor.png
+├── chart2_descriptor.png
+├── reel_descriptor.mp4
+└── reel_with_voice.mp4
 ```
 
 Commit and push.
