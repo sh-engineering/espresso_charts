@@ -111,6 +111,27 @@ Each story needs a Reel script with:
 - **Animated charts** (cover animation + 1–2 chart animations)
 - **Music preset** (`lofi_coffee`, `upbeat_data`, or `editorial_minimal`)
 
+### ⚠️ CRITICAL: REEL SAFE ZONES
+
+Instagram overlays UI elements on top of Reels that obscure content:
+- **Top ~15%:** Camera icon, "Reels" label, search icon
+- **Bottom ~35%:** Username, caption preview, music ticker, like/comment/share buttons
+
+On a 1080x1350 canvas, only the **middle ~50%** (roughly y=200px to y=880px) is guaranteed visible. Text placed at the very top of the frame will be hidden behind Instagram's UI.
+
+**Rules for all animated reel charts:**
+
+1. **Cover animations** must use `suptitle_y: 0.65` or lower (not the default ~0.85) to push the headline into the safe zone. The subtitle follows below it.
+
+2. **Chart animations** must use lower `suptitle_y` values than their static carousel counterparts. Reduce by at least 0.05–0.10 from the static version:
+   - Bar animate: `suptitle_y_custom: 0.93` (static uses 0.99)
+   - Line animate: `suptitle_y: 1.05` (static uses 1.2)
+   - Stem animate: `suptitle_y: 0.98` (static uses 1.06)
+
+3. **Source labels** (`txt_label`) can be shortened for reel versions since they are less readable at speed. Drop the URL, keep source name + © Espresso Charts.
+
+4. Always test: if the main heading of any animated chart would appear in the top 15% of the frame, push it down.
+
 ---
 
 ## STEP 5: COPY
@@ -191,8 +212,8 @@ Each story in the `stories` array:
   ],
   "reel": {
     "animated_charts": [
-      { "type": "cover_animate", "params": { "...cover params..." } },
-      { "type": "bar_animate|line_animate|stem_animate", "data": {...}, "params": { "...chart params + duration + hold_frames..." } }
+      { "type": "cover_animate", "params": { "...cover params + suptitle_y: 0.65..." } },
+      { "type": "bar_animate|line_animate|stem_animate", "data": {...}, "params": { "...chart params + lowered suptitle_y + duration + hold_frames..." } }
     ],
     "voiceover": { "text": "~50 word voiceover script." },
     "music": { "preset": "lofi_coffee", "duration_ms": 20000 }
@@ -298,13 +319,42 @@ Each story in the `stories` array:
 }
 ```
 
-**Animated chart params** — same as static chart params, plus:
+**Animated chart params** — same as static chart params, plus reel-specific overrides:
+
+`cover_animate` must push titles into the reel safe zone:
 ```json
 {
+  "txt_suptitle": "Headline\nHere",
+  "txt_subtitle": "Subhead text\nwith line break.",
+  "suptitle_size": 42,
+  "subtitle_size": 18,
+  "suptitle_y": 0.65,
+  "accent_line_color": "color_green"
+}
+```
+
+`bar_animate` / `stem_animate` — lower the heading vs. static version:
+```json
+{
+  "...all static chart params...",
+  "suptitle_y_custom": 0.93,
   "duration": 12,
   "hold_frames": 150
 }
 ```
+
+`line_animate` — lower the heading vs. static version:
+```json
+{
+  "...all static chart params...",
+  "suptitle_y": 1.05,
+  "subtitle_y": 0.98,
+  "duration": 12,
+  "hold_frames": 150
+}
+```
+
+> ⚠️ The static carousel charts use higher `suptitle_y` values (0.99, 1.2, 1.06) because carousel posts show the full frame. Reel animations must use lower values to keep headings out of Instagram's top UI overlay. See Step 4: Reel Safe Zones.
 
 ---
 
@@ -551,6 +601,8 @@ face_color = '#F5F0E6'
 - [ ] All text uses `\n` for line breaks
 - [ ] Colors as strings: `"color_blue"`, `"color_green"`, etc.
 - [ ] Voiceover ~50 words each
+- [ ] Reel `cover_animate` uses `suptitle_y: 0.65` or lower (safe zone)
+- [ ] Reel chart animations use lower `suptitle_y` than static versions
 - [ ] `copy` includes: `instagram`, `instagram_reel`, `substack_article`, `substack_note`
 
 **Weekly Pack:**
