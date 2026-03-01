@@ -1871,17 +1871,21 @@ def eStemChartAnimateInstagram(
 
     ax.set_facecolor(face_color)
 
-    # --- Titles (empty — typewriter) ---
-    _tw_suptitle_full = txt_suptitle    # main headline → fig.suptitle
-    _tw_subtitle_full = txt_subtitle    # secondary     → ax.title
+    # --- Titles (empty — typewriter, using fig.text for explicit positioning) ---
+    _tw_suptitle_full = txt_suptitle
+    _tw_subtitle_full = txt_subtitle
 
-    suptitle_obj = fig.suptitle(
-        "", y=suptitle_y, fontsize=suptitle_size,
-        color=suptitle_color, fontweight="medium", fontfamily=suptitle_font)
-    ax.set_title(
-        "", pad=subtitle_pad, fontsize=subtitle_size,
-        color=subtitle_color, fontweight="light", fontfamily=subtitle_font)
-    subtitle_obj = ax.title
+    suptitle_obj = fig.text(
+        0.5, suptitle_y, "",
+        fontsize=suptitle_size, color=suptitle_color,
+        fontweight="medium", fontfamily=suptitle_font,
+        ha='center', va='top')
+    subtitle_obj = fig.text(
+        0.5, suptitle_y - 0.05, "",
+        fontsize=subtitle_size, color=subtitle_color,
+        fontweight="light", fontfamily=subtitle_font,
+        ha='center', va='top')
+  
     ax.set_xlabel(txt_label, color=axis_label_color, labelpad=labelpad,
                   size=label_size, fontweight="light")
 
