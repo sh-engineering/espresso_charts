@@ -1828,7 +1828,7 @@ def eStemChartAnimateInstagram(
     suptitle_size=26,
     subtitle_size=14,
     label_size=12,
-    subtitle_pad=100,
+    subtitle_pad=30,
     labelpad=10,
     aspect_ratio=None,
     rotate_labels=False,
