@@ -1861,10 +1861,11 @@ def eStemChartAnimateInstagram(
 
     plt.rcdefaults()
     plt.rcParams['font.family'] = font
+
     if instagram:
-            figsize = (px_width / dpi, px_height / dpi)
-            fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=face_color)
-            fig.subplots_adjust(top=0.82, bottom=0.08, left=0.12, right=0.92)
+        figsize = (px_width / dpi, px_height / dpi)
+        fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=face_color)
+        fig.subplots_adjust(top=0.82, bottom=0.08, left=0.12, right=0.92)
     else:
         fig, ax = plt.subplots(figsize=(8, 14), dpi=160, facecolor=face_color)
 
