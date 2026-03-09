@@ -100,7 +100,7 @@ The trend is your hook. The data is your evidence. Find an **authoritative, publ
 |--------|---------|
 | **Macroeconomics** | FRED (Federal Reserve), IMF, OECD, World Bank, Eurostat, BLS, BEA |
 | **Energy & Climate** | IEA, EIA, IRENA, Our World in Data, NOAA, EPA, BloombergNEF |
-| **Demographics & Society** | UN Data, Census Bureau, Pew Research, UNESCO, WEF |
+| **Demographics & Society** | UN Data, Census Bureau, Pew Research, UNESCO, WEF, Gallup, The Brookings Institution, RAND Corporation, The Urban Institute, NORC at the University of Chicago |
 | **Science & Space** | NASA, ESA, NOAA, USGS |
 | **Trade & Development** | WTO, World Bank, UNCTAD, WIPO |
 | **Innovation & IP** | WIPO, EPO, USPTO |
