@@ -1,0 +1,706 @@
+{
+  "_meta": {
+    "library": "espresso_charts.py",
+    "description": "Full parameter reference for all chart functions and post-render helpers. Use this to configure chart calls in the weekly config. Required params have no default. All colour values are hex strings. Sizes in pts unless noted. Pixel dimensions assume dpi=200.",
+    "conventions": {
+      "num_format": "Python format string, e.g. '{:.1f}' or '{:.0f}%'",
+      "num_divisor": "Divide raw data values before display. e.g. 1000 to show thousands.",
+      "pos_text": "List of row indices where value labels are printed. Negative = from end.",
+      "pos_label": "Row index for series end-labels. -1 = last row.",
+      "suptitle": "Main headline. 3-5 words. Single line. Serif font.",
+      "subtitle": "Descriptive context. Sans font. May line-break once.",
+      "txt_label": "Source line shown at bottom-left (x-axis label slot).",
+      "colors_palette": ["#9d8561","#857052","#6c5c43","#544734","#3c3325","#79664a","#d9d0c1","#0b0a07"],
+      "face_color_default": "#F5F0E6",
+      "px_4x5": {"width": 1080, "height": 1350},
+      "px_9x16": {"width": 1080, "height": 1920}
+    }
+  },
+
+  "static_charts": {
+
+    "eSingleBarChartNewInstagram": {
+      "_description": "Horizontal bar chart. Bars sorted ascending (smallest at bottom). 4:5 format.",
+      "_returns": ["fig", "ax"],
+      "params": {
+        "required": {
+          "df_chart": "DataFrame",
+          "col_dim": "str — category column name",
+          "col_measure": "str — numeric column name",
+          "txt_suptitle": "str — main headline",
+          "txt_subtitle": "str — descriptive subtitle",
+          "txt_label": "str — source / axis label"
+        },
+        "data": {
+          "num_format": {"default": "'{:.0f}'", "desc": "Value label format string"},
+          "num_divisor": {"default": 1, "desc": "Divide values before display"},
+          "min_val": {"default": null, "desc": "Override x-axis min"},
+          "max_val": {"default": null, "desc": "Override x-axis max"},
+          "factor_limit_x": {"default": 1.0, "desc": "Multiply axis limit for breathing room"}
+        },
+        "bars": {
+          "bar_height": {"default": 0.75, "desc": "Bar height as fraction of row slot (0-1)"},
+          "bar_color": {"default": "'#9d8561'", "desc": "Single colour for all bars"},
+          "bar_colors": {
+            "default": null,
+            "desc": "Per-bar colour override. Dict {index: hex} or list of hex strings.",
+            "example": {"0": "#DD6B20", "3": "#3F5B83"}
+          }
+        },
+        "labels": {
+          "offset_label_x": {"default": 0, "desc": "Extra pts between bar start and category label (all bars)"},
+          "label_custom_offset": {
+            "default": null,
+            "desc": "LEGACY — per-bar x offset on value labels. Use value_label_offset_x instead.",
+            "example": {"0": 8, "2": -4}
+          },
+          "value_label_offset_x": {
+            "default": null,
+            "desc": "Dict {bar_index: pts} — nudge value label horizontally per bar",
+            "example": {"0": 12, "3": -6}
+          },
+          "value_label_offset_y": {
+            "default": null,
+            "desc": "Dict {bar_index: pts} — nudge value label vertically per bar (positive = up)",
+            "example": {"2": 8, "4": -5}
+          }
+        },
+        "axes": {
+          "hide_left_spine": {"default": false, "desc": "Hide the left category axis spine"},
+          "show_x_axis": {"default": false, "desc": "Show numeric x-axis ticks and values"},
+          "x_axis_num_format": {"default": null, "desc": "Format string for x-axis tick labels when show_x_axis=true"},
+          "show_zero_line": {"default": false, "desc": "Draw a vertical line at x=0"},
+          "zero_line_color": {"default": "'#4b2e1a'"},
+          "zero_line_style": {"default": "'--'", "options": ["'-'", "'--'", "':'", "'-.'"]},
+          "zero_line_width": {"default": 1.0}
+        },
+        "reference_elements": {
+          "reference_bands": {
+            "default": null,
+            "desc": "Shaded vertical bands along the x-axis. orientation='vertical' is applied automatically.",
+            "item_schema": {
+              "min": "float — left edge (x value)",
+              "max": "float — right edge (x value)",
+              "color": "str — hex",
+              "alpha": "float 0-1 (default 0.15)",
+              "label": "str — optional label at edge",
+              "label_color": "str",
+              "label_size": "int"
+            },
+            "example": [{"min": 0, "max": 50, "color": "#4D5523", "alpha": 0.12, "label": "Target range"}]
+          },
+          "vlines": {
+            "default": null,
+            "desc": "Vertical reference lines",
+            "item_schema": {
+              "x": "float — x position",
+              "color": "str (default '#857052')",
+              "style": "str (default '--')",
+              "width": "float (default 1.0)",
+              "alpha": "float (default 0.8)",
+              "label": "str — optional text at top",
+              "label_color": "str",
+              "label_size": "int"
+            }
+          },
+          "hlines": {
+            "default": null,
+            "desc": "Horizontal reference lines",
+            "item_schema": {
+              "y": "float — y position",
+              "color": "str (default '#857052')",
+              "style": "str (default '--')",
+              "width": "float (default 1.0)",
+              "alpha": "float (default 0.8)",
+              "label": "str — optional text at right end"
+            }
+          },
+          "sep_index": {
+            "default": null,
+            "desc": "Bar index (int or list) where a horizontal separator line is drawn between groups",
+            "example": 3
+          },
+          "sep_color": {"default": "'#4b2e1a'"},
+          "sep_style": {"default": "'-'"},
+          "sep_width": {"default": 1.5}
+        },
+        "typography": {
+          "suptitle_size": {"default": 26},
+          "subtitle_size": {"default": 14},
+          "label_size": {"default": 12},
+          "suptitle_color": {"default": "'#4b2e1a'"},
+          "subtitle_color": {"default": "'#4b2e1a'"},
+          "txt_label_color": {"default": "'#857052'"},
+          "tick_label_color": {"default": "'#3c3325'", "desc": "Category labels on bars"},
+          "value_label_color": {"default": "'#4b2e1a'", "desc": "Numeric labels at bar tips"},
+          "suptitle_font": {"default": "'DejaVu Serif'"},
+          "subtitle_font": {"default": "'DejaVu Sans'"},
+          "suptitle_font_weight": {"default": "'normal'"},
+          "suptitle_y_custom": {"default": 1, "desc": "Vertical position of suptitle (0-1 from bottom). Cover tiles use 0.65."},
+          "subtitle_pad_custom": {"default": 40, "desc": "Padding pts between subtitle and plot area"},
+          "x_subtitle_offset": {"default": 0.55, "desc": "Horizontal alignment of subtitle and source label (0=left, 1=right)"}
+        },
+        "canvas": {
+          "face_color": {"default": "'#f5f0e6'"},
+          "px_width": {"default": 1080},
+          "px_height": {"default": 1350, "desc": "Use 1350 for 4:5 carousel, 1920 for 9:16 reel"},
+          "dpi": {"default": 200},
+          "aspect_ratio": {"default": null, "desc": "Force axes aspect ratio (height/width)"}
+        }
+      }
+    },
+
+    "eMultiLineChartInstagram": {
+      "_description": "Multi-series line chart. One or more series plotted over a shared x dimension. 4:5 format.",
+      "_returns": ["fig", "ax"],
+      "params": {
+        "required": {
+          "df_chart": "DataFrame",
+          "col_dim": "str — x-axis column (e.g. year)",
+          "col_measure_list": "list[str] — one or more y-axis column names",
+          "txt_suptitle": "str",
+          "txt_subtitle": "str",
+          "txt_label": "str",
+          "pos_text": "list[int] — row indices where value annotations are printed"
+        },
+        "data": {
+          "num_format": {"default": "'{:.0f}'"},
+          "num_divisor": {"default": 1},
+          "pos_label": {"default": -1, "desc": "Row index for series end-label. null to hide."},
+          "y_limits": {"default": null, "desc": "[min, max] to fix y-axis range"},
+          "text_offset_y": {"default": null, "desc": "List of y-pts offsets per series for pos_text labels. e.g. [10, -15]"}
+        },
+        "lines": {
+          "line_colors": {"default": null, "desc": "List of hex colours per series"},
+          "line_styles": {"default": null, "desc": "List of line styles per series, e.g. ['-', '--']"},
+          "line_widths": {"default": null, "desc": "List of line widths per series, e.g. [1.2, 0.8]"},
+          "line_labels": {"default": null, "desc": "List of label strings for series end-labels and legend"}
+        },
+        "markers": {
+          "show_markers": {"default": false, "desc": "Overlay dot markers at each data point"},
+          "marker_size": {"default": 4},
+          "marker_styles": {"default": null, "desc": "List of marker style strings per series, e.g. ['o', 's', '^']"}
+        },
+        "trend_lines": {
+          "show_trend_lines": {"default": false, "desc": "Overlay linear regression trend line per series"},
+          "trend_line_colors": {"default": null, "desc": "List of hex colours; defaults to series colour at reduced alpha"},
+          "trend_line_style": {"default": "'--'"},
+          "trend_line_width": {"default": 1.0},
+          "trend_line_alpha": {"default": 0.6}
+        },
+        "labels": {
+          "label_offset_x": {"default": 8, "desc": "Pts to nudge ALL series end-labels rightward from last data point"},
+          "label_offset_y": {"default": 0, "desc": "Pts to nudge ALL series end-labels vertically"},
+          "point_label_offsets": {
+            "default": null,
+            "desc": "Per-point and per-series label overrides as dict keyed by (row_index, series_index) -> [x_pts, y_pts]. Applies to both pos_text and pos_label rows.",
+            "example": {"[5, 0]": [10, 4], "[5, 1]": [-8, -6], "[-1, 0]": [12, 0]}
+          }
+        },
+        "axes": {
+          "show_y_axis": {"default": false, "desc": "Show left y-axis with tick values"},
+          "y_ticks": {"default": null, "desc": "Explicit list of y tick values when show_y_axis=true"},
+          "y_num_format": {"default": null, "desc": "Format string for y-axis ticks"},
+          "y_tick_color": {"default": "'#857052'"},
+          "y_tick_size": {"default": 10},
+          "hide_x_axis": {"default": false, "desc": "Hide x-axis ticks and labels entirely"},
+          "x_ticks": {"default": null, "desc": "Explicit list of x tick positions"},
+          "x_tick_labels": {"default": null, "desc": "Labels for x_ticks"},
+          "tick_color": {"default": "'#4B2E1A'"},
+          "x_tick_size": {"default": 10},
+          "show_zero_line": {"default": false},
+          "zero_line_at": {"default": 0},
+          "zero_line_color": {"default": "'#857052'"},
+          "zero_line_style": {"default": "'--'"},
+          "zero_line_width": {"default": 1.0}
+        },
+        "shading": {
+          "shade_between": {"default": null, "desc": "Tuple of two column names to fill area between, e.g. ['col_low', 'col_high']"},
+          "shade_color": {"default": "'#c8b8a8'"},
+          "shade_alpha": {"default": 0.25},
+          "shade_x": {"default": null, "desc": "Restrict shade to x range [start, end]"}
+        },
+        "reference_elements": {
+          "reference_bands": {"$ref": "eSingleBarChartNewInstagram.params.reference_elements.reference_bands"},
+          "vlines": {"$ref": "eSingleBarChartNewInstagram.params.reference_elements.vlines"},
+          "hlines": {"$ref": "eSingleBarChartNewInstagram.params.reference_elements.hlines"}
+        },
+        "legend": {
+          "show_legend": {"default": false},
+          "legend_labels_custom": {"default": null, "desc": "Override labels shown in legend (separate from line_labels used for end-labels)"},
+          "legend_loc": {"default": "'upper left'"},
+          "legend_font_size": {"default": 10},
+          "legend_text_color": {"default": "'#857052'"},
+          "legend_ncol": {"default": 1},
+          "legend_bbox": {"default": [0, 1.02], "desc": "Anchor point for legend bbox_to_anchor"}
+        },
+        "typography": {
+          "suptitle_size": {"default": 26},
+          "subtitle_size": {"default": 14},
+          "label_size": {"default": 12},
+          "bottom_note_size": {"default": 10},
+          "suptitle_y": {"default": 0.98, "desc": "axes-relative y for suptitle (0-1)"},
+          "subtitle_y": {"default": 0.94, "desc": "axes-relative y for subtitle (0-1)"},
+          "suptitle_color": {"default": "'#4b2e1a'"},
+          "subtitle_color": {"default": "'#4b2e1a'"},
+          "txt_label_color": {"default": "'#857052'"},
+          "suptitle_font": {"default": "'DejaVu Serif'"},
+          "subtitle_font": {"default": "'DejaVu Sans'"},
+          "suptitle_font_weight": {"default": "'normal'"},
+          "subtitle_font_weight": {"default": "'normal'"}
+        },
+        "canvas": {
+          "face_color": {"default": "'#F7F5F2'"},
+          "px": {"default": 1080},
+          "py": {"default": 1350},
+          "dpi": {"default": 200},
+          "aspect_ratio": {"default": 1.0}
+        }
+      }
+    },
+
+    "eStemChartNewInstagram": {
+      "_description": "Stem (lollipop) chart. One or two series. 4:5 format.",
+      "_returns": ["fig", "ax"],
+      "params": {
+        "required": {
+          "df_chart": "DataFrame",
+          "col_dim": "str — category label column",
+          "col_measure_a": "str — primary numeric series column"
+        },
+        "data": {
+          "col_measure_b": {"default": null, "desc": "Optional second series column"},
+          "col_category_pos": {"default": null, "desc": "Column of explicit x positions; defaults to 0,1,2,..."},
+          "num_format": {"default": "'{:.0f}'"},
+          "num_divisor": {"default": 1},
+          "offset": {"default": 0.1, "desc": "Horizontal offset between series A and B stems"}
+        },
+        "value_labels": {
+          "value_label_offset_pts": {"default": 6, "desc": "Global Y gap in pts between stem tip and label"},
+          "value_label_offset_y": {
+            "default": null,
+            "desc": "Dict {stem_index: additional_y_pts} — per-stem vertical nudge stacked on top of value_label_offset_pts. Positive = further from baseline.",
+            "example": {"2": 10, "5": -8}
+          },
+          "value_label_offset_x": {
+            "default": null,
+            "desc": "Dict {stem_index: x_pts} — per-stem horizontal nudge on value label",
+            "example": {"0": 5, "3": -5}
+          },
+          "value_label_custom_offset": {"default": null, "desc": "LEGACY alias for value_label_offset_y"}
+        },
+        "series_labels": {
+          "year_label_a": {"default": null, "desc": "Text rotated 90° placed beside series A"},
+          "year_label_b": {"default": null, "desc": "Text rotated 90° placed beside series B"},
+          "label_a_offset_x": {"default": 1},
+          "label_a_offset_y": {"default": 1},
+          "label_b_offset_x": {"default": 1},
+          "label_b_offset_y": {"default": 1}
+        },
+        "stem_style": {
+          "marker_size": {"default": 4},
+          "line_width": {"default": 0.8},
+          "color_a": {"default": "'#a58e6c'"},
+          "color_b": {"default": "'#573D09'"},
+          "line_format_a": {"default": "'--'", "options": ["'--'", "'-'", "':'"]},
+          "line_format_b": {"default": "'--'"},
+          "x_axis_line_width": {"default": 0.8},
+          "x_axis_line_color": {"default": "'#857052'"}
+        },
+        "axes": {
+          "y_min": {"default": null},
+          "y_max": {"default": null},
+          "x_tick_label_y_offset": {"default": 0, "desc": "Vertical shift applied to all x-axis tick labels"},
+          "rotate_labels": {"default": false, "desc": "Rotate x-axis labels 90°"},
+          "xtick_align_ha": {"default": "'center'"},
+          "xtick_align_va": {"default": "'bottom'"},
+          "show_x_axis": {"default": false, "desc": "Show numeric x values in addition to category labels"},
+          "subtitle_pad": {"default": 90, "desc": "Padding between subtitle and plot area"}
+        },
+        "reference_elements": {
+          "reference_bands": {"$ref": "eSingleBarChartNewInstagram.params.reference_elements.reference_bands"},
+          "vlines": {"$ref": "eSingleBarChartNewInstagram.params.reference_elements.vlines"},
+          "hlines": {"$ref": "eSingleBarChartNewInstagram.params.reference_elements.hlines"}
+        },
+        "legend": {
+          "show_legend": {"default": false},
+          "legend_labels": {"default": null, "desc": "Tuple ['Label A', 'Label B']"},
+          "legend_loc": {"default": "'upper right'"},
+          "legend_font_size": {"default": 10},
+          "legend_frame": {"default": false},
+          "legend_text_color": {"default": "'#3c3325'"},
+          "legend_bbox_to_anchor": {"default": null}
+        },
+        "typography": {
+          "suptitle_size": {"default": 26},
+          "subtitle_size": {"default": 14},
+          "label_size": {"default": 12},
+          "suptitle_y": {"default": 0.955},
+          "suptitle_color": {"default": "'#4b2e1a'"},
+          "subtitle_color": {"default": "'#4b2e1a'"},
+          "axis_label_color": {"default": "'#79664a'"},
+          "tick_label_color": {"default": "'#3c3325'"},
+          "suptitle_font": {"default": "'DejaVu Serif'"},
+          "subtitle_font": {"default": "'DejaVu Sans'"}
+        },
+        "canvas": {
+          "face_color": {"default": "'#F7F5F2'"},
+          "px_width": {"default": 1080},
+          "px_height": {"default": 1350},
+          "dpi": {"default": 200},
+          "aspect_ratio": {"default": null}
+        }
+      }
+    },
+
+    "eDonutChartInstagram": {
+      "_description": "Donut chart. Supports single ring or double ring. 4:5 format.",
+      "_returns": ["fig", "ax"],
+      "params": {
+        "required": {
+          "df_chart": "DataFrame",
+          "col_value": "str — numeric values column"
+        },
+        "data": {
+          "col_label": {"default": null, "desc": "Column for outer ring segment labels"},
+          "col_inner": {"default": null, "desc": "Column for inner ring values (double-ring mode)"},
+          "num_format": {"default": "'{:.0f}%'"},
+          "num_divisor": {"default": 1}
+        },
+        "geometry": {
+          "radius_outer": {"default": 0.9},
+          "radius_inner": {"default": 0.65},
+          "wedge_width": {"default": 0.3},
+          "labeldistance": {"default": 1.05, "desc": "Distance of segment labels from outer edge"},
+          "pctdistance_outer": {"default": 0.8, "desc": "Distance of pct text within outer wedge"},
+          "pctdistance_inner": {"default": 0.75}
+        },
+        "labels": {
+          "show_pct": {"default": true},
+          "autopct_outer": {"default": true},
+          "autopct_inner": {"default": true},
+          "colors": {"default": null, "desc": "List of hex colours for wedges"},
+          "pct_colors": {"default": null, "desc": "List of hex colours for pct labels"},
+          "label_colors": {"default": null, "desc": "List of hex colours for segment labels"},
+          "center_text": {"default": null, "desc": "Text string placed at donut centre"},
+          "center_text_color": {"default": "'#4b2e1a'"},
+          "center_text_size": {"default": 12},
+          "center_text_weight": {"default": "'normal'"}
+        },
+        "typography": {
+          "suptitle_size": {"default": 26},
+          "subtitle_size": {"default": 14},
+          "label_size": {"default": 10},
+          "bottom_note_size": {"default": 10},
+          "suptitle_color": {"default": "'#4b2e1a'"},
+          "subtitle_color": {"default": "'#4b2e1a'"},
+          "txt_label_color": {"default": "'#857052'"}
+        },
+        "canvas": {
+          "face_color": {"default": "'#F7F5F2'"},
+          "px": {"default": 1080},
+          "dpi": {"default": 200},
+          "instagram_format": {"default": "'4x5'", "options": ["'4x5'", "'1x1'", "'9x16'"]}
+        }
+      }
+    },
+
+    "eCoverTileInstagram": {
+      "_description": "Text-only cover tile for carousel slide 1 or Reel thumbnail. 4:5 format.",
+      "_returns": ["fig", "ax"],
+      "params": {
+        "required": {
+          "txt_suptitle": "str — main headline. Use \\n for line breaks.",
+          "txt_subtitle": "str — hook / subheadline. Use \\n for line breaks."
+        },
+        "text": {
+          "txt_label": {"default": "''", "desc": "Small attribution line at bottom"},
+          "suptitle_y": {"default": 0.6, "desc": "Vertical position 0-1 from bottom. Default covers use 0.65."},
+          "subtitle_y": {"default": 0.38},
+          "label_y": {"default": 0.06},
+          "suptitle_size": {"default": 42},
+          "subtitle_size": {"default": 18},
+          "label_size": {"default": 11},
+          "suptitle_color": {"default": "'#4b2e1a'"},
+          "subtitle_color": {"default": "'#4b2e1a'"},
+          "txt_label_color": {"default": "'#857052'"},
+          "suptitle_font": {"default": "'DejaVu Serif'"},
+          "subtitle_font": {"default": "'DejaVu Sans'"},
+          "suptitle_font_weight": {"default": "'normal'"},
+          "subtitle_font_weight": {"default": "'normal'"}
+        },
+        "accent_line": {
+          "show_accent_line": {"default": true, "desc": "Short decorative horizontal rule between title and subtitle"},
+          "accent_line_color": {"default": "'#3F5B83'"},
+          "accent_line_width": {"default": 4},
+          "accent_line_y": {"default": 0.48, "desc": "Vertical position of line (0-1)"},
+          "accent_line_length": {"default": 0.15, "desc": "Line length as fraction of canvas width"}
+        },
+        "canvas": {
+          "face_color": {"default": "'#F5F0E6'"},
+          "px_width": {"default": 1080},
+          "px_height": {"default": 1350},
+          "dpi": {"default": 200}
+        }
+      }
+    }
+  },
+
+  "animated_charts": {
+    "_note": "Animated charts share all static params plus the animation params below. Only new/changed params are documented here. px_height defaults to 1920 (9:16 for Reels).",
+
+    "animation_params_shared": {
+      "duration": {"default": 8, "desc": "Seconds of animated build phase"},
+      "fps": {"default": 30},
+      "hold_frames": {"default": 120, "desc": "Frames to hold finished frame (120 = 4s at 30fps)"},
+      "output_file": {"default": "'espresso_chart_animated.mp4'"},
+      "easing": {"default": "'cubic'", "options": ["'cubic'", "'quad'", "'linear'"]},
+      "tw_suptitle_start": {"default": 0.0, "desc": "Progress fraction when suptitle typewriter begins"},
+      "tw_suptitle_end": {"default": 0.5, "desc": "Progress fraction when suptitle is fully shown"},
+      "tw_subtitle_start": {"default": 0.5},
+      "tw_subtitle_end": {"default": 0.95}
+    },
+
+    "eSingleBarChartAnimateInstagram": {
+      "_description": "Bars grow from zero. Titles type on. Same params as static bar chart plus animation params.",
+      "_changed_defaults": {
+        "px_height": 1920,
+        "suptitle_y_custom": 0.96,
+        "subtitle_pad_custom": 60
+      },
+      "_adds": ["bar_colors", "value_label_offset_x", "value_label_offset_y", "reference_bands", "vlines", "hlines"]
+    },
+
+    "eMultiLineChartAnimateInstagram": {
+      "_description": "Lines draw point-by-point with a leading dot. Same params as static line chart plus animation params.",
+      "_changed_defaults": {
+        "px": 1080,
+        "py": 1920,
+        "suptitle_y": 0.98,
+        "subtitle_y": 0.95
+      },
+      "_adds": ["label_offset_x", "label_offset_y", "point_label_offsets", "reference_bands", "vlines", "hlines"]
+    },
+
+    "eStemChartAnimateInstagram": {
+      "_description": "Stems grow from baseline. Same params as static stem chart plus animation params.",
+      "_changed_defaults": {
+        "px_height": 1920,
+        "subtitle_pad": 30,
+        "suptitle_y": 0.96
+      },
+      "_adds": ["value_label_offset_y", "value_label_offset_x", "reference_bands", "vlines", "hlines"]
+    },
+
+    "eDonutChartAnimateInstagram": {
+      "_description": "Wedges sweep open from top. Titles type on.",
+      "_changed_defaults": {
+        "instagram_format": "'9x16'"
+      }
+    },
+
+    "eCoverTileAnimateInstagram": {
+      "_description": "Title and subtitle type on. Accent line draws from centre outward.",
+      "_changed_defaults": {
+        "px_height": 1920,
+        "duration": 1.5,
+        "hold_duration": 1.0
+      },
+      "_extra_params": {
+        "hold_duration": {"default": 1.0, "desc": "Seconds to hold finished frame"},
+        "accent_line_start": {"default": 0.40, "desc": "Progress fraction when line begins drawing"},
+        "accent_line_end": {"default": 0.65, "desc": "Progress fraction when line is fully drawn"}
+      }
+    }
+  },
+
+  "post_render_helpers": {
+    "_note": "Call these on the returned ax object after the chart function. They mutate ax in-place and return ax.",
+
+    "add_reference_bands": {
+      "_description": "Shaded bands spanning the full axis range. Horizontal (y bands) or vertical (x bands).",
+      "_signature": "add_reference_bands(ax, bands, orientation='horizontal')",
+      "orientation": {"options": ["'horizontal'", "'vertical'"], "desc": "horizontal = bands along y-axis, vertical = bands along x-axis"},
+      "bands_item_schema": {
+        "min": "float — lower bound",
+        "max": "float — upper bound",
+        "color": "str — hex (default '#857052')",
+        "alpha": "float 0-1 (default 0.15)",
+        "label": "str — optional text at edge",
+        "label_color": "str (default matches color)",
+        "label_size": "int (default 10)",
+        "zorder": "int (default 0)"
+      },
+      "example": [
+        {"min": 0, "max": 2, "color": "#4D5523", "alpha": 0.12, "label": "Low"},
+        {"min": 8, "max": 10, "color": "#DD6B20", "alpha": 0.12, "label": "High"}
+      ]
+    },
+
+    "add_vlines": {
+      "_description": "Vertical reference lines with optional text label at top.",
+      "_signature": "add_vlines(ax, lines)",
+      "lines_item_schema": {
+        "x": "float — REQUIRED",
+        "color": "str (default '#857052')",
+        "style": "str (default '--')",
+        "width": "float (default 1.0)",
+        "alpha": "float (default 0.8)",
+        "label": "str — text drawn at top of line",
+        "label_color": "str",
+        "label_size": "int (default 10)",
+        "label_ha": "str (default 'center')",
+        "zorder": "int (default 5)"
+      },
+      "example": [
+        {"x": 2020, "color": "#DD6B20", "style": "--", "label": "Pandemic"},
+        {"x": 2008, "color": "#857052", "style": ":", "width": 0.8}
+      ]
+    },
+
+    "add_hlines": {
+      "_description": "Horizontal reference lines with optional text label at right.",
+      "_signature": "add_hlines(ax, lines)",
+      "lines_item_schema": {
+        "y": "float — REQUIRED",
+        "color": "str (default '#857052')",
+        "style": "str (default '--')",
+        "width": "float (default 1.0)",
+        "alpha": "float (default 0.8)",
+        "label": "str — text at right end of line",
+        "label_color": "str",
+        "label_size": "int (default 10)",
+        "zorder": "int (default 5)"
+      },
+      "example": [{"y": 50, "color": "#3F5B83", "style": "--", "label": "Target"}]
+    },
+
+    "add_custom_annotations": {
+      "_description": "Text callouts. Optionally with an arrowhead pointing to a data point. Use for highlight boxes.",
+      "_signature": "add_custom_annotations(ax, annotations)",
+      "annotations_item_schema": {
+        "text": "str — REQUIRED",
+        "xy": "[x, y] — REQUIRED — position of the text box",
+        "arrow_to": "[x, y] — optional — if set, draws arrow FROM xy TO arrow_to",
+        "arrowstyle": "str (default '->') — e.g. '->', '-|>', 'fancy'",
+        "arrow_color": "str (default matches color)",
+        "arrow_lw": "float (default 1.2)",
+        "color": "str (default '#4b2e1a')",
+        "fontsize": "int (default 12)",
+        "ha": "str (default 'center')",
+        "va": "str (default 'center')",
+        "frame": "bool (default true) — show background box",
+        "frame_color": "str",
+        "frame_alpha": "float (default 0.9)",
+        "bg_color": "str (default 'white')",
+        "zorder": "int (default 10)"
+      },
+      "example": [
+        {
+          "text": "Record high",
+          "xy": [2021, 90],
+          "arrow_to": [2021, 105],
+          "color": "#DD6B20",
+          "fontsize": 11,
+          "frame": true,
+          "bg_color": "#FFF8F0"
+        },
+        {
+          "text": "Base note, no arrow",
+          "xy": [2015, 40],
+          "frame": false,
+          "color": "#857052",
+          "fontsize": 10
+        }
+      ]
+    },
+
+    "add_lines": {
+      "_description": "Draw connecting lines or arrows between two data-coordinate points.",
+      "_signature": "add_lines(ax, lines)",
+      "lines_item_schema": {
+        "start": "[x1, y1] — REQUIRED",
+        "end": "[x2, y2] — REQUIRED",
+        "arrow": "bool (default false) — add arrowhead at end",
+        "arrowstyle": "str (default '->')",
+        "color": "str (default '#4b2e1a')",
+        "linewidth": "float (default 1.5)",
+        "linestyle": "str (default '-')",
+        "zorder": "int (default 8)"
+      },
+      "example": [
+        {"start": [2018, 60], "end": [2021, 95], "arrow": true, "color": "#3F5B83"}
+      ]
+    },
+
+    "add_text": {
+      "_description": "Free-form text elements in data coordinates. Use for axis labels, callout text, watermarks.",
+      "_signature": "add_text(ax, texts)",
+      "texts_item_schema": {
+        "text": "str — REQUIRED",
+        "xy": "[x, y] — REQUIRED — data coordinates",
+        "fontsize": "int (default 12)",
+        "color": "str (default '#4b2e1a')",
+        "ha": "str (default 'left') — 'left', 'center', 'right'",
+        "va": "str (default 'bottom') — 'top', 'center', 'bottom'",
+        "fontweight": "str (default 'normal') — 'normal', 'bold', 'light', 'medium'",
+        "rotation": "float (default 0) — degrees",
+        "alpha": "float (default 1.0)",
+        "family": "str (default 'DejaVu Sans')",
+        "linespacing": "float (default 1.2)",
+        "zorder": "int (default 10)"
+      },
+      "example": [
+        {"text": "Espresso Charts", "xy": [0.98, 0.02], "fontsize": 9, "color": "#857052", "ha": "right", "va": "bottom", "alpha": 0.6}
+      ]
+    }
+  },
+
+  "colour_palette": {
+    "_note": "All colours follow the Espresso Charts coffee theme. Do not deviate unless overriding a specific element.",
+    "face_background": "#F5F0E6",
+    "headline_text": "#4b2e1a",
+    "source_text": "#857052",
+    "tick_labels": "#3c3325",
+    "axis_labels": "#79664a",
+    "accent_blue": "#3F5B83",
+    "accent_orange": "#DD6B20",
+    "accent_green": "#4D5523",
+    "accent_sand": "#CDAF7B",
+    "series_palette": ["#9d8561", "#857052", "#6c5c43", "#544734", "#3c3325", "#79664a", "#d9d0c1"],
+    "highlight_warm": "#DD6B20",
+    "highlight_cool": "#3F5B83"
+  },
+
+  "canvas_sizes": {
+    "carousel_4x5": {"px_width": 1080, "px_height": 1350, "dpi": 200, "note": "Static charts, carousel slides"},
+    "reel_9x16":    {"px_width": 1080, "px_height": 1920, "dpi": 200, "note": "Animated Reels and YouTube Shorts"}
+  },
+
+  "typography_guide": {
+    "suptitle": {
+      "font": "DejaVu Serif",
+      "size_range": "26-42",
+      "default_size": 26,
+      "weight": "normal",
+      "rules": "3-5 words. Self-explanatory. Single line. No punctuation."
+    },
+    "subtitle": {
+      "font": "DejaVu Sans",
+      "size_range": "14-18",
+      "default_size": 14,
+      "weight": "normal",
+      "rules": "One sentence. May wrap once. Contextual detail."
+    },
+    "txt_label": {
+      "font": "DejaVu Sans",
+      "size_range": "10-12",
+      "weight": "normal",
+      "rules": "Source attribution. 'Source: ...' format."
+    },
+    "value_labels": {
+      "size_range": "10-14",
+      "default_size": 12
+    }
+  }
+}
