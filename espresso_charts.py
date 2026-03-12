@@ -902,10 +902,10 @@ def eStemChartNewInstagram(
     color_b="#573D09",
     year_label_a=None,
     year_label_b=None,
-    label_a_offset_x=1,
-    label_b_offset_x=1,
-    label_a_offset_y=1,
-    label_b_offset_y=1,
+    label_a_offset_x=0,
+    label_b_offset_x=0,
+    label_a_offset_y=0,
+    label_b_offset_y=0,
     instagram=True,
     px_width=1080,
     px_height=1350,
@@ -913,7 +913,7 @@ def eStemChartNewInstagram(
     suptitle_size=26,
     subtitle_size=14,
     label_size=12,
-    subtitle_y=0.88,             # axes-relative vertical position of subtitle (0=bottom, 1=top)
+    subtitle_y=0.8,             # axes-relative vertical position of subtitle (0=bottom, 1=top)
     subtitle_pad=90,             # DEPRECATED — kept for backwards compat, has no effect
     labelpad=10,
     aspect_ratio=None,
