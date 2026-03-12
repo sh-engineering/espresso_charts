@@ -902,10 +902,10 @@ def eStemChartNewInstagram(
     color_b="#573D09",
     year_label_a=None,
     year_label_b=None,
-    label_a_offset_x=0,
-    label_b_offset_x=0,
-    label_a_offset_y=0,
-    label_b_offset_y=0,
+    label_a_offset_x=1,
+    label_b_offset_x=1,
+    label_a_offset_y=1,
+    label_b_offset_y=1,
     instagram=True,
     px_width=1080,
     px_height=1350,
@@ -913,7 +913,7 @@ def eStemChartNewInstagram(
     suptitle_size=26,
     subtitle_size=14,
     label_size=12,
-    subtitle_y=0.86,             # axes-relative vertical position of subtitle (0=bottom, 1=top)
+    subtitle_y=0.88,             # axes-relative vertical position of subtitle (0=bottom, 1=top)
     subtitle_pad=90,             # DEPRECATED — kept for backwards compat, has no effect
     labelpad=10,
     aspect_ratio=None,
@@ -1118,9 +1118,13 @@ def eDonutChartInstagram(
     txt_label="",
     num_format="{:.0f}%",
     num_divisor=1,
-    radius_outer=0.9,
-    radius_inner=0.65,
-    wedge_width=0.3,
+    radius_outer=0.9,            # outer radius of the donut ring
+    inner_radius=None,           # explicit inner hole radius; if set overrides wedge_width
+                                 # hole edge = radius_outer - wedge_width, so:
+                                 #   inner_radius=0.6 → wedge_width=0.3 (with radius_outer=0.9)
+    wedge_width=0.3,             # ring band thickness; ignored when inner_radius is set
+    radius_inner=0.65,           # outer radius of SECOND ring in double-donut (col_inner)
+    wedge_width_inner=None,      # band width for inner ring; falls back to wedge_width if None
     labeldistance=1.05,
     pctdistance_outer=0.8,
     pctdistance_inner=0.75,
@@ -1148,6 +1152,9 @@ def eDonutChartInstagram(
     font='DejaVu Sans',
     suptitle_font='DejaVu Serif',
     subtitle_font='DejaVu Sans',
+    suptitle_y=0.97,             # figure-relative y for headline  (0=bottom, 1=top)
+    subtitle_y=0.91,             # figure-relative y for subheadline
+    label_y=0.04,                # figure-relative y for source line
     figsize=(8, 8),
     dpi=200,
     px=1080,
@@ -1170,16 +1177,21 @@ def eDonutChartInstagram(
     if colors is None:
         colors = default_colors
 
+    # --- Resolve ring widths ---
+    # inner_radius overrides wedge_width when provided
+    outer_band = radius_outer - inner_radius if inner_radius is not None else wedge_width
+    inner_band = wedge_width_inner if wedge_width_inner is not None else outer_band
+
     if txt_suptitle:
-        fig.text(0.5, 0.97, txt_suptitle, ha="center", va="top",
+        fig.text(0.5, suptitle_y, txt_suptitle, ha="center", va="top",
                  fontsize=suptitle_size, color=suptitle_color, weight=suptitle_font_weight,
                  fontfamily=suptitle_font)
     if txt_subtitle:
-        fig.text(0.5, 0.91, txt_subtitle, ha="center", va="top",
+        fig.text(0.5, subtitle_y, txt_subtitle, ha="center", va="top",
                  fontsize=subtitle_size, color=subtitle_color, weight=subtitle_font_weight,
                  fontfamily=subtitle_font)
     if txt_label:
-        fig.text(0.5, 0.04, txt_label, ha="center", va="bottom",
+        fig.text(0.5, label_y, txt_label, ha="center", va="bottom",
                  fontsize=bottom_note_size, color=txt_label_color, weight=txt_label_font_weight)
 
     pie_labels = df_chart[col_label].astype(str) if col_label is not None else None
@@ -1193,7 +1205,7 @@ def eDonutChartInstagram(
 
     wedges, texts, autotexts = ax.pie(
         df_chart[col_value] / num_divisor, radius=radius_outer, labels=pie_labels,
-        labeldistance=labeldistance, colors=colors, wedgeprops=dict(width=wedge_width),
+        labeldistance=labeldistance, colors=colors, wedgeprops=dict(width=outer_band),
         startangle=90, autopct=outer_autopct, pctdistance=pctdistance_outer,
         textprops={'fontsize': label_size})
 
@@ -1207,7 +1219,7 @@ def eDonutChartInstagram(
     if col_inner:
         wedges2, texts2, autotexts2 = ax.pie(
             df_chart[col_inner] / num_divisor, radius=radius_inner, colors=colors,
-            wedgeprops=dict(width=wedge_width), startangle=90, autopct=inner_autopct,
+            wedgeprops=dict(width=inner_band), startangle=90, autopct=inner_autopct,
             pctdistance=pctdistance_inner, textprops={'fontsize': label_size})
         if pct_colors:
             for i, t in enumerate(autotexts2):
@@ -1851,7 +1863,11 @@ def eDonutChartAnimateInstagram(
     tw_subtitle_start=0.5, tw_subtitle_end=0.95,
     col_label=None, col_inner=None, txt_suptitle="", txt_subtitle="", txt_label="",
     num_format="{:.0f}%", num_divisor=1,
-    radius_outer=0.9, radius_inner=0.65, wedge_width=0.3,
+    radius_outer=0.9,            # outer radius of the donut ring (controls overall size)
+    inner_radius=None,           # explicit inner hole radius; overrides wedge_width when set
+    wedge_width=0.3,             # ring band thickness; ignored when inner_radius is set
+    radius_inner=0.65,           # outer radius of second ring in double-donut (col_inner)
+    wedge_width_inner=None,      # band width for inner ring; falls back to outer band if None
     labeldistance=1.05, pctdistance_outer=0.8, pctdistance_inner=0.75,
     show_pct=True, autopct_outer=True, autopct_inner=True,
     colors=None, pct_colors=None, label_colors=None,
@@ -1862,6 +1878,9 @@ def eDonutChartAnimateInstagram(
     txt_label_font_weight='light', suptitle_size=26, subtitle_size=14,
     label_size=10, bottom_note_size=10, font='DejaVu Sans',
     suptitle_font='DejaVu Serif', subtitle_font='DejaVu Sans',
+    suptitle_y=0.97,             # figure-relative y for headline  (0=bottom, 1=top)
+    subtitle_y=0.92,             # figure-relative y for subheadline
+    label_y=0.03,                # figure-relative y for source line
     figsize=(8,8), dpi=200, px=1080, instagram=True, instagram_format='9x16',
 ):
     ease_fn = _EASING.get(easing, _ease_out_cubic)
@@ -1880,12 +1899,16 @@ def eDonutChartAnimateInstagram(
     default_colors = ['#d9d0c1','#79664a','#9d8561','#857052','#6c5c43','#544734','#3c3325']
     if colors is None: colors = default_colors
 
-    suptitle_fig_obj = fig.text(0.5, 0.97, "", ha="center", va="top", fontsize=suptitle_size,
+    # --- Resolve ring widths ---
+    outer_band = radius_outer - inner_radius if inner_radius is not None else wedge_width
+    inner_band = wedge_width_inner if wedge_width_inner is not None else outer_band
+
+    suptitle_fig_obj = fig.text(0.5, suptitle_y, "", ha="center", va="top", fontsize=suptitle_size,
                                  color=suptitle_color, weight=suptitle_font_weight, fontfamily=suptitle_font)
-    subtitle_fig_obj = fig.text(0.5, 0.92, "", ha="center", va="top", fontsize=subtitle_size,
+    subtitle_fig_obj = fig.text(0.5, subtitle_y, "", ha="center", va="top", fontsize=subtitle_size,
                                  color=subtitle_color, weight=subtitle_font_weight, fontfamily=subtitle_font)
     if txt_label:
-        fig.text(0.5, 0.03, txt_label, ha="center", va="bottom", fontsize=bottom_note_size,
+        fig.text(0.5, label_y, txt_label, ha="center", va="bottom", fontsize=bottom_note_size,
                  color=txt_label_color, weight=txt_label_font_weight)
 
     for side in ['top','right','left','bottom']: ax.spines[side].set_linewidth(0)
@@ -1922,7 +1945,7 @@ def eDonutChartAnimateInstagram(
             wa = angles_deg[i] * progress
             if wa < 0.5: cur_start -= wa; continue
             wedge = mpatches.Wedge(center=(0,0), r=radius_outer, theta1=cur_start-wa, theta2=cur_start,
-                                   width=wedge_width, facecolor=colors[i%len(colors)],
+                                   width=outer_band, facecolor=colors[i%len(colors)],
                                    edgecolor=face_color, linewidth=1.5, zorder=3)
             ax.add_patch(wedge); drawn.append(wedge)
             mid_rad = np.deg2rad(cur_start - wa/2)
@@ -1933,7 +1956,7 @@ def eDonutChartAnimateInstagram(
                 lc  = (label_colors[i] if label_colors and i < len(label_colors) else '#4b2e1a')
                 ax.text(lx, ly, labels_data[i], ha=ha, va='center', fontsize=label_size, color=lc)
             if show_pct and autopct_outer and progress > 0.3:
-                pr  = radius_outer - wedge_width/2
+                pr  = radius_outer - outer_band/2
                 px_ = pr*np.cos(mid_rad)*pctdistance_outer/0.8
                 py_ = pr*np.sin(mid_rad)*pctdistance_outer/0.8
                 pc  = (pct_colors[i] if pct_colors and i < len(pct_colors) else '#4b2e1a')
