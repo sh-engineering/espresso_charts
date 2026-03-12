@@ -913,7 +913,7 @@ def eStemChartNewInstagram(
     suptitle_size=26,
     subtitle_size=14,
     label_size=12,
-    subtitle_y=0.8,             # axes-relative vertical position of subtitle (0=bottom, 1=top)
+    subtitle_y=0.86,             # axes-relative vertical position of subtitle (0=bottom, 1=top)
     subtitle_pad=90,             # DEPRECATED — kept for backwards compat, has no effect
     labelpad=10,
     aspect_ratio=None,
