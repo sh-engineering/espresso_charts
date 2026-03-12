@@ -913,7 +913,8 @@ def eStemChartNewInstagram(
     suptitle_size=26,
     subtitle_size=14,
     label_size=12,
-    subtitle_pad=90,
+    subtitle_y=0.88,             # axes-relative vertical position of subtitle (0=bottom, 1=top)
+    subtitle_pad=90,             # DEPRECATED — kept for backwards compat, has no effect
     labelpad=10,
     aspect_ratio=None,
     rotate_labels=False,
@@ -960,8 +961,11 @@ def eStemChartNewInstagram(
 
     fig.suptitle(txt_suptitle, y=suptitle_y, fontsize=suptitle_size,
                  color=suptitle_color, fontweight="medium", fontfamily=suptitle_font)
-    ax.set_title(txt_subtitle, pad=subtitle_pad, fontsize=subtitle_size,
-                 color=subtitle_color, fontweight="light", fontfamily=subtitle_font)
+    # subtitle placed via ax.text so subtitle_y gives direct vertical control
+    ax.text(0.5, subtitle_y, txt_subtitle,
+            fontsize=subtitle_size, color=subtitle_color,
+            fontweight="light", fontfamily=subtitle_font,
+            ha='center', va='bottom', transform=ax.transAxes)
     ax.set_xlabel(txt_label, color=axis_label_color, labelpad=labelpad,
                   size=label_size, fontweight="light")
 
@@ -1688,7 +1692,9 @@ def eStemChartAnimateInstagram(
     label_a_offset_x=1, label_b_offset_x=1, label_a_offset_y=1, label_b_offset_y=1,
     instagram=True, px_width=1080, px_height=1920, dpi=200,
     suptitle_size=26, subtitle_size=14, label_size=12,
-    subtitle_pad=30, labelpad=10, aspect_ratio=None,
+    subtitle_y=0.88,             # figure-relative y for subtitle (0-1). suptitle sits at suptitle_y.
+    subtitle_pad=30,             # DEPRECATED — kept for backwards compat, has no effect
+    labelpad=10, aspect_ratio=None,
     rotate_labels=False, xtick_align_ha="center", xtick_align_va="bottom",
     value_label_offset_pts=6,
     value_label_offset_y=None,   # dict {index: additional_y_pts}
@@ -1717,7 +1723,7 @@ def eStemChartAnimateInstagram(
 
     suptitle_obj = fig.text(0.5, suptitle_y, "", fontsize=suptitle_size, color=suptitle_color,
                              fontweight="medium", fontfamily=suptitle_font, ha='center', va='top')
-    subtitle_obj = fig.text(0.5, suptitle_y - 0.05, "", fontsize=subtitle_size, color=subtitle_color,
+    subtitle_obj = fig.text(0.5, subtitle_y, "", fontsize=subtitle_size, color=subtitle_color,
                              fontweight="light", fontfamily=subtitle_font, ha='center', va='top')
     ax.set_xlabel(txt_label, color=axis_label_color, labelpad=labelpad,
                   size=label_size, fontweight="light")
