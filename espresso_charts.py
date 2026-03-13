@@ -1583,8 +1583,9 @@ def eMultiLineChartAnimateInstagram(
         ax.set_ylim(min(all_v) - m, max(all_v) + m)
 
     x_vals = x.tolist()
-    xm = (max(x_vals) - min(x_vals)) * 0.02
-    ax.set_xlim(min(x_vals) - xm, max(x_vals) + xm)
+    n_cats = len(x_vals)
+    xm = n_cats * 0.02
+    ax.set_xlim(-xm, n_cats - 1 + xm)
 
     if show_zero_line:
         ax.axhline(zero_line_at, color=zero_line_color, linestyle=zero_line_style,
