@@ -1561,6 +1561,7 @@ def eMultiLineChartAnimateInstagram(
         try:    x_ticks = [x.iloc[0], x.iloc[-1]]
         except: x_ticks = [min(x), max(x)]
     if x_tick_labels is None: x_tick_labels = x_ticks
+    ax.plot(x, [0] * len(x), alpha=0)  # pre-register all categories
     ax.set_xticks(x_ticks); ax.set_xticklabels(x_tick_labels)
 
     if show_y_axis:
