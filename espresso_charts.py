@@ -430,7 +430,7 @@ def eSingleBarChartNewInstagram(
     suptitle_font='DejaVu Serif',
     subtitle_font='DejaVu Sans',
     suptitle_y_custom=1,
-    subtitle_pad_custom=40,
+    subtitle_pad_custom=60,
     show_zero_line=False,
     zero_line_color='#4b2e1a',
     zero_line_style='--',
@@ -635,7 +635,7 @@ def eMultiLineChartInstagram(
     suptitle_size=26,
     subtitle_size=14,
     label_size=12,
-    bottom_note_size=10,
+    bottom_note_size=9,
     y_limits=None,
     suptitle_y=0.98,
     subtitle_y=0.94,
@@ -913,7 +913,7 @@ def eStemChartNewInstagram(
     suptitle_size=26,
     subtitle_size=14,
     label_size=12,
-    subtitle_y=0.88,             # axes-relative vertical position of subtitle (0=bottom, 1=top)
+    subtitle_y=0.85,             # axes-relative vertical position of subtitle (0=bottom, 1=top)
     subtitle_pad=90,             # DEPRECATED — kept for backwards compat, has no effect
     labelpad=10,
     aspect_ratio=None,
@@ -1122,7 +1122,7 @@ def eDonutChartInstagram(
     inner_radius=None,           # explicit inner hole radius; if set overrides wedge_width
                                  # hole edge = radius_outer - wedge_width, so:
                                  #   inner_radius=0.6 → wedge_width=0.3 (with radius_outer=0.9)
-    wedge_width=0.3,             # ring band thickness; ignored when inner_radius is set
+    wedge_width=0.4,             # ring band thickness; ignored when inner_radius is set
     radius_inner=0.65,           # outer radius of SECOND ring in double-donut (col_inner)
     wedge_width_inner=None,      # band width for inner ring; falls back to wedge_width if None
     labeldistance=1.05,
@@ -1148,12 +1148,12 @@ def eDonutChartInstagram(
     suptitle_size=26,
     subtitle_size=14,
     label_size=10,
-    bottom_note_size=10,
+    bottom_note_size=9,
     font='DejaVu Sans',
     suptitle_font='DejaVu Serif',
     subtitle_font='DejaVu Sans',
     suptitle_y=0.97,             # figure-relative y for headline  (0=bottom, 1=top)
-    subtitle_y=0.91,             # figure-relative y for subheadline
+    subtitle_y=0.90,             # figure-relative y for subheadline
     label_y=0.04,                # figure-relative y for source line
     figsize=(8, 8),
     dpi=200,
@@ -1557,11 +1557,19 @@ def eMultiLineChartAnimateInstagram(
     fig.patch.set_linewidth(0); fig.patch.set_alpha(1)
 
     x = df_chart[col_dim]
-    if x_ticks is None:
-        try:    x_ticks = [x.iloc[0], x.iloc[-1]]
-        except: x_ticks = [min(x), max(x)]
-    if x_tick_labels is None: x_tick_labels = x_ticks
-    ax.set_xticks(x_ticks); ax.set_xticklabels(x_tick_labels)
+
+    # Pre-register all x categories so the categorical converter is fully initialised
+    # before any animation frames draw partial data. Without this, early frames crash
+    # because set_xticks references categories that haven't been seen yet.
+    ax.plot(x, [0] * len(x), alpha=0)
+
+    # x_ticks / x_tick_labels are intentionally ignored for animated line charts.
+    # The categorical axis uses integer indices internally, so we set ticks by index
+    # and then relabel. Passing raw category values on early frames causes converter errors.
+    n_rows = len(df_chart)
+    x_idx  = list(range(n_rows))
+    ax.set_xticks([x_idx[0], x_idx[-1]])
+    ax.set_xticklabels([str(x.iloc[0]), str(x.iloc[-1])])
 
     if show_y_axis:
         if y_ticks is not None: ax.set_yticks(y_ticks)
@@ -1581,9 +1589,11 @@ def eMultiLineChartAnimateInstagram(
         m = (max(all_v) - min(all_v)) * 0.1
         ax.set_ylim(min(all_v) - m, max(all_v) + m)
 
+    # Index-based xlim: categorical axes map each category to an integer index 0..n-1.
+    # Using the raw category values for xlim does not work reliably.
     x_vals = x.tolist()
-    xm = (max(x_vals) - min(x_vals)) * 0.02
-    ax.set_xlim(min(x_vals) - xm, max(x_vals) + xm)
+    xm = len(x_vals) * 0.02
+    ax.set_xlim(-xm, len(x_vals) - 1 + xm)
 
     if show_zero_line:
         ax.axhline(zero_line_at, color=zero_line_color, linestyle=zero_line_style,
@@ -1865,7 +1875,7 @@ def eDonutChartAnimateInstagram(
     num_format="{:.0f}%", num_divisor=1,
     radius_outer=0.9,            # outer radius of the donut ring (controls overall size)
     inner_radius=None,           # explicit inner hole radius; overrides wedge_width when set
-    wedge_width=0.3,             # ring band thickness; ignored when inner_radius is set
+    wedge_width=0.4,             # ring band thickness; ignored when inner_radius is set
     radius_inner=0.65,           # outer radius of second ring in double-donut (col_inner)
     wedge_width_inner=None,      # band width for inner ring; falls back to outer band if None
     labeldistance=1.05, pctdistance_outer=0.8, pctdistance_inner=0.75,
@@ -1876,10 +1886,10 @@ def eDonutChartAnimateInstagram(
     suptitle_color='#4b2e1a', subtitle_color='#4b2e1a', txt_label_color='#857052',
     face_color='#F7F5F2', suptitle_font_weight='medium', subtitle_font_weight='light',
     txt_label_font_weight='light', suptitle_size=26, subtitle_size=14,
-    label_size=10, bottom_note_size=10, font='DejaVu Sans',
+    label_size=10, bottom_note_size=9, font='DejaVu Sans',
     suptitle_font='DejaVu Serif', subtitle_font='DejaVu Sans',
     suptitle_y=0.97,             # figure-relative y for headline  (0=bottom, 1=top)
-    subtitle_y=0.92,             # figure-relative y for subheadline
+    subtitle_y=0.90,             # figure-relative y for subheadline
     label_y=0.03,                # figure-relative y for source line
     figsize=(8,8), dpi=200, px=1080, instagram=True, instagram_format='9x16',
 ):
