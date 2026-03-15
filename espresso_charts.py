@@ -1048,9 +1048,9 @@ def eMultiLineChartAnimateInstagram(
     fig.patch.set_facecolor(face_color); fig.patch.set_edgecolor(face_color)
     fig.patch.set_linewidth(0); fig.patch.set_alpha(1)
     x = df_chart[col_dim]
-    ax.plot(x, [0] * len(x), alpha=0)
     n_rows = len(df_chart)
     x_idx  = list(range(n_rows))
+    # Use pure numeric axis — set tick positions as integers, labels as strings
     ax.set_xticks([x_idx[0], x_idx[-1]])
     ax.set_xticklabels([str(x.iloc[0]), str(x.iloc[-1])])
     if show_y_axis:
@@ -1099,7 +1099,7 @@ def eMultiLineChartAnimateInstagram(
                 else:
                     ox_pt, oy_pt = 0, 0
                 value_targets.append(dict(pos=p, idx=idx, formatted=fmt_s,
-                                          x=x.iloc[p], y=raw + oy + oy_pt,
+                                          x=float(p), y=raw + oy + oy_pt,
                                           ox=ox_pt, color=colors[idx]))
     val_objs = []
     for vt in value_targets:
@@ -1124,7 +1124,8 @@ def eMultiLineChartAnimateInstagram(
         shade_patch.set_visible(False)
     total_anim   = int(fps * duration)
     total_frames = total_anim + hold_frames
-    x_arr        = np.array(x.tolist(), dtype=float)
+    # Use integer indices for interpolation (categorical x-axis maps to 0..n-1)
+    x_arr        = np.arange(n_rows, dtype=float)
     def update(frame):
         progress = 1.0 if frame >= total_anim else ease_fn(frame / total_anim)
         suptitle_obj.set_text(_typewriter(txt_suptitle, progress, tw_suptitle_start, tw_suptitle_end))
