@@ -45,6 +45,19 @@ color_sand   = '#CDAF7B'
 face_color   = '#F5F0E6'
 
 
+# ============================================================================
+# INTERNAL: coerce string-keyed dicts to int keys (JSON compat)
+# ============================================================================
+def _int_keys(d):
+    """Convert {'0': 4, '1': 2} -> {0: 4, 1: 2}. Pass-through for None or already-int-keyed."""
+    if not isinstance(d, dict):
+        return d
+    try:
+        return {int(k): v for k, v in d.items()}
+    except (ValueError, TypeError):
+        return d
+
+
 def save_chart(fig, path, dpi=200):
     """Save chart with locked dimensions. Never uses bbox_inches='tight'."""
     fig.savefig(path, dpi=dpi, bbox_inches=None, pad_inches=0,
@@ -221,6 +234,11 @@ def eSingleBarChartNewInstagram(
     sep_index=None, sep_color='#4b2e1a', sep_style='-', sep_width=1.5,
     x_subtitle_offset=0.55,
 ):
+    # JSON compat: coerce string keys to int
+    label_custom_offset  = _int_keys(label_custom_offset)
+    value_label_offset_x = _int_keys(value_label_offset_x)
+    value_label_offset_y = _int_keys(value_label_offset_y)
+
     plt.rcdefaults()
     plt.rcParams['font.family'] = font
 
@@ -256,6 +274,7 @@ def eSingleBarChartNewInstagram(
 
     n = len(df_chart)
     if bar_colors is not None:
+        bar_colors = _int_keys(bar_colors)
         if isinstance(bar_colors, dict):
             colors_list = [bar_colors.get(i, bar_color) for i in range(n)]
         else:
@@ -339,7 +358,6 @@ def eSingleBarChartNewInstagram(
         ha_val  = 'left' if is_pos else 'right'
         off_val = 8 + x_extra if is_pos else -8 - x_extra
 
-        # FIX 1: Added bbox so value labels have background mask
         ax.annotate(
             formatted, xy=(x_end, y_center),
             xytext=(off_val, y_extra), textcoords='offset points',
@@ -482,7 +500,6 @@ def eMultiLineChartInstagram(
     if vlines: add_vlines(ax, vlines)
     if hlines: add_hlines(ax, hlines)
 
-    # --- Numeric value labels at pos_text rows ---
     n_rows = len(df_chart)
     for pos in (pos_text or []):
         if pos < 0: pos = n_rows + pos
@@ -492,26 +509,20 @@ def eMultiLineChartInstagram(
             val = raw / num_divisor
             try:    fmt_s = num_format.format(val)
             except: fmt_s = str(val)
-
             oy = (text_offset_y[idx] if isinstance(text_offset_y, (list, tuple))
                   else (text_offset_y or 0))
-
             if isinstance(point_label_offsets, dict):
                 ox_pt, oy_pt = point_label_offsets.get((pos, idx), (0, 0))
             else:
                 ox_pt, oy_pt = 0, 0
-
-            # FIX 2: Use ax.annotate() so ox_pt is actually applied
             ax.annotate(
-                fmt_s,
-                xy=(x.iloc[pos], raw + oy + oy_pt),
+                fmt_s, xy=(x.iloc[pos], raw + oy + oy_pt),
                 xytext=(ox_pt, 0), textcoords='offset points',
                 ha='center', va='bottom', color=colors[idx],
                 fontsize=label_size, zorder=11,
                 bbox=dict(boxstyle='square,pad=0.1', facecolor=face_color,
                           edgecolor=face_color, alpha=0.8))
 
-    # --- Series end-labels at pos_label ---
     if pos_label is not None:
         pos_eff = n_rows + pos_label if pos_label < 0 else pos_label
         if 0 <= pos_eff < n_rows:
@@ -547,7 +558,6 @@ def eMultiLineChartInstagram(
 
 
 
-
 # ============================================================================
 # STATIC CHART: STEM  (4:5 Instagram)
 # ============================================================================
@@ -577,6 +587,11 @@ def eStemChartNewInstagram(
     show_x_axis=False, reference_bands=None, vlines=None, hlines=None,
     font='DejaVu Sans', suptitle_font='DejaVu Serif', subtitle_font='DejaVu Sans',
 ):
+    # JSON compat: coerce string keys to int
+    value_label_offset_y      = _int_keys(value_label_offset_y)
+    value_label_offset_x      = _int_keys(value_label_offset_x)
+    value_label_custom_offset = _int_keys(value_label_custom_offset)
+
     plt.rcdefaults()
     plt.rcParams['font.family'] = 'DejaVu Sans'
 
@@ -702,7 +717,6 @@ def eStemChartNewInstagram(
 
 
 
-
 # ============================================================================
 # STATIC CHART: DONUT  (4:5 Instagram)
 # ============================================================================
@@ -825,7 +839,6 @@ def eCoverTileInstagram(
 def _ease_out_cubic(t): return 1 - (1 - t) ** 3
 def _ease_out_quad(t):  return 1 - (1 - t) ** 2
 def _ease_linear(t):    return t
-
 _EASING = {'cubic': _ease_out_cubic, 'quad': _ease_out_quad, 'linear': _ease_linear}
 
 def _typewriter(full_text, progress, start=0.0, end=0.95):
@@ -868,6 +881,10 @@ def eSingleBarChartAnimateInstagram(
     x_subtitle_offset=0.55,
     reference_bands=None, vlines=None, hlines=None,
 ):
+    label_custom_offset  = _int_keys(label_custom_offset)
+    value_label_offset_x = _int_keys(value_label_offset_x)
+    value_label_offset_y = _int_keys(value_label_offset_y)
+
     ease_fn = _EASING.get(easing, _ease_out_cubic)
     plt.rcdefaults(); plt.rcParams['font.family'] = font
     if instagram:
@@ -899,6 +916,7 @@ def eSingleBarChartAnimateInstagram(
     if max_val is None: max_val = float(df_chart[col_measure].max())
     ax.set_xlim(min(min_val * factor_limit_x, 0), max(max_val * factor_limit_x, 0))
     if bar_colors is not None:
+        bar_colors = _int_keys(bar_colors)
         if isinstance(bar_colors, dict):
             colors_list = [bar_colors.get(i, bar_color) for i in range(n)]
         else: colors_list = list(bar_colors)
@@ -969,7 +987,7 @@ def eSingleBarChartAnimateInstagram(
 
 
 # ============================================================================
-# ANIMATED: MULTI-LINE  (9:16 Reels)  — contains FIX 3 (3a, 3b, 3c)
+# ANIMATED: MULTI-LINE  (9:16 Reels)
 # ============================================================================
 def eMultiLineChartAnimateInstagram(
     df_chart, col_dim, col_measure_list, txt_suptitle, txt_subtitle, txt_label, pos_text,
@@ -1077,11 +1095,9 @@ def eMultiLineChartAnimateInstagram(
                     ox_pt, oy_pt = point_label_offsets.get((p, idx), (0, 0))
                 else:
                     ox_pt, oy_pt = 0, 0
-                # FIX 3a: Store ox_pt in value_targets
                 value_targets.append(dict(pos=p, idx=idx, formatted=fmt_s,
                                           x=x.iloc[p], y=raw + oy + oy_pt,
                                           ox=ox_pt, color=colors[idx]))
-    # FIX 3b: Use ax.annotate() so stored ox offset is applied via xytext
     val_objs = []
     for vt in value_targets:
         t = ax.annotate('', xy=(vt['x'], vt['y']),
@@ -1127,7 +1143,6 @@ def eMultiLineChartAnimateInstagram(
                     ys2.append(y_all[full-1] + frac*(y_all[full]-y_all[full-1]))
                 line_objects[li].set_data(xs2, ys2)
                 dot_objects[li].set_data([xs2[-1]], [ys2[-1]])
-        # FIX 3c: Set xy on annotate objects for correct position
         for vi, vt in enumerate(value_targets):
             if vt['pos'] < reveal - 0.5:
                 val_objs[vi].set_visible(True)
@@ -1144,7 +1159,6 @@ def eMultiLineChartAnimateInstagram(
     anim.save(output_file, writer=writer, dpi=dpi, savefig_kwargs={'facecolor': face_color})
     print(f"Saved animated line chart -> {output_file}")
     return fig, ax
-
 
 
 # ============================================================================
@@ -1179,6 +1193,10 @@ def eStemChartAnimateInstagram(
     font='DejaVu Sans', suptitle_font='DejaVu Serif', subtitle_font='DejaVu Sans',
     reference_bands=None, vlines=None, hlines=None,
 ):
+    value_label_offset_y      = _int_keys(value_label_offset_y)
+    value_label_offset_x      = _int_keys(value_label_offset_x)
+    value_label_custom_offset = _int_keys(value_label_custom_offset)
+
     ease_fn = _EASING.get(easing, _ease_out_cubic)
     plt.rcdefaults(); plt.rcParams['font.family'] = font
     if instagram:
@@ -1279,6 +1297,7 @@ def eStemChartAnimateInstagram(
     anim.save(output_file, writer=writer, dpi=dpi, savefig_kwargs={'facecolor': face_color})
     print(f"Saved animated stem chart -> {output_file}")
     return fig, ax
+
 
 
 # ============================================================================
@@ -1471,24 +1490,20 @@ def eConcatenateMP4(input_files, output_file="espresso_reel.mp4"):
     return output_file
 
 
-
 # ============================================================================
 # AUDIO PIPELINE (ElevenLabs)
 # ============================================================================
-
 VOICES = {
-    "adam":    "pNInz6obpgDQGcFmaJgB", "rachel":  "21m00Tcm4TlvDq8ikWAM",
-    "clyde":   "2EiwWnXFnvU5JabPnv8n", "domi":    "AZnzlk1XvdvUeBnXmlld",
-    "bella":   "EXAVITQu4vr4xnSDxMaL", "antoni":  "ErXwobaYiN019PkySvjV",
-    "josh":    "TxGEqnHWrfWFTfGW9XjX", "sam":     "yoZ06aMxZJJ28mfd3POQ",
-    "george":  "JBFqnCBsd6RMkjVDRZzb",
+    "adam": "pNInz6obpgDQGcFmaJgB", "rachel": "21m00Tcm4TlvDq8ikWAM",
+    "clyde": "2EiwWnXFnvU5JabPnv8n", "domi": "AZnzlk1XvdvUeBnXmlld",
+    "bella": "EXAVITQu4vr4xnSDxMaL", "antoni": "ErXwobaYiN019PkySvjV",
+    "josh": "TxGEqnHWrfWFTfGW9XjX", "sam": "yoZ06aMxZJJ28mfd3POQ",
+    "george": "JBFqnCBsd6RMkjVDRZzb",
 }
-
 TTS_MODELS = {
     "v3": "eleven_v3", "multilingual_v2": "eleven_multilingual_v2",
     "turbo_v2.5": "eleven_turbo_v2_5", "flash_v2.5": "eleven_flash_v2_5",
 }
-
 MUSIC_PRESETS = {
     "lofi_coffee": "Gentle lo-fi hip-hop instrumental, soft Rhodes piano chords, warm vinyl crackle, slow tempo 75 BPM, relaxed coffee shop vibe, no vocals, ambient and minimal",
     "editorial_minimal": "Minimal ambient instrumental, soft piano with subtle synth pads, calm and professional tone, 80 BPM, no percussion, suitable as background for data journalism",
@@ -1496,13 +1511,11 @@ MUSIC_PRESETS = {
     "morning_news": "Warm jazz instrumental, brushed drums, upright bass walking line, muted trumpet melody, 90 BPM, morning radio feel, no vocals",
 }
 
-
 def eGetDuration(filepath):
     cmd = ['ffprobe','-v','quiet','-print_format','json','-show_format', filepath]
     r   = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode != 0: raise RuntimeError(f"ffprobe failed on {filepath}: {r.stderr}")
     return float(json.loads(r.stdout)['format']['duration'])
-
 
 def eListVoices(api_key, limit=20):
     r = requests.get("https://api.elevenlabs.io/v1/voices", headers={"xi-api-key": api_key})
@@ -1515,7 +1528,6 @@ def eListVoices(api_key, limit=20):
         print(f"{v['name']:<20} {v['voice_id']:<28} {lbl}")
     print(f"\nShowing {min(limit,len(voices))} of {len(voices)} voices")
     return voices
-
 
 def eGenerateVoiceover(
     text, api_key, output_file="voiceover.mp3", voice_id=None, voice_name="george",
@@ -1540,7 +1552,6 @@ def eGenerateVoiceover(
     print(f"Voiceover saved -> {output_file}  ({dur:.1f}s, voice={voice_name}, model={model})")
     return output_file
 
-
 def eGenerateMusic(
     api_key, prompt=None, output_file="background_music.mp3",
     duration_ms=15000, force_instrumental=True, output_format="mp3_44100_128", preset=None,
@@ -1562,7 +1573,6 @@ def eGenerateMusic(
     print(f"Music saved -> {output_file}  ({dur:.1f}s)")
     return output_file
 
-
 def eAddVoiceover(video_file, voiceover_file, output_file="espresso_with_vo.mp4",
                   vo_volume=1.0, vo_delay=0.0, vo_fade_in=0.0, vo_fade_out=0.3):
     for f in [video_file, voiceover_file]:
@@ -1583,7 +1593,6 @@ def eAddVoiceover(video_file, voiceover_file, output_file="espresso_with_vo.mp4"
     print(f"Added voiceover -> {output_file}")
     return output_file
 
-
 def eAddMusic(video_file, music_file, output_file="espresso_with_music.mp4",
               music_volume=0.15, fade_in=1.0, fade_out=2.0, loop=True):
     for f in [video_file, music_file]:
@@ -1601,7 +1610,6 @@ def eAddMusic(video_file, music_file, output_file="espresso_with_music.mp4",
     if r.returncode != 0: raise RuntimeError(f"ffmpeg failed:\n{r.stderr}")
     print(f"Added background music -> {output_file}")
     return output_file
-
 
 def eAddAudio(video_file, output_file="espresso_final.mp4",
               voiceover_file=None, vo_volume=1.0, vo_delay=0.5, vo_fade_in=0.0, vo_fade_out=0.3,
@@ -1685,13 +1693,13 @@ class GitHubUploader:
         self._push(dest, b64, msg); print(f"  {name}  ->  {dest}")
     def push_story_pack(self, story_slug, files, year=None):
         year = year or str(datetime.now().year); base = f"content/{year}/{story_slug}"
-        print(f"\nPushing story pack -> {base}/\n{'---'*17}")
+        print(f"\nPushing story pack -> {base}/")
         for suffix, source in files.items():
             dest = f"{base}/{suffix}"
             if isinstance(source, str) and os.path.exists(source): self.push_file(source, dest)
             elif isinstance(source, str): self.push_text(source, dest)
             else: print(f"  Skipped {suffix}: pass a file path or text string")
-        print(f"{'---'*17}\n  Story pack complete\n")
+        print(f"  Story pack complete\n")
 
 
 # ============================================================================
