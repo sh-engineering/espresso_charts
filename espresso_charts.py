@@ -333,8 +333,12 @@ def eSingleBarChartNewInstagram(
         x_end    = x_start + patch.get_width()
         is_pos   = (x_end >= x_start)
 
+        # Category label — label_custom_offset moves these per bar
+        cat_extra = 0
+        if isinstance(label_custom_offset, dict):
+            cat_extra = label_custom_offset.get(idx, 0)
         ha_cat  = 'left' if is_pos else 'right'
-        off_cat = 8 + offset_label_x if is_pos else -8 - offset_label_x
+        off_cat = 8 + offset_label_x + cat_extra if is_pos else -8 - offset_label_x - cat_extra
         ax.annotate(
             category, xy=(x_start if is_pos else x_end, y_center),
             xytext=(off_cat, 0), textcoords='offset points',
@@ -343,12 +347,11 @@ def eSingleBarChartNewInstagram(
             bbox=dict(boxstyle='square,pad=0.1', facecolor=face_color,
                       edgecolor='none', alpha=0.8))
 
+        # Value label — value_label_offset_x moves these per bar
         val       = value / num_divisor
         formatted = num_format.format(val) if num_format else str(val)
 
         x_extra = 0
-        if isinstance(label_custom_offset, dict):
-            x_extra += label_custom_offset.get(idx, 0)
         if isinstance(value_label_offset_x, dict):
             x_extra += value_label_offset_x.get(idx, 0)
         y_extra = 0
@@ -938,8 +941,9 @@ def eSingleBarChartAnimateInstagram(
     for idx, patch in enumerate(bars):
         y_center = patch.get_y() + patch.get_height() / 2
         is_pos = measure_vals[idx] >= 0
+        cat_extra = label_custom_offset.get(idx, 0) if isinstance(label_custom_offset, dict) else 0
         ha_cat = 'left' if is_pos else 'right'
-        off_cat = 8 + offset_label_x if is_pos else -8 - offset_label_x
+        off_cat = 8 + offset_label_x + cat_extra if is_pos else -8 - offset_label_x - cat_extra
         ann = ax.annotate(str(dim_vals[idx]), xy=(0, y_center), xytext=(off_cat, 0),
             textcoords='offset points', ha=ha_cat, va='center',
             fontsize=label_size, color=tick_label_color, zorder=6,
@@ -968,7 +972,6 @@ def eSingleBarChartAnimateInstagram(
             try:    formatted = num_format.format(val)
             except: formatted = str(val)
             x_extra = 0
-            if isinstance(label_custom_offset, dict): x_extra += label_custom_offset.get(idx, 0)
             if isinstance(value_label_offset_x, dict): x_extra += value_label_offset_x.get(idx, 0)
             y_extra = 0
             if isinstance(value_label_offset_y, dict): y_extra = value_label_offset_y.get(idx, 0)
