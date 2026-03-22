@@ -72,19 +72,27 @@ face_color   = '#F5F0E6'
 # If titles are shorter, the extra space becomes clean whitespace above the plot.
 
 _LAYOUT = {
+    # Computed from font metrics:
+    #   suptitle 26pt × 2 lines × 1.2 ls = 57.2pt block
+    #   subtitle 14pt × 2 lines × 1.2 ls = 30.8pt block
+    #   footnote  9pt × 2 lines × 1.2 ls = 19.8pt block
+    #   gap between elements = 0.015 fig units
+    #
+    # 4:5 figure = 6.75 in tall → suptitle block = 0.118, subtitle block = 0.063
+    # 9:16 figure = 9.6 in tall → suptitle block = 0.083, subtitle block = 0.045
     '4x5': {
         'figsize_px': (1080, 1350),
-        'suptitle_y':  0.955,   # top of suptitle text block
-        'subtitle_y':  0.890,   # top of subtitle text block
-        'plot_top':    0.815,   # axes top edge
+        'suptitle_y':  0.960,   # top of suptitle text block
+        'subtitle_y':  0.827,   # = 0.960 - 0.118 (sup block) - 0.015 (gap)
+        'plot_top':    0.749,   # = 0.827 - 0.063 (sub block) - 0.015 (gap)
         'plot_bottom': 0.085,   # axes bottom edge
-        'footnote_y':  0.040,   # top of footnote text block
+        'footnote_y':  0.045,   # top of footnote text block
     },
     '9x16': {
         'figsize_px': (1080, 1920),
-        'suptitle_y':  0.965,
-        'subtitle_y':  0.920,
-        'plot_top':    0.870,
+        'suptitle_y':  0.970,
+        'subtitle_y':  0.872,   # = 0.970 - 0.083 - 0.015
+        'plot_top':    0.812,   # = 0.872 - 0.045 - 0.015
         'plot_bottom': 0.055,
         'footnote_y':  0.025,
     },
