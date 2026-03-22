@@ -1,8 +1,27 @@
 # -*- coding: utf-8 -*-
 """
-espresso_charts.py — Espresso Charts Library
-=============================================
+espresso_charts.py — Espresso Charts Library (v2 — Standardized Layout)
+========================================================================
 Chart functions for Instagram carousels (4:5) and Reels (9:16).
+
+v2 CHANGES:
+-----------
+All chart types now share a unified layout system. Title positions, plot area
+boundaries, and footnote positions are fixed via figure-relative coordinates.
+This eliminates the inconsistency between chart types where bar charts used
+fig.suptitle(), line charts used ax.text(transform=ax.transAxes), etc.
+
+LAYOUT ZONES (figure coordinates, y=0 bottom, y=1 top):
+  ┌─────────────────────────┐ y = 1.0
+  │  suptitle (26pt, ≤2 ln) │ y ≈ 0.955 (4:5) / 0.965 (9:16)
+  │  subtitle (14pt, ≤2 ln) │ y ≈ 0.890 (4:5) / 0.920 (9:16)
+  ├─────────────────────────┤ plot_top ≈ 0.815 / 0.870
+  │                         │
+  │       PLOT AREA         │
+  │                         │
+  ├─────────────────────────┤ plot_bottom ≈ 0.085 / 0.055
+  │  footnote (9pt, ≤2 ln)  │ y ≈ 0.040 / 0.025
+  └─────────────────────────┘ y = 0.0
 
 Static charts:  eSingleBarChartNewInstagram, eMultiLineChartInstagram,
                 eStemChartNewInstagram, eDonutChartInstagram, eCoverTileInstagram
@@ -43,6 +62,115 @@ color_orange = '#DD6B20'
 color_green  = '#4D5523'
 color_sand   = '#CDAF7B'
 face_color   = '#F5F0E6'
+
+
+# ============================================================================
+# STANDARDIZED LAYOUT SYSTEM
+# ============================================================================
+# All values are figure-relative coordinates (0 = bottom/left, 1 = top/right).
+# Tuned for: 2-line suptitle at 26pt + 2-line subtitle at 14pt + 2-line footnote at 9pt.
+# If titles are shorter, the extra space becomes clean whitespace above the plot.
+
+_LAYOUT = {
+    '4x5': {
+        'figsize_px': (1080, 1350),
+        'suptitle_y':  0.955,   # top of suptitle text block
+        'subtitle_y':  0.890,   # top of subtitle text block
+        'plot_top':    0.815,   # axes top edge
+        'plot_bottom': 0.085,   # axes bottom edge
+        'footnote_y':  0.040,   # top of footnote text block
+    },
+    '9x16': {
+        'figsize_px': (1080, 1920),
+        'suptitle_y':  0.965,
+        'subtitle_y':  0.920,
+        'plot_top':    0.870,
+        'plot_bottom': 0.055,
+        'footnote_y':  0.025,
+    },
+}
+
+# Font defaults
+_SUPTITLE_SIZE = 26
+_SUBTITLE_SIZE = 14
+_FOOTNOTE_SIZE = 9
+_SUPTITLE_FONT = 'DejaVu Serif'
+_SUBTITLE_FONT = 'DejaVu Sans'
+_BODY_FONT     = 'DejaVu Sans'
+
+
+def _setup_chart(layout='4x5', face_color='#F5F0E6', dpi=200,
+                 plot_left=0.10, plot_right=0.90):
+    """Create figure + axes with standardized layout zones.
+
+    Parameters
+    ----------
+    layout : '4x5' or '9x16'
+    face_color : background color
+    dpi : resolution
+    plot_left, plot_right : horizontal margins (chart-type specific)
+
+    Returns
+    -------
+    fig, ax, L : figure, axes, layout dict for downstream use
+    """
+    plt.rcdefaults()
+    plt.rcParams['font.family'] = _BODY_FONT
+
+    L = _LAYOUT[layout]
+    px_w, px_h = L['figsize_px']
+    figsize = (px_w / dpi, px_h / dpi)
+    fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=face_color)
+    fig.subplots_adjust(
+        top=L['plot_top'], bottom=L['plot_bottom'],
+        left=plot_left, right=plot_right,
+    )
+    ax.set_facecolor(face_color)
+    fig.patch.set_facecolor(face_color)
+    fig.patch.set_edgecolor(face_color)
+    fig.patch.set_linewidth(0)
+    fig.patch.set_alpha(1)
+    return fig, ax, L
+
+
+def _add_titles(fig, txt_suptitle, txt_subtitle, L,
+                suptitle_color='#4b2e1a', subtitle_color='#4b2e1a',
+                suptitle_font=None, subtitle_font=None,
+                suptitle_font_weight='normal', subtitle_font_weight='normal',
+                suptitle_size=None, subtitle_size=None):
+    """Place suptitle and subtitle at fixed positions using fig.text().
+
+    Returns (suptitle_obj, subtitle_obj) for animation use.
+    """
+    sf = suptitle_font or _SUPTITLE_FONT
+    tf = subtitle_font or _SUBTITLE_FONT
+    ss = suptitle_size or _SUPTITLE_SIZE
+    ts = subtitle_size or _SUBTITLE_SIZE
+
+    sup = fig.text(
+        0.5, L['suptitle_y'], txt_suptitle,
+        fontsize=ss, color=suptitle_color,
+        fontweight=suptitle_font_weight, fontfamily=sf,
+        ha='center', va='top', linespacing=1.2,
+    )
+    sub = fig.text(
+        0.5, L['subtitle_y'], txt_subtitle,
+        fontsize=ts, color=subtitle_color,
+        fontweight=subtitle_font_weight, fontfamily=tf,
+        ha='center', va='top', linespacing=1.2,
+    )
+    return sup, sub
+
+
+def _add_footnote(fig, txt_label, L,
+                  color='#857052', font_weight='light', size=None):
+    """Place footnote at fixed position below the plot area."""
+    fs = size or _FOOTNOTE_SIZE
+    return fig.text(
+        0.5, L['footnote_y'], txt_label,
+        fontsize=fs, color=color, fontweight=font_weight,
+        ha='center', va='top', linespacing=1.2,
+    )
 
 
 # ============================================================================
@@ -218,7 +346,7 @@ def eSingleBarChartNewInstagram(
     label_custom_offset=None, value_label_offset_x=None, value_label_offset_y=None,
     show_x_axis=False, x_axis_num_format=None,
     reference_bands=None, vlines=None, hlines=None,
-    suptitle_size=26, subtitle_size=14, label_size=12,
+    suptitle_size=None, subtitle_size=None, label_size=12,
     suptitle_color='#4b2e1a', subtitle_color='#4b2e1a',
     txt_label_color='#857052', tick_label_color='#3c3325',
     value_label_color='#4b2e1a', face_color='#f5f0e6',
@@ -226,49 +354,35 @@ def eSingleBarChartNewInstagram(
                     '#79664a','#d9d0c1','#0b0a07'),
     suptitle_font_weight='normal', subtitle_font_weight='normal',
     txt_label_font_weight='normal',
-    font='DejaVu Sans', suptitle_font='DejaVu Serif', subtitle_font='DejaVu Sans',
-    suptitle_y_custom=1, subtitle_pad_custom=60,
+    font='DejaVu Sans', suptitle_font=None, subtitle_font=None,
     show_zero_line=False, zero_line_color='#4b2e1a',
     zero_line_style='--', zero_line_width=1.0,
     instagram=True, px_width=1080, px_height=1350, dpi=200,
     sep_index=None, sep_color='#4b2e1a', sep_style='-', sep_width=1.5,
-    x_subtitle_offset=0.55,
+    # Legacy params — accepted but ignored in v2 standardized layout
+    suptitle_y_custom=None, subtitle_pad_custom=None, x_subtitle_offset=None,
 ):
-    # JSON compat: coerce string keys to int
+    # JSON compat
     label_custom_offset  = _int_keys(label_custom_offset)
     value_label_offset_x = _int_keys(value_label_offset_x)
     value_label_offset_y = _int_keys(value_label_offset_y)
 
-    plt.rcdefaults()
-    plt.rcParams['font.family'] = font
+    # --- Standardized layout ---
+    fig, ax, L = _setup_chart(
+        layout='4x5', face_color=face_color, dpi=dpi,
+        plot_left=0.10, plot_right=0.80,  # bar charts need right margin for value labels
+    )
+    _add_titles(fig, txt_suptitle, txt_subtitle, L,
+                suptitle_color=suptitle_color, subtitle_color=subtitle_color,
+                suptitle_font=suptitle_font, subtitle_font=subtitle_font,
+                suptitle_font_weight=suptitle_font_weight,
+                subtitle_font_weight=subtitle_font_weight,
+                suptitle_size=suptitle_size, subtitle_size=subtitle_size)
+    _add_footnote(fig, txt_label, L,
+                  color=txt_label_color, font_weight=txt_label_font_weight)
 
-    if instagram:
-        figsize = (px_width / dpi, px_height / dpi)
-        fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=face_color)
-        fig.subplots_adjust(top=0.85, bottom=0.1, left=0.1, right=0.8)
-        suptitle_y   = 0.93 if suptitle_y_custom is None else suptitle_y_custom
-        subtitle_pad = 25  if subtitle_pad_custom is None else subtitle_pad_custom
-    else:
-        fig, ax = plt.subplots(figsize=(8, 10), dpi=160, facecolor=face_color)
-        fig.subplots_adjust(top=0.82, bottom=0.12)
-        suptitle_y   = 0.96
-        subtitle_pad = 20
-
-    ax.set_facecolor(face_color)
     if bar_color is None:
         bar_color = coffee_palette[0]
-
-    fig.suptitle(txt_suptitle, y=suptitle_y, fontsize=suptitle_size,
-                 color=suptitle_color, ha='center', va='top',
-                 fontweight=suptitle_font_weight, fontfamily=suptitle_font)
-    ax.set_title(txt_subtitle, pad=subtitle_pad, color=subtitle_color,
-                 size=subtitle_size, fontweight=subtitle_font_weight,
-                 ha='center', va='top', x=x_subtitle_offset,
-                 fontfamily=subtitle_font)
-    ax.set_xlabel(txt_label, color=txt_label_color, labelpad=15,
-                  size=label_size, fontweight=txt_label_font_weight,
-                  x=x_subtitle_offset)
-
     if bar_height is None:
         bar_height = 0.75
 
@@ -333,7 +447,6 @@ def eSingleBarChartNewInstagram(
         x_end    = x_start + patch.get_width()
         is_pos   = (x_end >= x_start)
 
-        # Category label — label_custom_offset moves these per bar
         cat_extra = 0
         if isinstance(label_custom_offset, dict):
             cat_extra = label_custom_offset.get(idx, 0)
@@ -347,20 +460,16 @@ def eSingleBarChartNewInstagram(
             bbox=dict(boxstyle='square,pad=0.1', facecolor=face_color,
                       edgecolor='none', alpha=0.8))
 
-        # Value label — value_label_offset_x moves these per bar
         val       = value / num_divisor
         formatted = num_format.format(val) if num_format else str(val)
-
         x_extra = 0
         if isinstance(value_label_offset_x, dict):
             x_extra += value_label_offset_x.get(idx, 0)
         y_extra = 0
         if isinstance(value_label_offset_y, dict):
             y_extra = value_label_offset_y.get(idx, 0)
-
         ha_val  = 'left' if is_pos else 'right'
         off_val = 8 + x_extra if is_pos else -8 - x_extra
-
         ax.annotate(
             formatted, xy=(x_end, y_center),
             xytext=(off_val, y_extra), textcoords='offset points',
@@ -381,19 +490,19 @@ def eSingleBarChartNewInstagram(
 # ============================================================================
 def eMultiLineChartInstagram(
     df_chart, col_dim, col_measure_list, txt_suptitle, txt_subtitle, txt_label,
-    pos_text, pos_label=-1, num_format="{:.0f}", num_divisor=1,
+    pos_text, pos_label=None, num_format="{:.0f}", num_divisor=1,
     x_ticks=None, x_tick_labels=None, tick_color='#4B2E1A', x_tick_size=10,
     aspect_ratio=1.0, line_colors=None, line_styles=None, line_widths=None, line_labels=None,
     suptitle_color='#4b2e1a', subtitle_color='#4b2e1a', txt_label_color='#857052',
-    face_color='#F7F5F2',
-    suptitle_font_weight='normal', suptitle_font='DejaVu Serif',
-    subtitle_font_weight='normal', subtitle_font='DejaVu Sans',
+    face_color='#F5F0E6',
+    suptitle_font_weight='normal', suptitle_font=None,
+    subtitle_font_weight='normal', subtitle_font=None,
     txt_label_font_weight='normal',
     show_zero_line=False, zero_line_color='#857052', zero_line_style='--',
     zero_line_width=1.0, zero_line_at=0,
     px=1080, py=1350, dpi=200,
-    suptitle_size=26, subtitle_size=14, label_size=12, bottom_note_size=9,
-    y_limits=None, suptitle_y=0.98, subtitle_y=0.94, text_offset_y=None,
+    suptitle_size=None, subtitle_size=None, label_size=12, bottom_note_size=None,
+    y_limits=None, text_offset_y=None,
     shade_between=None, shade_color='#c8b8a8', shade_alpha=0.25, shade_x=None,
     show_y_axis=False, y_ticks=None, y_tick_color='#857052', y_tick_size=10,
     y_num_format=None,
@@ -406,14 +515,23 @@ def eMultiLineChartInstagram(
     show_trend_lines=False, trend_line_colors=None, trend_line_style='--',
     trend_line_width=1.0, trend_line_alpha=0.6,
     reference_bands=None, vlines=None, hlines=None,
+    # Legacy params — accepted but ignored in v2
+    suptitle_y=None, subtitle_y=None,
 ):
-    plt.rcdefaults()
-    plt.rcParams['font.family'] = 'DejaVu Sans'
-    plt.rcParams['font.size']   = 10
-
-    figsize = (px / dpi, py / dpi)
-    fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=face_color)
-    ax.set_facecolor(face_color)
+    # --- Standardized layout ---
+    fig, ax, L = _setup_chart(
+        layout='4x5', face_color=face_color, dpi=dpi,
+        plot_left=0.10, plot_right=0.90,
+    )
+    _add_titles(fig, txt_suptitle, txt_subtitle, L,
+                suptitle_color=suptitle_color, subtitle_color=subtitle_color,
+                suptitle_font=suptitle_font, subtitle_font=subtitle_font,
+                suptitle_font_weight=suptitle_font_weight,
+                subtitle_font_weight=subtitle_font_weight,
+                suptitle_size=suptitle_size, subtitle_size=subtitle_size)
+    _add_footnote(fig, txt_label, L,
+                  color=txt_label_color, font_weight=txt_label_font_weight,
+                  size=bottom_note_size)
 
     default_colors = ['#9d8561', '#857052', '#6c5c43', '#544734', '#3c3325']
     colors  = line_colors  if line_colors  is not None else default_colors
@@ -428,15 +546,6 @@ def eMultiLineChartInstagram(
         return lst
     colors, styles, widths, labels, mstyles = (_pad(colors), _pad(styles),
                                                 _pad(widths), _pad(labels), _pad(mstyles))
-
-    ax.text(0.5, suptitle_y, txt_suptitle, fontsize=suptitle_size,
-            color=suptitle_color, fontweight=suptitle_font_weight,
-            family=suptitle_font, ha='center', va='top', transform=ax.transAxes)
-    ax.text(0.5, subtitle_y, txt_subtitle, fontsize=subtitle_size,
-            color=subtitle_color, fontweight=subtitle_font_weight,
-            family=subtitle_font, ha='center', va='top', transform=ax.transAxes)
-    ax.set_xlabel(txt_label, color=txt_label_color, labelpad=10,
-                  size=bottom_note_size, fontweight=txt_label_font_weight)
 
     if reference_bands:
         add_reference_bands(ax, reference_bands, orientation='horizontal')
@@ -466,9 +575,6 @@ def eMultiLineChartInstagram(
         ax.set_xticks([]); ax.tick_params(axis='x', length=0, labelsize=0)
     else:
         ax.tick_params(axis='x', colors=tick_color, labelsize=x_tick_size)
-
-    fig.patch.set_facecolor(face_color); fig.patch.set_edgecolor(face_color)
-    fig.patch.set_linewidth(0); fig.patch.set_alpha(1)
 
     if not hide_x_axis:
         if x_ticks is None:
@@ -566,18 +672,17 @@ def eMultiLineChartInstagram(
 # ============================================================================
 def eStemChartNewInstagram(
     df_chart, col_dim, col_measure_a, col_measure_b=None, col_category_pos=None,
-    txt_suptitle="", suptitle_y=0.955, txt_subtitle="", txt_label="",
+    txt_suptitle="", txt_subtitle="", txt_label="",
     num_format="{:.0f}", num_divisor=1, offset=0.1, x_tick_label_y_offset=0,
     marker_size=4, line_width=0.8,
     suptitle_color="#4b2e1a", subtitle_color="#4b2e1a",
     axis_label_color="#79664a", tick_label_color="#3c3325",
-    face_color="#F7F5F2", color_a="#a58e6c", color_b="#573D09",
+    face_color="#F5F0E6", color_a="#a58e6c", color_b="#573D09",
     year_label_a=None, year_label_b=None,
     label_a_offset_x=1, label_b_offset_x=1,
     label_a_offset_y=1, label_b_offset_y=1,
     instagram=True, px_width=1080, px_height=1350, dpi=200,
-    suptitle_size=26, subtitle_size=14, label_size=12,
-    subtitle_y=0.85, subtitle_pad=90, labelpad=10,
+    suptitle_size=None, subtitle_size=None, label_size=12,
     aspect_ratio=None, rotate_labels=False,
     xtick_align_ha="center", xtick_align_va="bottom",
     value_label_offset_pts=6, value_label_offset_y=None, value_label_offset_x=None,
@@ -588,33 +693,25 @@ def eStemChartNewInstagram(
     legend_font_size=10, legend_frame=False, legend_text_color='#3c3325',
     legend_bbox_to_anchor=None, y_min=None, y_max=None,
     show_x_axis=False, reference_bands=None, vlines=None, hlines=None,
-    font='DejaVu Sans', suptitle_font='DejaVu Serif', subtitle_font='DejaVu Sans',
+    font='DejaVu Sans', suptitle_font=None, subtitle_font=None,
+    # Legacy params — accepted but ignored in v2
+    suptitle_y=None, subtitle_y=None, subtitle_pad=None, labelpad=None,
 ):
-    # JSON compat: coerce string keys to int
+    # JSON compat
     value_label_offset_y      = _int_keys(value_label_offset_y)
     value_label_offset_x      = _int_keys(value_label_offset_x)
     value_label_custom_offset = _int_keys(value_label_custom_offset)
 
-    plt.rcdefaults()
-    plt.rcParams['font.family'] = 'DejaVu Sans'
-
-    if instagram:
-        figsize = (px_width / dpi, px_height / dpi)
-        fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=face_color,
-                               constrained_layout=True)
-    else:
-        fig, ax = plt.subplots(figsize=(8, 10), dpi=160, facecolor=face_color)
-
-    ax.set_facecolor(face_color)
-
-    fig.suptitle(txt_suptitle, y=suptitle_y, fontsize=suptitle_size,
-                 color=suptitle_color, fontweight="medium", fontfamily=suptitle_font)
-    ax.text(0.5, subtitle_y, txt_subtitle,
-            fontsize=subtitle_size, color=subtitle_color,
-            fontweight="light", fontfamily=subtitle_font,
-            ha='center', va='bottom', transform=ax.transAxes)
-    ax.set_xlabel(txt_label, color=axis_label_color, labelpad=labelpad,
-                  size=label_size, fontweight="light")
+    # --- Standardized layout ---
+    fig, ax, L = _setup_chart(
+        layout='4x5', face_color=face_color, dpi=dpi,
+        plot_left=0.12, plot_right=0.92,
+    )
+    _add_titles(fig, txt_suptitle, txt_subtitle, L,
+                suptitle_color=suptitle_color, subtitle_color=subtitle_color,
+                suptitle_font=suptitle_font, subtitle_font=subtitle_font,
+                suptitle_size=suptitle_size, subtitle_size=subtitle_size)
+    _add_footnote(fig, txt_label, L, color=axis_label_color)
 
     xpos = (np.arange(len(df_chart)) if col_category_pos is None
             else np.asarray(df_chart[col_category_pos]))
@@ -735,36 +832,41 @@ def eDonutChartInstagram(
     center_text=None, center_text_color="#4b2e1a",
     center_text_size=12, center_text_weight="normal",
     suptitle_color='#4b2e1a', subtitle_color='#4b2e1a', txt_label_color='#857052',
-    face_color='#F7F5F2',
+    face_color='#F5F0E6',
     suptitle_font_weight='medium', subtitle_font_weight='light', txt_label_font_weight='light',
-    suptitle_size=26, subtitle_size=14, label_size=10, bottom_note_size=9,
-    font='DejaVu Sans', suptitle_font='DejaVu Serif', subtitle_font='DejaVu Sans',
-    suptitle_y=0.97, subtitle_y=0.90, label_y=0.04,
+    suptitle_size=None, subtitle_size=None, label_size=10, bottom_note_size=None,
+    font='DejaVu Sans', suptitle_font=None, subtitle_font=None,
     figsize=(8, 8), dpi=200, px=1080, instagram=True, instagram_format='4x5',
+    # Legacy params — accepted but ignored in v2
+    suptitle_y=None, subtitle_y=None, label_y=None,
 ):
-    plt.rcdefaults(); plt.rcParams['font.family'] = font; plt.rcParams['font.size'] = 12
-    if instagram:
-        figsize = (px/dpi, (px * 1.25)/dpi) if instagram_format == '4x5' else (px/dpi, px/dpi)
-    fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=face_color, constrained_layout=True)
+    # --- Standardized layout ---
+    fig, ax, L = _setup_chart(
+        layout='4x5', face_color=face_color, dpi=dpi,
+        plot_left=0.05, plot_right=0.95,  # donut needs wide axes for labels
+    )
+    _add_titles(fig, txt_suptitle, txt_subtitle, L,
+                suptitle_color=suptitle_color, subtitle_color=subtitle_color,
+                suptitle_font=suptitle_font, subtitle_font=subtitle_font,
+                suptitle_font_weight=suptitle_font_weight,
+                subtitle_font_weight=subtitle_font_weight,
+                suptitle_size=suptitle_size, subtitle_size=subtitle_size)
+    _add_footnote(fig, txt_label, L,
+                  color=txt_label_color, font_weight=txt_label_font_weight,
+                  size=bottom_note_size)
+
     default_colors = ['#d9d0c1','#79664a','#9d8561','#857052','#6c5c43','#544734','#3c3325']
     if colors is None: colors = default_colors
     outer_band = radius_outer - inner_radius if inner_radius is not None else wedge_width
     inner_band = wedge_width_inner if wedge_width_inner is not None else outer_band
-    if txt_suptitle:
-        fig.text(0.5, suptitle_y, txt_suptitle, ha="center", va="top",
-                 fontsize=suptitle_size, color=suptitle_color, weight=suptitle_font_weight, fontfamily=suptitle_font)
-    if txt_subtitle:
-        fig.text(0.5, subtitle_y, txt_subtitle, ha="center", va="top",
-                 fontsize=subtitle_size, color=subtitle_color, weight=subtitle_font_weight, fontfamily=subtitle_font)
-    if txt_label:
-        fig.text(0.5, label_y, txt_label, ha="center", va="bottom",
-                 fontsize=bottom_note_size, color=txt_label_color, weight=txt_label_font_weight)
+
     pie_labels = df_chart[col_label].astype(str) if col_label is not None else None
     def autopct_func(pct):
         try:    return num_format.format(pct)
         except: return f"{pct:.0f}%"
     outer_autopct = autopct_func if (show_pct and autopct_outer) else None
     inner_autopct = autopct_func if (show_pct and autopct_inner) else None
+
     wedges, texts, autotexts = ax.pie(
         df_chart[col_value] / num_divisor, radius=radius_outer, labels=pie_labels,
         labeldistance=labeldistance, colors=colors, wedgeprops=dict(width=outer_band),
@@ -787,9 +889,8 @@ def eDonutChartInstagram(
     if center_text:
         ax.text(0, 0, center_text, ha="center", va="center", fontsize=center_text_size,
                 color=center_text_color, fontweight=center_text_weight, linespacing=1.2)
+
     for side in ['top','right','left','bottom']: ax.spines[side].set_linewidth(0)
-    fig.patch.set_facecolor(face_color); fig.patch.set_edgecolor(face_color)
-    fig.patch.set_linewidth(0); fig.patch.set_alpha(1)
     ax.set_aspect("equal", adjustable="box")
     return fig, ax
 
@@ -809,6 +910,7 @@ def eCoverTileInstagram(
     show_accent_line=True, accent_line_color='#3F5B83', accent_line_width=4,
     accent_line_y=0.48, accent_line_length=0.15,
 ):
+    """Cover tile — full-bleed typography, no plot area. Layout is custom per design."""
     plt.rcdefaults(); plt.rcParams['font.family'] = 'DejaVu Sans'
     figsize = (px_width / dpi, px_height / dpi)
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=face_color)
@@ -867,7 +969,7 @@ def eSingleBarChartAnimateInstagram(
     min_val=None, max_val=None, factor_limit_x=1.0,
     aspect_ratio=None, label_custom_offset=None,
     value_label_offset_x=None, value_label_offset_y=None,
-    suptitle_size=26, subtitle_size=14, label_size=12,
+    suptitle_size=None, subtitle_size=None, label_size=12,
     suptitle_color='#4b2e1a', subtitle_color='#4b2e1a',
     txt_label_color='#857052', tick_label_color='#3c3325',
     value_label_color='#4b2e1a', face_color='#f5f0e6',
@@ -875,42 +977,41 @@ def eSingleBarChartAnimateInstagram(
                     '#79664a','#d9d0c1','#0b0a07'),
     suptitle_font_weight='normal', subtitle_font_weight='normal',
     txt_label_font_weight='normal',
-    font='DejaVu Sans', suptitle_font='DejaVu Serif', subtitle_font='DejaVu Sans',
-    suptitle_y_custom=0.96, subtitle_pad_custom=60,
+    font='DejaVu Sans', suptitle_font=None, subtitle_font=None,
     show_zero_line=False, zero_line_color='#4b2e1a',
     zero_line_style='--', zero_line_width=1.0,
     instagram=True, px_width=1080, px_height=1920, dpi=200,
     sep_index=None, sep_color='#4b2e1a', sep_style='-', sep_width=1.5,
-    x_subtitle_offset=0.55,
     reference_bands=None, vlines=None, hlines=None,
+    # Legacy params — accepted but ignored in v2
+    suptitle_y_custom=None, subtitle_pad_custom=None, x_subtitle_offset=None,
 ):
     label_custom_offset  = _int_keys(label_custom_offset)
     value_label_offset_x = _int_keys(value_label_offset_x)
     value_label_offset_y = _int_keys(value_label_offset_y)
 
     ease_fn = _EASING.get(easing, _ease_out_cubic)
-    plt.rcdefaults(); plt.rcParams['font.family'] = font
-    if instagram:
-        figsize = (px_width / dpi, px_height / dpi)
-        fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=face_color)
-        fig.subplots_adjust(top=0.82, bottom=0.08, left=0.10, right=0.80)
-        suptitle_y   = 0.93 if suptitle_y_custom is None else suptitle_y_custom
-        subtitle_pad = 30   if subtitle_pad_custom is None else subtitle_pad_custom
-    else:
-        fig, ax = plt.subplots(figsize=(8, 14), dpi=160, facecolor=face_color)
-        fig.subplots_adjust(top=0.82, bottom=0.08)
-        suptitle_y, subtitle_pad = 0.96, 20
-    ax.set_facecolor(face_color)
+
+    # --- Standardized layout (9:16) ---
+    fig, ax, L = _setup_chart(
+        layout='9x16', face_color=face_color, dpi=dpi,
+        plot_left=0.10, plot_right=0.80,
+    )
+    # Titles start blank for typewriter animation
+    sup_obj = fig.text(
+        0.5, L['suptitle_y'], "",
+        fontsize=suptitle_size or _SUPTITLE_SIZE, color=suptitle_color,
+        fontweight=suptitle_font_weight, fontfamily=suptitle_font or _SUPTITLE_FONT,
+        ha='center', va='top', linespacing=1.2)
+    sub_obj = fig.text(
+        0.5, L['subtitle_y'], "",
+        fontsize=subtitle_size or _SUBTITLE_SIZE, color=subtitle_color,
+        fontweight=subtitle_font_weight, fontfamily=subtitle_font or _SUBTITLE_FONT,
+        ha='center', va='top', linespacing=1.2)
+    _add_footnote(fig, txt_label, L,
+                  color=txt_label_color, font_weight=txt_label_font_weight)
+
     if bar_color is None: bar_color = coffee_palette[0]
-    suptitle_obj = fig.suptitle("", y=suptitle_y, fontsize=suptitle_size,
-                                 color=suptitle_color, ha='center', va='top',
-                                 fontweight=suptitle_font_weight, fontfamily=suptitle_font)
-    ax.set_title("", pad=subtitle_pad, color=subtitle_color, size=subtitle_size,
-                 fontweight=subtitle_font_weight, ha='center', va='top',
-                 x=x_subtitle_offset, fontfamily=subtitle_font)
-    subtitle_obj = ax.title
-    ax.set_xlabel(txt_label, color=txt_label_color, labelpad=15,
-                  size=label_size, fontweight=txt_label_font_weight, x=x_subtitle_offset)
     dim_vals     = df_chart[col_dim].tolist()
     measure_vals = df_chart[col_measure].tolist()
     n = len(dim_vals)
@@ -918,16 +1019,19 @@ def eSingleBarChartAnimateInstagram(
     if min_val is None: min_val = float(df_chart[col_measure].min())
     if max_val is None: max_val = float(df_chart[col_measure].max())
     ax.set_xlim(min(min_val * factor_limit_x, 0), max(max_val * factor_limit_x, 0))
+
     if bar_colors is not None:
         bar_colors = _int_keys(bar_colors)
         if isinstance(bar_colors, dict):
             colors_list = [bar_colors.get(i, bar_color) for i in range(n)]
         else: colors_list = list(bar_colors)
     else: colors_list = [bar_color] * n
+
     bars = ax.barh(dim_vals, [0]*n, color=colors_list, height=bar_height, zorder=3)
     if reference_bands: add_reference_bands(ax, reference_bands, orientation='vertical')
     if vlines: add_vlines(ax, vlines)
     if hlines: add_hlines(ax, hlines)
+
     for side in ['top','right','bottom']: ax.spines[side].set_linewidth(0)
     if hide_left_spine: ax.spines['left'].set_linewidth(0)
     else:
@@ -935,8 +1039,10 @@ def eSingleBarChartAnimateInstagram(
         ax.spines['left'].set_zorder(5)
     ax.set_yticks([]); ax.tick_params(axis='y', left=False)
     ax.set_xticks([]); ax.tick_params(axis='x', colors=face_color)
+
     if show_zero_line:
         ax.axvline(0, color=zero_line_color, linestyle=zero_line_style, linewidth=zero_line_width, zorder=2)
+
     cat_anns = []
     for idx, patch in enumerate(bars):
         y_center = patch.get_y() + patch.get_height() / 2
@@ -949,6 +1055,7 @@ def eSingleBarChartAnimateInstagram(
             fontsize=label_size, color=tick_label_color, zorder=6,
             bbox=dict(boxstyle='square,pad=0.1', facecolor=face_color, edgecolor='none', alpha=0.8))
         cat_anns.append(ann)
+
     val_anns = []
     for idx in range(n):
         y_center = bars[idx].get_y() + bars[idx].get_height() / 2
@@ -956,12 +1063,14 @@ def eSingleBarChartAnimateInstagram(
                           textcoords='offset points', ha='left', va='center',
                           fontsize=label_size, color=value_label_color, zorder=6)
         val_anns.append(ann)
+
     total_anim   = int(fps * duration)
     total_frames = total_anim + hold_frames
+
     def update(frame):
         progress = 1.0 if frame >= total_anim else ease_fn(frame / total_anim)
-        suptitle_obj.set_text(_typewriter(txt_suptitle, progress, tw_suptitle_start, tw_suptitle_end))
-        subtitle_obj.set_text(_typewriter(txt_subtitle, progress, tw_subtitle_start, tw_subtitle_end))
+        sup_obj.set_text(_typewriter(txt_suptitle, progress, tw_suptitle_start, tw_suptitle_end))
+        sub_obj.set_text(_typewriter(txt_subtitle, progress, tw_subtitle_start, tw_subtitle_end))
         for idx, bar in enumerate(bars):
             cur = measure_vals[idx] * progress
             bar.set_width(cur)
@@ -980,6 +1089,7 @@ def eSingleBarChartAnimateInstagram(
             val_anns[idx].xy    = (x_end, y_c)
             val_anns[idx].xyann = (off, y_extra)
         return list(bars) + val_anns
+
     anim   = animation.FuncAnimation(fig, update, frames=total_frames, interval=1000/fps, blit=False)
     writer = animation.FFMpegWriter(fps=fps, bitrate=3000,
                                     extra_args=['-vcodec','libx264','-pix_fmt','yuv420p'])
@@ -998,16 +1108,16 @@ def eMultiLineChartAnimateInstagram(
     output_file="espresso_line_animated.mp4", easing='cubic',
     tw_suptitle_start=0.0, tw_suptitle_end=0.5,
     tw_subtitle_start=0.5, tw_subtitle_end=0.95,
-    pos_label=-1, num_format="{:.0f}", num_divisor=1,
+    pos_label=None, num_format="{:.0f}", num_divisor=1,
     x_ticks=None, x_tick_labels=None, tick_color='#4B2E1A', x_tick_size=10,
     aspect_ratio=None, line_colors=None, line_styles=None, line_widths=None, line_labels=None,
     suptitle_color='#4b2e1a', subtitle_color='#4b2e1a', txt_label_color='#857052',
-    face_color='#F7F5F2', suptitle_font_weight='normal', suptitle_font='DejaVu Serif',
-    subtitle_font_weight='normal', subtitle_font='DejaVu Sans', txt_label_font_weight='normal',
+    face_color='#F5F0E6', suptitle_font_weight='normal', suptitle_font=None,
+    subtitle_font_weight='normal', subtitle_font=None, txt_label_font_weight='normal',
     show_zero_line=False, zero_line_color='#857052', zero_line_style='--',
     zero_line_width=1.0, zero_line_at=0, px=1080, py=1920, dpi=200,
-    suptitle_size=26, subtitle_size=14, label_size=12, bottom_note_size=10,
-    y_limits=None, suptitle_y=0.98, subtitle_y=0.95, text_offset_y=None,
+    suptitle_size=None, subtitle_size=None, label_size=12, bottom_note_size=None,
+    y_limits=None, text_offset_y=None,
     shade_between=None, shade_color='#c8b8a8', shade_alpha=0.25, shade_x=None,
     show_y_axis=False, y_ticks=None, y_tick_color='#857052', y_tick_size=10,
     y_num_format=None, show_legend=False, legend_labels_custom=None,
@@ -1015,12 +1125,30 @@ def eMultiLineChartAnimateInstagram(
     legend_ncol=1, legend_bbox=(0, 1.02), chart_top_margin=0.15,
     label_offset_x=8, label_offset_y=0, point_label_offsets=None,
     reference_bands=None, vlines=None, hlines=None,
+    # Legacy params — accepted but ignored in v2
+    suptitle_y=None, subtitle_y=None,
 ):
     ease_fn = _EASING.get(easing, _ease_out_cubic)
-    plt.rcdefaults(); plt.rcParams['font.family'] = 'DejaVu Sans'; plt.rcParams['font.size'] = 10
-    figsize = (px / dpi, py / dpi)
-    fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=face_color)
-    ax.set_facecolor(face_color)
+
+    # --- Standardized layout (9:16) ---
+    fig, ax, L = _setup_chart(
+        layout='9x16', face_color=face_color, dpi=dpi,
+        plot_left=0.10, plot_right=0.90,
+    )
+    sup_obj = fig.text(
+        0.5, L['suptitle_y'], "",
+        fontsize=suptitle_size or _SUPTITLE_SIZE, color=suptitle_color,
+        fontweight=suptitle_font_weight, fontfamily=suptitle_font or _SUPTITLE_FONT,
+        ha='center', va='top', linespacing=1.2)
+    sub_obj = fig.text(
+        0.5, L['subtitle_y'], "",
+        fontsize=subtitle_size or _SUBTITLE_SIZE, color=subtitle_color,
+        fontweight=subtitle_font_weight, fontfamily=subtitle_font or _SUBTITLE_FONT,
+        ha='center', va='top', linespacing=1.2)
+    _add_footnote(fig, txt_label, L,
+                  color=txt_label_color, font_weight=txt_label_font_weight,
+                  size=bottom_note_size)
+
     default_colors = ['#9d8561','#857052','#6c5c43','#544734','#3c3325']
     colors = line_colors  if line_colors  is not None else default_colors
     styles = line_styles  if line_styles  is not None else ['-']  * len(col_measure_list)
@@ -1031,28 +1159,21 @@ def eMultiLineChartAnimateInstagram(
             return (lst * (len(col_measure_list) // len(lst) + 1))[:len(col_measure_list)]
         return lst
     colors, styles, widths, labels = _pad(colors), _pad(styles), _pad(widths), _pad(labels)
-    suptitle_obj = ax.text(0.5, suptitle_y, "", fontsize=suptitle_size, color=suptitle_color,
-                            fontweight=suptitle_font_weight, family=suptitle_font,
-                            ha='center', va='top', transform=ax.transAxes)
-    subtitle_obj = ax.text(0.5, subtitle_y, "", fontsize=subtitle_size, color=subtitle_color,
-                            fontweight=subtitle_font_weight, family=subtitle_font,
-                            ha='center', va='top', transform=ax.transAxes)
-    ax.set_xlabel(txt_label, color=txt_label_color, labelpad=10,
-                  size=bottom_note_size, fontweight=txt_label_font_weight)
+
     if reference_bands: add_reference_bands(ax, reference_bands, orientation='horizontal')
     if vlines: add_vlines(ax, vlines)
     if hlines: add_hlines(ax, hlines)
+
     for side in ['top','right','bottom']: ax.spines[side].set_visible(False)
     ax.spines['left'].set_visible(False)
     ax.tick_params(axis='x', colors=tick_color, labelsize=x_tick_size)
-    fig.patch.set_facecolor(face_color); fig.patch.set_edgecolor(face_color)
-    fig.patch.set_linewidth(0); fig.patch.set_alpha(1)
+
     x = df_chart[col_dim]
     n_rows = len(df_chart)
     x_idx  = list(range(n_rows))
-    # Use pure numeric axis — set tick positions as integers, labels as strings
     ax.set_xticks([x_idx[0], x_idx[-1]])
     ax.set_xticklabels([str(x.iloc[0]), str(x.iloc[-1])])
+
     if show_y_axis:
         if y_ticks is not None: ax.set_yticks(y_ticks)
         fmt = y_num_format if y_num_format else num_format
@@ -1063,26 +1184,30 @@ def eMultiLineChartAnimateInstagram(
         ax.spines['left'].set_color(y_tick_color)
     else:
         ax.set_yticks([])
+
     if y_limits is not None:
         ax.set_ylim(y_limits)
     else:
         all_v = [v for c in col_measure_list for v in df_chart[c].tolist()]
         m = (max(all_v) - min(all_v)) * 0.1
         ax.set_ylim(min(all_v) - m, max(all_v) + m)
+
     x_vals = x.tolist()
     xm = len(x_vals) * 0.02
     ax.set_xlim(-xm, len(x_vals) - 1 + xm)
+
     if show_zero_line:
         ax.axhline(zero_line_at, color=zero_line_color, linestyle=zero_line_style,
                    linewidth=zero_line_width, zorder=8)
     if aspect_ratio is not None: ax.set_box_aspect(aspect_ratio)
+
     line_objects, dot_objects = [], []
     for idx in range(len(col_measure_list)):
         ln, = ax.plot([], [], color=colors[idx], linestyle=styles[idx], linewidth=widths[idx], zorder=9)
         line_objects.append(ln)
         dt, = ax.plot([], [], 'o', color=colors[idx], markersize=5, zorder=10)
         dot_objects.append(dt)
-    n_rows = len(df_chart)
+
     value_targets = []
     for pos in (pos_text or []):
         p = pos if pos >= 0 else n_rows + pos
@@ -1101,6 +1226,7 @@ def eMultiLineChartAnimateInstagram(
                 value_targets.append(dict(pos=p, idx=idx, formatted=fmt_s,
                                           x=float(p), y=raw + oy + oy_pt,
                                           ox=ox_pt, color=colors[idx]))
+
     val_objs = []
     for vt in value_targets:
         t = ax.annotate('', xy=(vt['x'], vt['y']),
@@ -1111,6 +1237,7 @@ def eMultiLineChartAnimateInstagram(
                                    edgecolor=face_color, alpha=0.8))
         t.set_visible(False)
         val_objs.append(t)
+
     shade_patch = None
     if shade_between is not None:
         cl, ch = shade_between
@@ -1122,14 +1249,15 @@ def eMultiLineChartAnimateInstagram(
             shade_patch = ax.fill_between(x[mask], y1[mask], y2[mask],
                                           color=shade_color, alpha=shade_alpha, zorder=1)
         shade_patch.set_visible(False)
+
     total_anim   = int(fps * duration)
     total_frames = total_anim + hold_frames
-    # Use integer indices for interpolation (categorical x-axis maps to 0..n-1)
     x_arr        = np.arange(n_rows, dtype=float)
+
     def update(frame):
         progress = 1.0 if frame >= total_anim else ease_fn(frame / total_anim)
-        suptitle_obj.set_text(_typewriter(txt_suptitle, progress, tw_suptitle_start, tw_suptitle_end))
-        subtitle_obj.set_text(_typewriter(txt_subtitle,  progress, tw_subtitle_start,  tw_subtitle_end))
+        sup_obj.set_text(_typewriter(txt_suptitle, progress, tw_suptitle_start, tw_suptitle_end))
+        sub_obj.set_text(_typewriter(txt_subtitle,  progress, tw_subtitle_start,  tw_subtitle_end))
         reveal = progress * n_rows
         for li, col in enumerate(col_measure_list):
             y_all = df_chart[col].values.astype(float)
@@ -1157,6 +1285,7 @@ def eMultiLineChartAnimateInstagram(
         if shade_patch is not None:
             shade_patch.set_visible(progress >= 0.99)
         return line_objects + dot_objects + val_objs
+
     anim   = animation.FuncAnimation(fig, update, frames=total_frames, interval=1000/fps, blit=False)
     writer = animation.FFMpegWriter(fps=fps, bitrate=3000,
                                     extra_args=['-vcodec','libx264','-pix_fmt','yuv420p'])
@@ -1175,17 +1304,17 @@ def eStemChartAnimateInstagram(
     tw_suptitle_start=0.0, tw_suptitle_end=0.5,
     tw_subtitle_start=0.5, tw_subtitle_end=0.95,
     col_measure_b=None, col_category_pos=None,
-    txt_suptitle="", suptitle_y=0.96, txt_subtitle="", txt_label="",
+    txt_suptitle="", txt_subtitle="", txt_label="",
     num_format="{:.0f}", num_divisor=1, offset=0.1, x_tick_label_y_offset=0,
     marker_size=4, line_width=0.8,
     suptitle_color="#4b2e1a", subtitle_color="#4b2e1a",
     axis_label_color="#79664a", tick_label_color="#3c3325",
-    face_color="#F7F5F2", color_a="#a58e6c", color_b="#573D09",
+    face_color="#F5F0E6", color_a="#a58e6c", color_b="#573D09",
     year_label_a=None, year_label_b=None,
     label_a_offset_x=1, label_b_offset_x=1, label_a_offset_y=1, label_b_offset_y=1,
     instagram=True, px_width=1080, px_height=1920, dpi=200,
-    suptitle_size=26, subtitle_size=14, label_size=12,
-    subtitle_y=0.88, subtitle_pad=30, labelpad=10, aspect_ratio=None,
+    suptitle_size=None, subtitle_size=None, label_size=12,
+    aspect_ratio=None,
     rotate_labels=False, xtick_align_ha="center", xtick_align_va="bottom",
     value_label_offset_pts=6, value_label_offset_y=None, value_label_offset_x=None,
     value_label_custom_offset=None,
@@ -1194,28 +1323,34 @@ def eStemChartAnimateInstagram(
     show_legend=False, legend_labels=None, legend_loc='upper right',
     legend_font_size=10, legend_frame=False, legend_text_color='#3c3325',
     legend_bbox_to_anchor=None, y_min=None, y_max=None,
-    font='DejaVu Sans', suptitle_font='DejaVu Serif', subtitle_font='DejaVu Sans',
+    font='DejaVu Sans', suptitle_font=None, subtitle_font=None,
     reference_bands=None, vlines=None, hlines=None,
+    # Legacy params
+    suptitle_y=None, subtitle_y=None, subtitle_pad=None, labelpad=None,
 ):
     value_label_offset_y      = _int_keys(value_label_offset_y)
     value_label_offset_x      = _int_keys(value_label_offset_x)
     value_label_custom_offset = _int_keys(value_label_custom_offset)
 
     ease_fn = _EASING.get(easing, _ease_out_cubic)
-    plt.rcdefaults(); plt.rcParams['font.family'] = font
-    if instagram:
-        figsize = (px_width / dpi, px_height / dpi)
-        fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=face_color)
-        fig.subplots_adjust(top=0.82, bottom=0.08, left=0.12, right=0.92)
-    else:
-        fig, ax = plt.subplots(figsize=(8, 14), dpi=160, facecolor=face_color)
-    ax.set_facecolor(face_color)
-    suptitle_obj = fig.text(0.5, suptitle_y, "", fontsize=suptitle_size, color=suptitle_color,
-                             fontweight="medium", fontfamily=suptitle_font, ha='center', va='top')
-    subtitle_obj = fig.text(0.5, subtitle_y, "", fontsize=subtitle_size, color=subtitle_color,
-                             fontweight="light", fontfamily=subtitle_font, ha='center', va='top')
-    ax.set_xlabel(txt_label, color=axis_label_color, labelpad=labelpad,
-                  size=label_size, fontweight="light")
+
+    # --- Standardized layout (9:16) ---
+    fig, ax, L = _setup_chart(
+        layout='9x16', face_color=face_color, dpi=dpi,
+        plot_left=0.12, plot_right=0.92,
+    )
+    sup_obj = fig.text(
+        0.5, L['suptitle_y'], "",
+        fontsize=suptitle_size or _SUPTITLE_SIZE, color=suptitle_color,
+        fontweight="medium", fontfamily=suptitle_font or _SUPTITLE_FONT,
+        ha='center', va='top', linespacing=1.2)
+    sub_obj = fig.text(
+        0.5, L['subtitle_y'], "",
+        fontsize=subtitle_size or _SUBTITLE_SIZE, color=subtitle_color,
+        fontweight="light", fontfamily=subtitle_font or _SUBTITLE_FONT,
+        ha='center', va='top', linespacing=1.2)
+    _add_footnote(fig, txt_label, L, color=axis_label_color)
+
     xpos = (np.arange(len(df_chart)) if col_category_pos is None
             else np.asarray(df_chart[col_category_pos]))
     cats = df_chart[col_dim].tolist()
@@ -1224,16 +1359,19 @@ def eStemChartAnimateInstagram(
     y_b_final = None
     if col_measure_b is not None:
         y_b_final = df_chart[col_measure_b].to_numpy(dtype=float) / num_divisor
+
     for side in ["top","right","left","bottom"]: ax.spines[side].set_linewidth(0)
     ax.axhline(0, color=x_axis_line_color, linewidth=x_axis_line_width)
     if reference_bands: add_reference_bands(ax, reference_bands, orientation='horizontal')
     if vlines: add_vlines(ax, vlines)
     if hlines: add_hlines(ax, hlines)
+
     all_v = list(y_a_final) + (list(y_b_final) if y_b_final is not None else [])
     dmin, dmax = min(all_v), max(all_v)
     margin = (dmax - dmin) * 0.15
     ax.set_ylim(y_min if y_min is not None else (dmin - margin if dmin < 0 else -margin*0.5),
                 y_max if y_max is not None else dmax + margin)
+
     ax.set_xticks(xpos)
     ax.set_xticklabels(cats, color=tick_label_color, va=xtick_align_va, ha=xtick_align_ha,
                         fontsize=label_size, rotation=90 if rotate_labels else 0,
@@ -1243,6 +1381,7 @@ def eStemChartAnimateInstagram(
         x0, y0 = lbl.get_position()
         lbl.set_position((x0, y0 + x_tick_label_y_offset))
     ax.tick_params(axis="x", length=0); ax.set_yticks([])
+
     def _resolve_offsets(i, val, g_y, per_y, per_x, legacy):
         base_y  = g_y if val >= 0 else -g_y
         extra_y = 0
@@ -1250,6 +1389,7 @@ def eStemChartAnimateInstagram(
         elif legacy and i in legacy:     extra_y = legacy[i]
         extra_x = per_x.get(i, 0) if per_x else 0
         return base_y + extra_y, extra_x
+
     stem_a, mark_a, lbl_a = [], [], []
     stem_b, mark_b, lbl_b = [], [], []
     for i in range(n):
@@ -1280,12 +1420,14 @@ def eStemChartAnimateInstagram(
                             bbox=dict(boxstyle="square,pad=0.2", facecolor="white", edgecolor="white", alpha=0.7), zorder=10)
             lbl_b.append(t)
     if aspect_ratio is not None: ax.set_box_aspect(aspect_ratio)
+
     total_anim   = int(fps * duration)
     total_frames = total_anim + hold_frames
+
     def update(frame):
         progress = 1.0 if frame >= total_anim else ease_fn(frame / total_anim)
-        suptitle_obj.set_text(_typewriter(txt_suptitle, progress, tw_suptitle_start, tw_suptitle_end))
-        subtitle_obj.set_text(_typewriter(txt_subtitle,  progress, tw_subtitle_start,  tw_subtitle_end))
+        sup_obj.set_text(_typewriter(txt_suptitle, progress, tw_suptitle_start, tw_suptitle_end))
+        sub_obj.set_text(_typewriter(txt_subtitle,  progress, tw_subtitle_start,  tw_subtitle_end))
         for i in range(n):
             ca = y_a_final[i] * progress
             stem_a[i].set_ydata([0, ca]); mark_a[i].set_ydata([ca])
@@ -1295,6 +1437,7 @@ def eStemChartAnimateInstagram(
                 stem_b[i].set_ydata([0, cb]); mark_b[i].set_ydata([cb])
                 lbl_b[i].set_text(num_format.format(cb)); lbl_b[i].xy = (xpos[i]+offset, cb)
         return stem_a + mark_a + lbl_a + stem_b + mark_b + lbl_b
+
     anim   = animation.FuncAnimation(fig, update, frames=total_frames, interval=1000/fps, blit=False)
     writer = animation.FFMpegWriter(fps=fps, bitrate=3000,
                                     extra_args=['-vcodec','libx264','-pix_fmt','yuv420p'])
@@ -1320,35 +1463,45 @@ def eDonutChartAnimateInstagram(
     colors=None, pct_colors=None, label_colors=None,
     center_text=None, center_text_color="#4b2e1a", center_text_size=12, center_text_weight="normal",
     suptitle_color='#4b2e1a', subtitle_color='#4b2e1a', txt_label_color='#857052',
-    face_color='#F7F5F2', suptitle_font_weight='medium', subtitle_font_weight='light',
-    txt_label_font_weight='light', suptitle_size=26, subtitle_size=14,
-    label_size=10, bottom_note_size=9, font='DejaVu Sans',
-    suptitle_font='DejaVu Serif', subtitle_font='DejaVu Sans',
-    suptitle_y=0.97, subtitle_y=0.90, label_y=0.03,
+    face_color='#F5F0E6', suptitle_font_weight='medium', subtitle_font_weight='light',
+    txt_label_font_weight='light', suptitle_size=None, subtitle_size=None,
+    label_size=10, bottom_note_size=None, font='DejaVu Sans',
+    suptitle_font=None, subtitle_font=None,
     figsize=(8,8), dpi=200, px=1080, instagram=True, instagram_format='9x16',
+    # Legacy params
+    suptitle_y=None, subtitle_y=None, label_y=None,
 ):
     ease_fn = _EASING.get(easing, _ease_out_cubic)
-    plt.rcdefaults(); plt.rcParams['font.family'] = font; plt.rcParams['font.size'] = 12
-    if instagram:
-        if   instagram_format == '9x16': figsize = (px/dpi, (px*16/9)/dpi)
-        elif instagram_format == '4x5':  figsize = (px/dpi, (px*1.25)/dpi)
-        else:                            figsize = (px/dpi, px/dpi)
-    fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=face_color)
-    ax.set_facecolor(face_color); ax.set_aspect("equal", adjustable="box")
+
+    # --- Standardized layout (9:16) ---
+    fig, ax, L = _setup_chart(
+        layout='9x16', face_color=face_color, dpi=dpi,
+        plot_left=0.05, plot_right=0.95,
+    )
+    ax.set_aspect("equal", adjustable="box")
+
+    sup_obj = fig.text(
+        0.5, L['suptitle_y'], "",
+        fontsize=suptitle_size or _SUPTITLE_SIZE, color=suptitle_color,
+        weight=suptitle_font_weight, fontfamily=suptitle_font or _SUPTITLE_FONT,
+        ha='center', va='top', linespacing=1.2)
+    sub_obj = fig.text(
+        0.5, L['subtitle_y'], "",
+        fontsize=subtitle_size or _SUBTITLE_SIZE, color=subtitle_color,
+        weight=subtitle_font_weight, fontfamily=subtitle_font or _SUBTITLE_FONT,
+        ha='center', va='top', linespacing=1.2)
+    if txt_label:
+        _add_footnote(fig, txt_label, L,
+                      color=txt_label_color, font_weight=txt_label_font_weight,
+                      size=bottom_note_size)
+
     default_colors = ['#d9d0c1','#79664a','#9d8561','#857052','#6c5c43','#544734','#3c3325']
     if colors is None: colors = default_colors
     outer_band = radius_outer - inner_radius if inner_radius is not None else wedge_width
     inner_band = wedge_width_inner if wedge_width_inner is not None else outer_band
-    suptitle_fig_obj = fig.text(0.5, suptitle_y, "", ha="center", va="top", fontsize=suptitle_size,
-                                 color=suptitle_color, weight=suptitle_font_weight, fontfamily=suptitle_font)
-    subtitle_fig_obj = fig.text(0.5, subtitle_y, "", ha="center", va="top", fontsize=subtitle_size,
-                                 color=subtitle_color, weight=subtitle_font_weight, fontfamily=subtitle_font)
-    if txt_label:
-        fig.text(0.5, label_y, txt_label, ha="center", va="bottom", fontsize=bottom_note_size,
-                 color=txt_label_color, weight=txt_label_font_weight)
+
     for side in ['top','right','left','bottom']: ax.spines[side].set_linewidth(0)
-    fig.patch.set_facecolor(face_color); fig.patch.set_edgecolor(face_color)
-    fig.patch.set_linewidth(0); fig.patch.set_alpha(1)
+
     values     = (df_chart[col_value] / num_divisor).values.astype(float)
     total      = values.sum()
     fractions  = values / total
@@ -1360,15 +1513,17 @@ def eDonutChartAnimateInstagram(
     def fmt_pct(pct):
         try:    return num_format.format(pct)
         except: return f"{pct:.0f}%"
+
     total_anim   = int(fps * duration)
     total_frames = total_anim + hold_frames
+
     def update(frame):
         ax.clear(); ax.set_facecolor(face_color); ax.set_aspect("equal", adjustable="box")
         for side in ['top','right','left','bottom']: ax.spines[side].set_linewidth(0)
         ax.set_xticks([]); ax.set_yticks([])
         progress = 1.0 if frame >= total_anim else ease_fn(frame / total_anim)
-        suptitle_fig_obj.set_text(_typewriter(txt_suptitle, progress, tw_suptitle_start, tw_suptitle_end))
-        subtitle_fig_obj.set_text(_typewriter(txt_subtitle,  progress, tw_subtitle_start,  tw_subtitle_end))
+        sup_obj.set_text(_typewriter(txt_suptitle, progress, tw_suptitle_start, tw_suptitle_end))
+        sub_obj.set_text(_typewriter(txt_subtitle,  progress, tw_subtitle_start,  tw_subtitle_end))
         cur_start = start_angle; drawn = []
         for i in range(n_wedges):
             wa = angles_deg[i] * progress
@@ -1397,6 +1552,7 @@ def eDonutChartAnimateInstagram(
         lim = radius_outer * 1.4
         ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim)
         return drawn
+
     anim   = animation.FuncAnimation(fig, update, frames=total_frames, interval=1000/fps, blit=False)
     writer = animation.FFMpegWriter(fps=fps, bitrate=3000,
                                     extra_args=['-vcodec','libx264','-pix_fmt','yuv420p'])
@@ -1424,6 +1580,7 @@ def eCoverTileAnimateInstagram(
     accent_line_y=0.48, accent_line_length=0.15,
     accent_line_start=0.40, accent_line_end=0.65,
 ):
+    """Animated cover tile — full-bleed typography, no plot area. Layout is custom per design."""
     ease_fn = _EASING.get(easing, _ease_out_cubic)
     plt.rcdefaults(); plt.rcParams['font.family'] = 'DejaVu Sans'
     plt.rcParams["savefig.bbox"] = "standard"
@@ -1431,6 +1588,11 @@ def eCoverTileAnimateInstagram(
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=face_color)
     ax.set_facecolor(face_color); ax.set_xlim(0,1); ax.set_ylim(0,1); ax.axis('off')
     for spine in ax.spines.values(): spine.set_visible(False)
+    fig.patch.set_facecolor(face_color)
+    fig.patch.set_edgecolor(face_color)
+    fig.patch.set_linewidth(0)
+    fig.patch.set_alpha(1)
+
     suptitle_obj = ax.text(0.5, suptitle_y, "", fontsize=suptitle_size, color=suptitle_color,
                             ha='center', va='center', fontweight=suptitle_font_weight,
                             fontfamily=suptitle_font, linespacing=1.1, transform=ax.transAxes)
@@ -1446,6 +1608,7 @@ def eCoverTileAnimateInstagram(
     total_anim   = int(fps * duration)
     hold_frames  = int(fps * hold_duration)
     total_frames = total_anim + hold_frames
+
     def update(frame):
         progress = 1.0 if frame >= total_anim else ease_fn(frame / total_anim)
         suptitle_obj.set_text(_typewriter(txt_suptitle, progress, tw_suptitle_start, tw_suptitle_end))
@@ -1461,6 +1624,7 @@ def eCoverTileAnimateInstagram(
                 ch = (accent_line_length/2)*t
                 accent_line_obj.set_data([0.5-ch, 0.5+ch], [accent_line_y, accent_line_y])
         return [suptitle_obj, subtitle_obj, accent_line_obj]
+
     anim   = animation.FuncAnimation(fig, update, frames=total_frames, interval=1000/fps, blit=False)
     writer = animation.FFMpegWriter(fps=fps, bitrate=3000,
                                     extra_args=['-vcodec','libx264','-pix_fmt','yuv420p'])
