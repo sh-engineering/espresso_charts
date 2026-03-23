@@ -1902,6 +1902,8 @@ def eGenerateOpeningFrame(
     poll_interval=15,
     max_wait=300,
     gemini_api_key=None,
+    gcp_project="main-voltage-446412-p1",
+    gcp_location="us-central1",
 ):
     """Generate an animated opening frame for a Reel using Gemini Veo.
 
@@ -1915,7 +1917,13 @@ def eGenerateOpeningFrame(
     Parameters
     ----------
     gemini_api_key : str or None
-        Google Gemini API key. If None, reads from GEMINI_API_KEY env var.
+        Google Gemini API key. Fallback only; Vertex AI auth is preferred.
+        If None, reads from GEMINI_API_KEY env var.
+    gcp_project : str or None
+        GCP project ID for Vertex AI auth. Default uses the Espresso Charts
+        project. Set to None to force API key auth instead.
+    gcp_location : str
+        GCP region for Vertex AI. Default "us-central1".
     video_prompt : str
         Creative prompt for the video background. A portrait-format preamble
         is automatically prepended.
@@ -1960,8 +1968,6 @@ def eGenerateOpeningFrame(
 
     if gemini_api_key is None:
         gemini_api_key = os.environ.get("GEMINI_API_KEY", "")
-    if not gemini_api_key:
-        raise ValueError("No Gemini API key provided. Set GEMINI_API_KEY env var or pass gemini_api_key.")
 
     # --- 1. Build prompt with portrait preamble ---
     portrait_preamble = (
@@ -1972,8 +1978,25 @@ def eGenerateOpeningFrame(
     full_prompt = portrait_preamble + video_prompt
 
     # --- 2. Submit generation job ---
+    # Vertex AI auth (service account) supports the full pipeline including
+    # operation polling. API key auth fails on operations.get() with 401.
+    # Use Vertex AI by default; fall back to API key only if no project set.
     print("Generating Gemini video clip...")
-    client = genai.Client(api_key=gemini_api_key)
+    if gcp_project:
+        print(f"  Using Vertex AI (project={gcp_project}, location={gcp_location})")
+        client = genai.Client(
+            vertexai=True,
+            project=gcp_project,
+            location=gcp_location,
+        )
+    elif gemini_api_key:
+        print("  Using API key auth (operation polling may fail)")
+        client = genai.Client(api_key=gemini_api_key)
+    else:
+        raise ValueError(
+            "No auth configured. Either set gcp_project for Vertex AI "
+            "or set GEMINI_API_KEY env var."
+        )
 
     operation = client.models.generate_videos(
         model="veo-2.0-generate-001",
