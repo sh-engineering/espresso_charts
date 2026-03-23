@@ -1250,6 +1250,13 @@ def eMultiLineChartAnimateInstagram(
         dt, = ax.plot([], [], 'o', color=colors[idx], markersize=5, zorder=10)
         dot_objects.append(dt)
 
+    if show_legend:
+        leg_labels = legend_labels_custom if legend_labels_custom is not None else labels
+        leg = ax.legend(leg_labels, loc=legend_loc, bbox_to_anchor=legend_bbox,
+                        ncol=legend_ncol, frameon=False, fontsize=legend_font_size)
+        if legend_text_color is not None:
+            for t in leg.get_texts(): t.set_color(legend_text_color)
+
     value_targets = []
     for pos in (pos_text or []):
         p = pos if pos >= 0 else n_rows + pos
