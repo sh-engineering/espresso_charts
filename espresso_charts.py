@@ -1888,7 +1888,6 @@ def _find_font(filename):
 
 
 def eGenerateOpeningFrame(
-    gemini_api_key,
     video_prompt,
     number_text,
     label_text,
@@ -1902,6 +1901,7 @@ def eGenerateOpeningFrame(
     duration_seconds=5,
     poll_interval=15,
     max_wait=300,
+    gemini_api_key=None,
 ):
     """Generate an animated opening frame for a Reel using Gemini Veo.
 
@@ -1914,8 +1914,8 @@ def eGenerateOpeningFrame(
 
     Parameters
     ----------
-    gemini_api_key : str
-        Google Gemini API key.
+    gemini_api_key : str or None
+        Google Gemini API key. If None, reads from GEMINI_API_KEY env var.
     video_prompt : str
         Creative prompt for the video background. A portrait-format preamble
         is automatically prepended.
@@ -1958,6 +1958,11 @@ def eGenerateOpeningFrame(
         from google import genai
         from google.genai import types
 
+    if gemini_api_key is None:
+        gemini_api_key = os.environ.get("GEMINI_API_KEY", "")
+    if not gemini_api_key:
+        raise ValueError("No Gemini API key provided. Set GEMINI_API_KEY env var or pass gemini_api_key.")
+
     # --- 1. Build prompt with portrait preamble ---
     portrait_preamble = (
         "Generate a 1080x1920 pixel video. Portrait orientation, taller than "
@@ -1973,7 +1978,7 @@ def eGenerateOpeningFrame(
     operation = client.models.generate_videos(
         model="veo-2.0-generate-001",
         prompt=full_prompt,
-        config=types.GenerateVideoConfig(
+        config=types.GenerateVideosConfig(
             aspect_ratio="9:16",
             number_of_videos=1,
             duration_seconds=duration_seconds,
