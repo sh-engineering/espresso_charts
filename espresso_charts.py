@@ -875,22 +875,56 @@ def eDonutChartInstagram(
     outer_autopct = autopct_func if (show_pct and autopct_outer) else None
     inner_autopct = autopct_func if (show_pct and autopct_inner) else None
 
-    wedges, texts, autotexts = ax.pie(
+    # ax.pie returns 2 values when autopct is None, 3 when it's set
+    pie_result = ax.pie(
         df_chart[col_value] / num_divisor, radius=radius_outer, labels=pie_labels,
         labeldistance=labeldistance, colors=colors, wedgeprops=dict(width=outer_band),
         startangle=90, autopct=outer_autopct, pctdistance=pctdistance_outer,
         textprops={'fontsize': label_size})
+    if outer_autopct is not None:
+        wedges, texts, autotexts = pie_result
+    else:
+        wedges, texts = pie_result
+        autotexts = []
     if label_colors:
         for i, t in enumerate(texts):
             if i < len(label_colors): t.set_color(label_colors[i])
     if pct_colors:
         for i, t in enumerate(autotexts):
             if i < len(pct_colors): t.set_color(pct_colors[i])
+
+    # --- Fix overlapping pie labels ---
+    # Collect (index, y-position) for all visible label texts, sort by y,
+    # then nudge any pair that is closer than min_gap apart.
+    if texts:
+        fig.canvas.draw()  # force position calculation
+        min_gap = 0.08
+        positions = [(i, t.get_position()[1]) for i, t in enumerate(texts)
+                     if t.get_text().strip()]
+        positions.sort(key=lambda p: p[1])
+        for k in range(len(positions) - 1):
+            idx_lo, y_lo = positions[k]
+            idx_hi, y_hi = positions[k + 1]
+            if abs(y_hi - y_lo) < min_gap:
+                nudge = (min_gap - abs(y_hi - y_lo)) / 2 + 0.02
+                x_lo, _ = texts[idx_lo].get_position()
+                x_hi, _ = texts[idx_hi].get_position()
+                texts[idx_lo].set_position((x_lo, y_lo - nudge))
+                texts[idx_hi].set_position((x_hi, y_hi + nudge))
+                # Update sorted list for cascading checks
+                positions[k]     = (idx_lo, y_lo - nudge)
+                positions[k + 1] = (idx_hi, y_hi + nudge)
+
     if col_inner:
-        wedges2, texts2, autotexts2 = ax.pie(
+        inner_result = ax.pie(
             df_chart[col_inner] / num_divisor, radius=radius_inner, colors=colors,
             wedgeprops=dict(width=inner_band), startangle=90, autopct=inner_autopct,
             pctdistance=pctdistance_inner, textprops={'fontsize': label_size})
+        if inner_autopct is not None:
+            wedges2, texts2, autotexts2 = inner_result
+        else:
+            wedges2, texts2 = inner_result
+            autotexts2 = []
         if pct_colors:
             for i, t in enumerate(autotexts2):
                 if i < len(pct_colors): t.set_color(pct_colors[i])
