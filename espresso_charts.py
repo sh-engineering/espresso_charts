@@ -1240,14 +1240,14 @@ def eMultiLineChartAnimateInstagram(
 
     if show_zero_line:
         ax.axhline(zero_line_at, color=zero_line_color, linestyle=zero_line_style,
-                   linewidth=zero_line_width, zorder=8)
+                   linewidth=zero_line_width, zorder=8, label='_nolegend_')
     if aspect_ratio is not None: ax.set_box_aspect(aspect_ratio)
 
     line_objects, dot_objects = [], []
     for idx in range(len(col_measure_list)):
         ln, = ax.plot([], [], color=colors[idx], linestyle=styles[idx], linewidth=widths[idx], zorder=9)
         line_objects.append(ln)
-        dt, = ax.plot([], [], 'o', color=colors[idx], markersize=5, zorder=10)
+        dt, = ax.plot([], [], 'o', color=colors[idx], markersize=5, zorder=10, linewidth=0, label='_nolegend_')
         dot_objects.append(dt)
 
     if show_legend:
