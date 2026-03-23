@@ -2034,51 +2034,11 @@ def eGenerateOpeningFrame(
 
     # Download differs between Vertex AI and API key auth
     if gcp_project:
-        # Vertex AI: video has a .uri attribute — download via authenticated HTTP or GCS
-        video_uri = getattr(video, 'uri', None)
-        if not video_uri:
-            # Debug: show all attributes to help diagnose
-            attrs = {k: getattr(video, k, None) for k in dir(video) if not k.startswith('_')}
-            raise RuntimeError(
-                f"Vertex AI video has no .uri attribute. "
-                f"Available attributes: {list(attrs.keys())}. "
-                f"Values: {attrs}"
-            )
-        print(f"  Downloading from: {video_uri}")
-
-        if video_uri.startswith("gs://"):
-            # GCS URI — use the storage client
-            try:
-                from google.cloud import storage as gcs_storage
-            except ImportError:
-                os.system("pip install google-cloud-storage --break-system-packages -q")
-                from google.cloud import storage as gcs_storage
-            # Parse gs://bucket/path
-            gcs_path = video_uri.replace("gs://", "")
-            bucket_name = gcs_path.split("/")[0]
-            blob_path = "/".join(gcs_path.split("/")[1:])
-            gcs_client = gcs_storage.Client(project=gcp_project)
-            bucket = gcs_client.bucket(bucket_name)
-            blob = bucket.blob(blob_path)
-            blob.download_to_filename(raw_path)
-        else:
-            # HTTPS URI — download with auth token
-            import google.auth
-            import google.auth.transport.requests as gauth_requests
-            creds, _ = google.auth.default()
-            creds.refresh(gauth_requests.Request())
-            headers = {"Authorization": f"Bearer {creds.token}"}
-            resp = requests.get(video_uri, headers=headers, stream=True)
-            if resp.status_code != 200:
-                raise RuntimeError(
-                    f"Failed to download video ({resp.status_code}): {resp.text[:500]}"
-                )
-            with open(raw_path, "wb") as f:
-                for chunk in resp.iter_content(chunk_size=8192):
-                    if chunk:
-                        f.write(chunk)
+        # Vertex AI: video_bytes is populated directly (uri is None).
+        # Just call .save() to write to disk.
+        video.save(raw_path)
     else:
-        # API key auth: use the SDK download
+        # API key auth: need to download first, then save
         client.files.download(file=video)
         video.save(raw_path)
 
