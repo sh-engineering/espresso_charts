@@ -89,12 +89,16 @@ _LAYOUT = {
         'footnote_y':  0.045,   # top of footnote text block
     },
     '9x16': {
+        # Instagram Reel safe zones: top ~250px, bottom ~200px are covered by UI.
+        # Content must stay within y=0.104 to y=0.870 (in figure coords).
+        # Top:  250px / 1920 = 0.130 buffer → content ceiling at 0.870
+        # Bottom: 200px / 1920 = 0.104 buffer → content floor at 0.104
         'figsize_px': (1080, 1920),
-        'suptitle_y':  0.970,
-        'subtitle_y':  0.872,   # = 0.970 - 0.083 - 0.015
-        'plot_top':    0.812,   # = 0.872 - 0.045 - 0.015
-        'plot_bottom': 0.055,
-        'footnote_y':  0.025,
+        'suptitle_y':  0.870,   # right at the top safe edge
+        'subtitle_y':  0.772,   # = 0.870 - 0.083 (sup block) - 0.015 (gap)
+        'plot_top':    0.712,   # = 0.772 - 0.045 (sub block) - 0.015 (gap)
+        'plot_bottom': 0.185,   # extra space for x-axis tick labels
+        'footnote_y':  0.120,   # just above bottom safe zone (floor = 0.104)
     },
 }
 
