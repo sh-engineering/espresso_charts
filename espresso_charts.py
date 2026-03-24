@@ -2054,42 +2054,50 @@ def eGenerateOpeningFrame(
     print(f"Raw clip saved -> {raw_path}  ({raw_dur:.1f}s)")
 
     # --- 5. Overlay text with ffmpeg drawtext ---
-    font_serif = _find_font("DejaVuSerif-Bold.ttf")
+    font_serif = _find_font("DejaVuSerif-Bold.ttf") or _find_font("DejaVuSerif.ttf")
     font_sans  = _find_font("DejaVuSans.ttf")
+
+    print(f"  Fonts: serif={font_serif}, sans={font_sans}")
 
     # ffmpeg drawtext uses hex without '#'
     num_hex   = number_color.lstrip("#")
     label_hex = label_color.lstrip("#")
 
+    # ffmpeg drawtext treats '%' as a format specifier — must escape as '%%'
+    safe_number = number_text.replace("%", "%%")
+    safe_label  = label_text.replace("%", "%%")
+
     # Semi-transparent dark scrim behind the text zone for readability.
-    # Covers the vertical band where number + label sit (center ± 150px).
-    scrim_y = f"(h/2)+{number_y_offset}-100"
-    scrim_h = abs(number_y_offset) + abs(label_y_offset) + 200
+    # Compute scrim position as absolute pixel values to avoid ffmpeg expression issues.
+    # Frame is 1920px tall; center = 960.
+    scrim_top = 960 + number_y_offset - 120   # starts above the number
+    scrim_bot = 960 + label_y_offset + 80     # ends below the label
+    scrim_h   = scrim_bot - scrim_top
     scrim_filter = (
-        f"drawbox=x=0:y={scrim_y}:w=iw:h={scrim_h}"
+        f"drawbox=x=0:y={scrim_top}:w=iw:h={scrim_h}"
         f":color=black@{scrim_opacity}:t=fill"
     )
 
     # Build drawtext filter for the number (with dark border for contrast)
     num_filter = (
-        f"drawtext=text='{number_text}'"
+        f"drawtext=text='{safe_number}'"
         f":fontsize={number_size}"
         f":fontcolor={num_hex}"
         f":borderw=3:bordercolor=black@0.6"
         f":x=(w-text_w)/2"
-        f":y=(h-text_h)/2+{number_y_offset}"
+        f":y=(h-text_h)/2+({number_y_offset})"
     )
     if font_serif:
         num_filter += f":fontfile='{font_serif}'"
 
     # Build drawtext filter for the label (with dark border for contrast)
     lbl_filter = (
-        f"drawtext=text='{label_text}'"
+        f"drawtext=text='{safe_label}'"
         f":fontsize={label_size}"
         f":fontcolor={label_hex}"
         f":borderw=2:bordercolor=black@0.5"
         f":x=(w-text_w)/2"
-        f":y=(h-text_h)/2+{label_y_offset}"
+        f":y=(h-text_h)/2+({label_y_offset})"
     )
     if font_sans:
         lbl_filter += f":fontfile='{font_sans}'"
@@ -2107,6 +2115,7 @@ def eGenerateOpeningFrame(
         '-c:a', 'copy',
         output_file,
     ]
+    print(f"  ffmpeg filter: {filter_chain[:200]}...")
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode != 0:
         raise RuntimeError(f"ffmpeg overlay failed:\n{r.stderr}")
