@@ -1883,12 +1883,26 @@ def eAddAudio(video_file, output_file="espresso_final.mp4",
 
 def _find_font(filename):
     """Locate a font file on the system. Returns path string or None."""
+    # Try common font directories (covers Ubuntu, Colab, macOS)
+    search_dirs = ["/usr/share/fonts", "/usr/local/share/fonts",
+                   "/usr/lib/fonts", "/System/Library/Fonts"]
+    for d in search_dirs:
+        result = subprocess.run(
+            ["find", d, "-name", filename],
+            capture_output=True, text=True
+        )
+        paths = result.stdout.strip().split("\n")
+        if paths and paths[0]:
+            return paths[0]
+    # Fallback: use fc-match to find closest system match
+    base = filename.replace(".ttf", "").replace("-Bold", ":style=Bold")
     result = subprocess.run(
-        ["find", "/usr", "-name", filename],
+        ["fc-match", "--format=%{file}", base],
         capture_output=True, text=True
     )
-    paths = result.stdout.strip().split("\n")
-    return paths[0] if paths and paths[0] else None
+    if result.returncode == 0 and result.stdout.strip():
+        return result.stdout.strip()
+    return None
 
 
 def eGenerateOpeningFrame(
@@ -2056,51 +2070,59 @@ def eGenerateOpeningFrame(
     # --- 5. Overlay text with ffmpeg drawtext ---
     font_serif = _find_font("DejaVuSerif-Bold.ttf") or _find_font("DejaVuSerif.ttf")
     font_sans  = _find_font("DejaVuSans.ttf")
-
     print(f"  Fonts: serif={font_serif}, sans={font_sans}")
 
-    # ffmpeg drawtext uses hex without '#'
-    num_hex   = number_color.lstrip("#")
-    label_hex = label_color.lstrip("#")
+    # Write text to temp files to avoid ALL ffmpeg escaping issues (%, quotes, colons)
+    num_txt_path = raw_path.replace("_raw.mp4", "_num.txt")
+    lbl_txt_path = raw_path.replace("_raw.mp4", "_lbl.txt")
+    with open(num_txt_path, "w") as f:
+        f.write(number_text)
+    with open(lbl_txt_path, "w") as f:
+        f.write(label_text)
+    print(f"  Number text: '{number_text}' -> {num_txt_path}")
+    print(f"  Label text:  '{label_text}' -> {lbl_txt_path}")
 
-    # ffmpeg drawtext treats '%' as a format specifier — must escape as '%%'
-    safe_number = number_text.replace("%", "%%")
-    safe_label  = label_text.replace("%", "%%")
-
-    # Semi-transparent dark scrim behind the text zone for readability.
-    # Compute scrim position as absolute pixel values to avoid ffmpeg expression issues.
-    # Frame is 1920px tall; center = 960.
-    scrim_top = 960 + number_y_offset - 120   # starts above the number
-    scrim_bot = 960 + label_y_offset + 80     # ends below the label
-    scrim_h   = scrim_bot - scrim_top
+    # Scrim: full-width dark band centered on the text zone.
+    # number sits at (h/2 + number_y_offset), label at (h/2 + label_y_offset).
+    # Pad 120px above number center, 80px below label center.
+    scrim_y_expr = f"h/2-{abs(number_y_offset)}-120"
+    scrim_h_val  = abs(number_y_offset) + abs(label_y_offset) + 200
     scrim_filter = (
-        f"drawbox=x=0:y={scrim_top}:w=iw:h={scrim_h}"
-        f":color=black@{scrim_opacity}:t=fill"
+        f"drawbox=x=0"
+        f":y={scrim_y_expr}"
+        f":w=iw"
+        f":h={scrim_h_val}"
+        f":color=black@{scrim_opacity}"
+        f":t=fill"
     )
 
-    # Build drawtext filter for the number (with dark border for contrast)
+    # Number overlay — large headline stat (DejaVu Serif Bold)
     num_filter = (
-        f"drawtext=text='{safe_number}'"
+        f"drawtext=textfile={num_txt_path}"
+        f":expansion=none"
         f":fontsize={number_size}"
-        f":fontcolor={num_hex}"
-        f":borderw=3:bordercolor=black@0.6"
+        f":fontcolor=0x{number_color.lstrip('#')}"
+        f":borderw=3"
+        f":bordercolor=0x000000@0.6"
         f":x=(w-text_w)/2"
-        f":y=(h-text_h)/2+({number_y_offset})"
+        f":y=h/2-text_h/2-{abs(number_y_offset)}"
     )
     if font_serif:
-        num_filter += f":fontfile='{font_serif}'"
+        num_filter += f":fontfile={font_serif}"
 
-    # Build drawtext filter for the label (with dark border for contrast)
+    # Label overlay — short context phrase (DejaVu Sans)
     lbl_filter = (
-        f"drawtext=text='{safe_label}'"
+        f"drawtext=textfile={lbl_txt_path}"
+        f":expansion=none"
         f":fontsize={label_size}"
-        f":fontcolor={label_hex}"
-        f":borderw=2:bordercolor=black@0.5"
+        f":fontcolor=0x{label_color.lstrip('#')}"
+        f":borderw=2"
+        f":bordercolor=0x000000@0.5"
         f":x=(w-text_w)/2"
-        f":y=(h-text_h)/2+({label_y_offset})"
+        f":y=h/2-text_h/2+{abs(label_y_offset)}"
     )
     if font_sans:
-        lbl_filter += f":fontfile='{font_sans}'"
+        lbl_filter += f":fontfile={font_sans}"
 
     filter_chain = f"{num_filter},{lbl_filter}"
     if scrim_opacity > 0:
@@ -2115,10 +2137,15 @@ def eGenerateOpeningFrame(
         '-c:a', 'copy',
         output_file,
     ]
-    print(f"  ffmpeg filter: {filter_chain[:200]}...")
+    print(f"  ffmpeg -vf: {filter_chain}")
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode != 0:
         raise RuntimeError(f"ffmpeg overlay failed:\n{r.stderr}")
+
+    # Cleanup temp text files
+    for p in [num_txt_path, lbl_txt_path]:
+        if os.path.exists(p):
+            os.remove(p)
 
     print(f"Overlay applied -> {output_file}")
     return output_file
