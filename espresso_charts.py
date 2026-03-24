@@ -1901,6 +1901,7 @@ def eGenerateOpeningFrame(
     duration_seconds=5,
     poll_interval=15,
     max_wait=300,
+    scrim_opacity=0.45,
     gemini_api_key=None,
     gcp_project="main-voltage-446412-p1",
     gcp_location="us-central1",
@@ -1948,6 +1949,9 @@ def eGenerateOpeningFrame(
         Vertical pixel offset from center for the label (positive = down).
     duration_seconds : int
         Target clip duration to request from Gemini.
+    scrim_opacity : float
+        Opacity of the dark scrim behind the text (0.0 = invisible, 1.0 = solid
+        black). Default 0.45. Set to 0 to disable the scrim entirely.
     poll_interval : int
         Seconds between status polls.
     max_wait : int
@@ -2053,22 +2057,33 @@ def eGenerateOpeningFrame(
     num_hex   = number_color.lstrip("#")
     label_hex = label_color.lstrip("#")
 
-    # Build drawtext filter for the number
+    # Semi-transparent dark scrim behind the text zone for readability.
+    # Covers the vertical band where number + label sit (center ± 150px).
+    scrim_y = f"(h/2)+{number_y_offset}-100"
+    scrim_h = abs(number_y_offset) + abs(label_y_offset) + 200
+    scrim_filter = (
+        f"drawbox=x=0:y={scrim_y}:w=iw:h={scrim_h}"
+        f":color=black@{scrim_opacity}:t=fill"
+    )
+
+    # Build drawtext filter for the number (with dark border for contrast)
     num_filter = (
         f"drawtext=text='{number_text}'"
         f":fontsize={number_size}"
         f":fontcolor={num_hex}"
+        f":borderw=3:bordercolor=black@0.6"
         f":x=(w-text_w)/2"
         f":y=(h-text_h)/2+{number_y_offset}"
     )
     if font_serif:
         num_filter += f":fontfile='{font_serif}'"
 
-    # Build drawtext filter for the label
+    # Build drawtext filter for the label (with dark border for contrast)
     lbl_filter = (
         f"drawtext=text='{label_text}'"
         f":fontsize={label_size}"
         f":fontcolor={label_hex}"
+        f":borderw=2:bordercolor=black@0.5"
         f":x=(w-text_w)/2"
         f":y=(h-text_h)/2+{label_y_offset}"
     )
@@ -2076,6 +2091,8 @@ def eGenerateOpeningFrame(
         lbl_filter += f":fontfile='{font_sans}'"
 
     filter_chain = f"{num_filter},{lbl_filter}"
+    if scrim_opacity > 0:
+        filter_chain = f"{scrim_filter},{filter_chain}"
 
     cmd = [
         'ffmpeg', '-y',
