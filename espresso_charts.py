@@ -73,16 +73,15 @@ def install_espresso_fonts():
     FONT_DIR.mkdir(parents=True, exist_ok=True)
 
     fonts = [
-        ("PlayfairDisplay-Regular.ttf",
-         "https://raw.githubusercontent.com/google/fonts/main/ofl/playfairdisplay/static/PlayfairDisplay-Regular.ttf"),
-        ("PlayfairDisplay-Medium.ttf",
-         "https://raw.githubusercontent.com/google/fonts/main/ofl/playfairdisplay/static/PlayfairDisplay-Medium.ttf"),
-        ("SourceSerif4-Regular.ttf",
-         "https://raw.githubusercontent.com/google/fonts/main/ofl/sourceserif4/static/SourceSerif4-Regular.ttf"),
-        ("SourceSerif4-Light.ttf",
-         "https://raw.githubusercontent.com/google/fonts/main/ofl/sourceserif4/static/SourceSerif4-Light.ttf"),
-        ("SourceSerif4-Italic.ttf",
-         "https://raw.githubusercontent.com/google/fonts/main/ofl/sourceserif4/static/SourceSerif4-Italic.ttf"),
+        # Playfair Display — variable font from google/fonts repo
+        ("PlayfairDisplay[wght].ttf",
+         "https://raw.githubusercontent.com/google/fonts/main/ofl/playfairdisplay/PlayfairDisplay%5Bwght%5D.ttf"),
+        # Source Serif 4 — variable font from google/fonts repo
+        ("SourceSerif4[opsz,wght].ttf",
+         "https://raw.githubusercontent.com/google/fonts/main/ofl/sourceserif4/SourceSerif4%5Bopsz%2Cwght%5D.ttf"),
+        ("SourceSerif4-Italic[opsz,wght].ttf",
+         "https://raw.githubusercontent.com/google/fonts/main/ofl/sourceserif4/SourceSerif4-Italic%5Bopsz%2Cwght%5D.ttf"),
+        # DM Mono — static TTFs (still available)
         ("DMMono-Regular.ttf",
          "https://raw.githubusercontent.com/google/fonts/main/ofl/dmmono/DMMono-Regular.ttf"),
         ("DMMono-Light.ttf",
@@ -1968,19 +1967,21 @@ def eAddAudio(video_file, output_file="espresso_final.mp4",
 
 def _find_font(filename):
     """Locate a font file on the system. Returns path string or None."""
-    # Try common font directories (covers Ubuntu, Colab, macOS)
-    search_dirs = ["/usr/share/fonts", "/usr/local/share/fonts",
-                   "/usr/lib/fonts", "/System/Library/Fonts"]
+    # Check espresso font dir first (known install location)
+    espresso_dir = "/usr/local/share/fonts/espresso"
+    direct_path = os.path.join(espresso_dir, filename)
+    if os.path.exists(direct_path):
+        return direct_path
+    # Try common font directories with os.walk (handles brackets in filenames)
+    search_dirs = ["/usr/local/share/fonts", "/usr/share/fonts"]
     for d in search_dirs:
-        result = subprocess.run(
-            ["find", d, "-name", filename],
-            capture_output=True, text=True
-        )
-        paths = result.stdout.strip().split("\n")
-        if paths and paths[0]:
-            return paths[0]
-    # Fallback: use fc-match to find closest system match
-    base = filename.replace(".ttf", "").replace("-Bold", ":style=Bold")
+        if not os.path.isdir(d):
+            continue
+        for root, dirs, files in os.walk(d):
+            if filename in files:
+                return os.path.join(root, filename)
+    # Fallback: fc-match
+    base = filename.split("[")[0].split(".")[0]  # strip brackets and extension
     result = subprocess.run(
         ["fc-match", "--format=%{file}", base],
         capture_output=True, text=True
@@ -2153,11 +2154,12 @@ def eGenerateOpeningFrame(
     print(f"Raw clip saved -> {raw_path}  ({raw_dur:.1f}s)")
 
     # --- 5. Overlay text with ffmpeg drawtext ---
-    font_serif = (_find_font("PlayfairDisplay-Medium.ttf")
-                  or _find_font("PlayfairDisplay-Regular.ttf")
+    font_serif = (_find_font("PlayfairDisplay[wght].ttf")
+                  or _find_font("PlayfairDisplay-Medium.ttf")
                   or _find_font("DejaVuSerif-Bold.ttf")
                   or _find_font("DejaVuSerif.ttf"))
-    font_sans  = (_find_font("SourceSerif4-Regular.ttf")
+    font_sans  = (_find_font("SourceSerif4[opsz,wght].ttf")
+                  or _find_font("SourceSerif4-Regular.ttf")
                   or _find_font("DMMono-Regular.ttf")
                   or _find_font("DejaVuSans.ttf"))
     print(f"  Fonts: serif={font_serif}, sans={font_sans}")
