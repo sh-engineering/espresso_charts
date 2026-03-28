@@ -780,7 +780,7 @@ def eStemChartNewInstagram(
     instagram=True, px_width=1080, px_height=1350, dpi=200,
     suptitle_size=None, subtitle_size=None, label_size=12,
     aspect_ratio=None, rotate_labels=False,
-    xtick_align_ha="center", xtick_align_va="bottom",
+    xtick_align_ha="center", xtick_align_va="top",
     value_label_offset_pts=6, value_label_offset_y=None, value_label_offset_x=None,
     x_axis_line_width=0.8, x_axis_line_color="#857052",
     line_format_a="--", line_format_b="--",
@@ -843,7 +843,7 @@ def eStemChartNewInstagram(
     for lbl in ax.get_xticklabels():
         x0, y0 = lbl.get_position()
         lbl.set_position((x0, y0 + x_tick_label_y_offset))
-    ax.tick_params(axis="x", length=0)
+    ax.tick_params(axis="x", length=0, pad=8)
     ax.set_yticks([])
 
     if reference_bands: add_reference_bands(ax, reference_bands, orientation='horizontal')
@@ -1452,7 +1452,7 @@ def eStemChartAnimateInstagram(
     instagram=True, px_width=1080, px_height=1920, dpi=200,
     suptitle_size=None, subtitle_size=None, label_size=12,
     aspect_ratio=None,
-    rotate_labels=False, xtick_align_ha="center", xtick_align_va="bottom",
+    rotate_labels=False, xtick_align_ha="center", xtick_align_va="top",
     value_label_offset_pts=6, value_label_offset_y=None, value_label_offset_x=None,
     value_label_custom_offset=None,
     x_axis_line_width=0.8, x_axis_line_color="#857052",
@@ -1517,7 +1517,7 @@ def eStemChartAnimateInstagram(
     for lbl in ax.get_xticklabels():
         x0, y0 = lbl.get_position()
         lbl.set_position((x0, y0 + x_tick_label_y_offset))
-    ax.tick_params(axis="x", length=0); ax.set_yticks([])
+    ax.tick_params(axis="x", length=0, pad=8); ax.set_yticks([])
 
     def _resolve_offsets(i, val, g_y, per_y, per_x, legacy):
         base_y  = g_y if val >= 0 else -g_y
