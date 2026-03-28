@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 espresso_charts.py — Espresso Charts Library (v2 — Standardized Layout)
+Fonts: Playfair Display (display) · Source Serif 4 (body) · DM Mono (mono)
+Install fonts before use: install_espresso_fonts()
 ========================================================================
 Chart functions for Instagram carousels (4:5) and Reels (9:16).
 
@@ -54,14 +56,69 @@ from sklearn.linear_model import LinearRegression
 
 warnings.filterwarnings("ignore")
 
+
+# ============================================================================
+# FONT INSTALLER
+# ============================================================================
+
+def install_espresso_fonts():
+    """
+    Download and install the Espresso Charts font set from Google Fonts GitHub.
+    Run once per Colab session before rendering any charts.
+    Fonts installed: Playfair Display, Source Serif 4, DM Mono.
+    """
+    from pathlib import Path as _Path
+
+    FONT_DIR = _Path("/usr/local/share/fonts/espresso")
+    FONT_DIR.mkdir(parents=True, exist_ok=True)
+
+    fonts = [
+        ("PlayfairDisplay-Regular.ttf",
+         "https://github.com/google/fonts/raw/main/ofl/playfairdisplay/static/PlayfairDisplay-Regular.ttf"),
+        ("PlayfairDisplay-Medium.ttf",
+         "https://github.com/google/fonts/raw/main/ofl/playfairdisplay/static/PlayfairDisplay-Medium.ttf"),
+        ("SourceSerif4-Regular.ttf",
+         "https://github.com/google/fonts/raw/main/ofl/sourceserif4/static/SourceSerif4-Regular.ttf"),
+        ("SourceSerif4-Light.ttf",
+         "https://github.com/google/fonts/raw/main/ofl/sourceserif4/static/SourceSerif4-Light.ttf"),
+        ("SourceSerif4-Italic.ttf",
+         "https://github.com/google/fonts/raw/main/ofl/sourceserif4/static/SourceSerif4-Italic.ttf"),
+        ("DMMono-Regular.ttf",
+         "https://github.com/google/fonts/raw/main/ofl/dmmono/DMMono-Regular.ttf"),
+        ("DMMono-Light.ttf",
+         "https://github.com/google/fonts/raw/main/ofl/dmmono/DMMono-Light.ttf"),
+    ]
+
+    for filename, url in fonts:
+        dest = FONT_DIR / filename
+        if dest.exists():
+            print(f"  Already installed: {filename}")
+            continue
+        r = requests.get(url)
+        if r.status_code == 200:
+            dest.write_bytes(r.content)
+            print(f"  Installed: {filename}")
+        else:
+            print(f"  FAILED ({r.status_code}): {filename}")
+
+    fm.fontManager.__init__()
+    fm._load_fontmanager(try_read_cache=False)
+    print("\nFont cache rebuilt.")
+    print("Ready: Playfair Display, Source Serif 4, DM Mono")
+
+
 # ============================================================================
 # STYLE CONFIG
 # ============================================================================
 color_blue   = '#3F5B83'
-color_orange = '#DD6B20'
+color_orange = '#A14516'
 color_green  = '#4D5523'
 color_sand   = '#CDAF7B'
 face_color   = '#F5F0E6'
+
+font_display = 'Playfair Display'   # headlines, suptitle, cover, opening numbers
+font_body    = 'Source Serif 4'     # subtitles, body text
+font_mono    = 'DM Mono'            # labels, ticks, source lines, data values
 
 
 # ============================================================================
@@ -106,9 +163,9 @@ _LAYOUT = {
 _SUPTITLE_SIZE = 26
 _SUBTITLE_SIZE = 14
 _FOOTNOTE_SIZE = 9
-_SUPTITLE_FONT = 'DejaVu Serif'
-_SUBTITLE_FONT = 'DejaVu Sans'
-_BODY_FONT     = 'DejaVu Sans'
+_SUPTITLE_FONT = 'Playfair Display'
+_SUBTITLE_FONT = 'Source Serif 4'
+_BODY_FONT     = 'DM Mono'
 
 
 def _setup_chart(layout='4x5', face_color='#F5F0E6', dpi=200,
@@ -340,7 +397,7 @@ def add_text(ax, texts):
             fontsize=txt.get('fontsize', 12), color=txt.get('color', '#4b2e1a'),
             ha=txt.get('ha', 'left'), va=txt.get('va', 'bottom'),
             fontweight=txt.get('fontweight', 'normal'), rotation=txt.get('rotation', 0),
-            alpha=txt.get('alpha', 1.0), family=txt.get('family', 'DejaVu Sans'),
+            alpha=txt.get('alpha', 1.0), family=txt.get('family', 'DM Mono'),
             linespacing=txt.get('linespacing', 1.2), zorder=txt.get('zorder', 10))
     return ax
 
@@ -366,7 +423,7 @@ def eSingleBarChartNewInstagram(
                     '#79664a','#d9d0c1','#0b0a07'),
     suptitle_font_weight='normal', subtitle_font_weight='normal',
     txt_label_font_weight='normal',
-    font='DejaVu Sans', suptitle_font=None, subtitle_font=None,
+    font='DM Mono', suptitle_font=None, subtitle_font=None,
     show_zero_line=False, zero_line_color='#4b2e1a',
     zero_line_style='--', zero_line_width=1.0,
     instagram=True, px_width=1080, px_height=1350, dpi=200,
@@ -705,7 +762,7 @@ def eStemChartNewInstagram(
     legend_font_size=10, legend_frame=False, legend_text_color='#3c3325',
     legend_bbox_to_anchor=None, y_min=None, y_max=None,
     show_x_axis=False, reference_bands=None, vlines=None, hlines=None,
-    font='DejaVu Sans', suptitle_font=None, subtitle_font=None,
+    font='DM Mono', suptitle_font=None, subtitle_font=None,
     # Legacy params — accepted but ignored in v2
     suptitle_y=None, subtitle_y=None, subtitle_pad=None, labelpad=None,
 ):
@@ -847,7 +904,7 @@ def eDonutChartInstagram(
     face_color='#F5F0E6',
     suptitle_font_weight='medium', subtitle_font_weight='light', txt_label_font_weight='light',
     suptitle_size=None, subtitle_size=None, label_size=10, bottom_note_size=None,
-    font='DejaVu Sans', suptitle_font=None, subtitle_font=None,
+    font='DM Mono', suptitle_font=None, subtitle_font=None,
     figsize=(8, 8), dpi=200, px=1080, instagram=True, instagram_format='4x5',
     # Legacy params — accepted but ignored in v2
     suptitle_y=None, subtitle_y=None, label_y=None,
@@ -946,18 +1003,18 @@ def eDonutChartInstagram(
 # ============================================================================
 def eCoverTileInstagram(
     txt_suptitle, txt_subtitle, txt_label="",
-    suptitle_color='#4b2e1a', suptitle_font='DejaVu Serif',
+    suptitle_color='#4b2e1a', suptitle_font='Playfair Display',
     suptitle_font_weight='normal', suptitle_size=42, suptitle_y=0.6,
-    subtitle_color='#4b2e1a', subtitle_font='DejaVu Sans',
+    subtitle_color='#4b2e1a', subtitle_font='DM Mono',
     subtitle_font_weight='normal', subtitle_size=18, subtitle_y=0.38,
-    txt_label_color='#857052', txt_label_font='DejaVu Sans',
+    txt_label_color='#857052', txt_label_font='DM Mono',
     txt_label_font_weight='light', label_size=11, label_y=0.06,
     face_color='#F5F0E6', px_width=1080, px_height=1350, dpi=200,
     show_accent_line=True, accent_line_color='#3F5B83', accent_line_width=4,
     accent_line_y=0.48, accent_line_length=0.15,
 ):
     """Cover tile — full-bleed typography, no plot area. Layout is custom per design."""
-    plt.rcdefaults(); plt.rcParams['font.family'] = 'DejaVu Sans'
+    plt.rcdefaults(); plt.rcParams['font.family'] = 'DM Mono'
     figsize = (px_width / dpi, px_height / dpi)
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=face_color)
     ax.set_facecolor(face_color); ax.set_xlim(0, 1); ax.set_ylim(0, 1); ax.axis('off')
@@ -1023,7 +1080,7 @@ def eSingleBarChartAnimateInstagram(
                     '#79664a','#d9d0c1','#0b0a07'),
     suptitle_font_weight='normal', subtitle_font_weight='normal',
     txt_label_font_weight='normal',
-    font='DejaVu Sans', suptitle_font=None, subtitle_font=None,
+    font='DM Mono', suptitle_font=None, subtitle_font=None,
     show_zero_line=False, zero_line_color='#4b2e1a',
     zero_line_style='--', zero_line_width=1.0,
     instagram=True, px_width=1080, px_height=1920, dpi=200,
@@ -1376,7 +1433,7 @@ def eStemChartAnimateInstagram(
     show_legend=False, legend_labels=None, legend_loc='upper right',
     legend_font_size=10, legend_frame=False, legend_text_color='#3c3325',
     legend_bbox_to_anchor=None, y_min=None, y_max=None,
-    font='DejaVu Sans', suptitle_font=None, subtitle_font=None,
+    font='DM Mono', suptitle_font=None, subtitle_font=None,
     reference_bands=None, vlines=None, hlines=None,
     # Legacy params
     suptitle_y=None, subtitle_y=None, subtitle_pad=None, labelpad=None,
@@ -1518,7 +1575,7 @@ def eDonutChartAnimateInstagram(
     suptitle_color='#4b2e1a', subtitle_color='#4b2e1a', txt_label_color='#857052',
     face_color='#F5F0E6', suptitle_font_weight='medium', subtitle_font_weight='light',
     txt_label_font_weight='light', suptitle_size=None, subtitle_size=None,
-    label_size=10, bottom_note_size=None, font='DejaVu Sans',
+    label_size=10, bottom_note_size=None, font='DM Mono',
     suptitle_font=None, subtitle_font=None,
     figsize=(8,8), dpi=200, px=1080, instagram=True, instagram_format='9x16',
     # Legacy params
@@ -1622,11 +1679,11 @@ def eCoverTileAnimateInstagram(
     duration=1.5, hold_duration=1.0, fps=30,
     output_file="espresso_cover_animated.mp4", easing='cubic',
     tw_suptitle_start=0.0, tw_suptitle_end=0, tw_subtitle_start=0, tw_subtitle_end=0,
-    suptitle_color='#4b2e1a', suptitle_font='DejaVu Serif', suptitle_font_weight='normal',
+    suptitle_color='#4b2e1a', suptitle_font='Playfair Display', suptitle_font_weight='normal',
     suptitle_size=42, suptitle_y=0.6,
-    subtitle_color='#4b2e1a', subtitle_font='DejaVu Sans', subtitle_font_weight='normal',
+    subtitle_color='#4b2e1a', subtitle_font='DM Mono', subtitle_font_weight='normal',
     subtitle_size=18, subtitle_y=0.38,
-    txt_label_color='#857052', txt_label_font='DejaVu Sans', txt_label_font_weight='light',
+    txt_label_color='#857052', txt_label_font='DM Mono', txt_label_font_weight='light',
     label_size=11, label_y=0.06,
     face_color='#F5F0E6', px_width=1080, px_height=1920, dpi=200,
     show_accent_line=True, accent_line_color='#3F5B83', accent_line_width=4,
@@ -1635,7 +1692,7 @@ def eCoverTileAnimateInstagram(
 ):
     """Animated cover tile — full-bleed typography, no plot area. Layout is custom per design."""
     ease_fn = _EASING.get(easing, _ease_out_cubic)
-    plt.rcdefaults(); plt.rcParams['font.family'] = 'DejaVu Sans'
+    plt.rcdefaults(); plt.rcParams['font.family'] = 'DM Mono'
     plt.rcParams["savefig.bbox"] = "standard"
     figsize = (px_width/dpi, px_height/dpi)
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=face_color)
@@ -2068,9 +2125,44 @@ def eGenerateOpeningFrame(
     print(f"Raw clip saved -> {raw_path}  ({raw_dur:.1f}s)")
 
     # --- 5. Overlay text with ffmpeg drawtext ---
-    font_serif = _find_font("DejaVuSerif-Bold.ttf") or _find_font("DejaVuSerif.ttf")
-    font_sans  = _find_font("DejaVuSans.ttf")
+    font_serif = (_find_font("PlayfairDisplay-Medium.ttf")
+                  or _find_font("PlayfairDisplay-Regular.ttf")
+                  or _find_font("DejaVuSerif-Bold.ttf")
+                  or _find_font("DejaVuSerif.ttf"))
+    font_sans  = (_find_font("SourceSerif4-Regular.ttf")
+                  or _find_font("DMMono-Regular.ttf")
+                  or _find_font("DejaVuSans.ttf"))
     print(f"  Fonts: serif={font_serif}, sans={font_sans}")
+
+    # Probe actual video dimensions (Veo may not produce exactly 1080x1920)
+    probe_cmd = ['ffprobe', '-v', 'quiet', '-print_format', 'json',
+                 '-show_streams', raw_path]
+    probe_r = subprocess.run(probe_cmd, capture_output=True, text=True)
+    vid_w, vid_h = 1080, 1920  # defaults
+    if probe_r.returncode == 0:
+        streams = json.loads(probe_r.stdout).get('streams', [])
+        for s in streams:
+            if s.get('codec_type') == 'video':
+                vid_w = int(s['width'])
+                vid_h = int(s['height'])
+                break
+    print(f"  Video dimensions: {vid_w}x{vid_h}")
+
+    # Compute absolute pixel positions (no ffmpeg expressions)
+    center_y = vid_h // 2
+    # Approximate text heights: number ~130px at fontsize 130, label ~36px at fontsize 36
+    num_text_h = int(number_size * 1.0)
+    lbl_text_h = int(label_size * 1.0)
+
+    num_y = center_y + number_y_offset - num_text_h // 2  # number_y_offset is negative = up
+    lbl_y = center_y + label_y_offset - lbl_text_h // 2
+
+    # Scrim: covers from above number to below label
+    scrim_y = num_y - 40
+    scrim_bottom = lbl_y + lbl_text_h + 40
+    scrim_h = scrim_bottom - scrim_y
+
+    print(f"  Positions: number_y={num_y}, label_y={lbl_y}, scrim={scrim_y}-{scrim_bottom} (h={scrim_h})")
 
     # Write text to temp files to avoid ALL ffmpeg escaping issues (%, quotes, colons)
     num_txt_path = raw_path.replace("_raw.mp4", "_num.txt")
@@ -2079,47 +2171,33 @@ def eGenerateOpeningFrame(
         f.write(number_text)
     with open(lbl_txt_path, "w") as f:
         f.write(label_text)
-    print(f"  Number text: '{number_text}' -> {num_txt_path}")
-    print(f"  Label text:  '{label_text}' -> {lbl_txt_path}")
 
-    # Scrim: full-width dark band centered on the text zone.
-    # number sits at (h/2 + number_y_offset), label at (h/2 + label_y_offset).
-    # Pad 120px above number center, 80px below label center.
-    scrim_y_expr = f"h/2-{abs(number_y_offset)}-120"
-    scrim_h_val  = abs(number_y_offset) + abs(label_y_offset) + 200
+    # Build filters with hardcoded pixel positions
     scrim_filter = (
-        f"drawbox=x=0"
-        f":y={scrim_y_expr}"
-        f":w=iw"
-        f":h={scrim_h_val}"
-        f":color=black@{scrim_opacity}"
-        f":t=fill"
+        f"drawbox=x=0:y={scrim_y}:w={vid_w}:h={scrim_h}"
+        f":color=black@{scrim_opacity}:t=fill"
     )
 
-    # Number overlay — large headline stat (DejaVu Serif Bold)
     num_filter = (
         f"drawtext=textfile={num_txt_path}"
         f":expansion=none"
         f":fontsize={number_size}"
         f":fontcolor=0x{number_color.lstrip('#')}"
-        f":borderw=3"
-        f":bordercolor=0x000000@0.6"
-        f":x=(w-text_w)/2"
-        f":y=h/2-text_h/2-{abs(number_y_offset)}"
+        f":borderw=3:bordercolor=0x000000@0.6"
+        f":x=({vid_w}-text_w)/2"
+        f":y={num_y}"
     )
     if font_serif:
         num_filter += f":fontfile={font_serif}"
 
-    # Label overlay — short context phrase (DejaVu Sans)
     lbl_filter = (
         f"drawtext=textfile={lbl_txt_path}"
         f":expansion=none"
         f":fontsize={label_size}"
         f":fontcolor=0x{label_color.lstrip('#')}"
-        f":borderw=2"
-        f":bordercolor=0x000000@0.5"
-        f":x=(w-text_w)/2"
-        f":y=h/2-text_h/2+{abs(label_y_offset)}"
+        f":borderw=2:bordercolor=0x000000@0.5"
+        f":x=({vid_w}-text_w)/2"
+        f":y={lbl_y}"
     )
     if font_sans:
         lbl_filter += f":fontfile={font_sans}"
