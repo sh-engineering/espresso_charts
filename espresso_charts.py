@@ -74,48 +74,53 @@ def install_espresso_fonts():
 
     fonts = [
         ("PlayfairDisplay-Regular.ttf",
-         "https://github.com/google/fonts/raw/main/ofl/playfairdisplay/static/PlayfairDisplay-Regular.ttf"),
+         "https://raw.githubusercontent.com/google/fonts/main/ofl/playfairdisplay/static/PlayfairDisplay-Regular.ttf"),
         ("PlayfairDisplay-Medium.ttf",
-         "https://github.com/google/fonts/raw/main/ofl/playfairdisplay/static/PlayfairDisplay-Medium.ttf"),
+         "https://raw.githubusercontent.com/google/fonts/main/ofl/playfairdisplay/static/PlayfairDisplay-Medium.ttf"),
         ("SourceSerif4-Regular.ttf",
-         "https://github.com/google/fonts/raw/main/ofl/sourceserif4/static/SourceSerif4-Regular.ttf"),
+         "https://raw.githubusercontent.com/google/fonts/main/ofl/sourceserif4/static/SourceSerif4-Regular.ttf"),
         ("SourceSerif4-Light.ttf",
-         "https://github.com/google/fonts/raw/main/ofl/sourceserif4/static/SourceSerif4-Light.ttf"),
+         "https://raw.githubusercontent.com/google/fonts/main/ofl/sourceserif4/static/SourceSerif4-Light.ttf"),
         ("SourceSerif4-Italic.ttf",
-         "https://github.com/google/fonts/raw/main/ofl/sourceserif4/static/SourceSerif4-Italic.ttf"),
+         "https://raw.githubusercontent.com/google/fonts/main/ofl/sourceserif4/static/SourceSerif4-Italic.ttf"),
         ("DMMono-Regular.ttf",
-         "https://github.com/google/fonts/raw/main/ofl/dmmono/DMMono-Regular.ttf"),
+         "https://raw.githubusercontent.com/google/fonts/main/ofl/dmmono/DMMono-Regular.ttf"),
         ("DMMono-Light.ttf",
-         "https://github.com/google/fonts/raw/main/ofl/dmmono/DMMono-Light.ttf"),
+         "https://raw.githubusercontent.com/google/fonts/main/ofl/dmmono/DMMono-Light.ttf"),
     ]
 
     for filename, url in fonts:
         dest = FONT_DIR / filename
-        if dest.exists():
+        if dest.exists() and dest.stat().st_size > 1000:
             print(f"  Already installed: {filename}")
             continue
-        r = requests.get(url)
-        if r.status_code == 200:
+        r = requests.get(url, timeout=30)
+        if r.status_code == 200 and len(r.content) > 1000:
             dest.write_bytes(r.content)
             print(f"  Installed: {filename}")
         else:
             print(f"  FAILED ({r.status_code}): {filename}")
 
-    # Delete matplotlib's font cache to force a full rebuild
+    # Delete matplotlib's font cache
     import matplotlib as mpl
     cache_dir = _Path(mpl.get_cachedir())
     for cache_file in cache_dir.glob("fontlist-*.json"):
-        cache_file.unlink()
-        print(f"  Deleted cache: {cache_file.name}")
+        try:
+            cache_file.unlink()
+            print(f"  Deleted cache: {cache_file.name}")
+        except Exception:
+            pass
 
-    # Manually register each font with the font manager
+    # Rebuild font manager from scratch (clean slate)
+    fm._load_fontmanager(try_read_cache=False)
+
+    # Register our fonts LAST — nothing modifies the manager after this
     for filename, url in fonts:
         font_path = str(FONT_DIR / filename)
         try:
             fm.fontManager.addfont(font_path)
-            print(f"  Registered: {filename}")
-        except Exception as e:
-            print(f"  Register failed ({filename}): {e}")
+        except Exception:
+            pass
 
     # Verify fonts are found
     print()
