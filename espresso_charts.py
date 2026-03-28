@@ -101,10 +101,33 @@ def install_espresso_fonts():
         else:
             print(f"  FAILED ({r.status_code}): {filename}")
 
-    fm.fontManager.__init__()
-    fm._load_fontmanager(try_read_cache=False)
-    print("\nFont cache rebuilt.")
-    print("Ready: Playfair Display, Source Serif 4, DM Mono")
+    # Delete matplotlib's font cache to force a full rebuild
+    import matplotlib as mpl
+    cache_dir = _Path(mpl.get_cachedir())
+    for cache_file in cache_dir.glob("fontlist-*.json"):
+        cache_file.unlink()
+        print(f"  Deleted cache: {cache_file.name}")
+
+    # Manually register each font with the font manager
+    for filename, url in fonts:
+        font_path = str(FONT_DIR / filename)
+        try:
+            fm.fontManager.addfont(font_path)
+            print(f"  Registered: {filename}")
+        except Exception as e:
+            print(f"  Register failed ({filename}): {e}")
+
+    # Verify fonts are found
+    print()
+    for name in ['Playfair Display', 'Source Serif 4', 'DM Mono']:
+        try:
+            match = fm.findfont(fm.FontProperties(family=name))
+            found = name.lower().replace(' ', '') in match.lower().replace(' ', '')
+            print(f"  {'✓' if found else '✗'} {name} -> {match}")
+        except Exception:
+            print(f"  ✗ {name} -> NOT FOUND")
+
+    print("\nReady: Playfair Display, Source Serif 4, DM Mono")
 
 
 # ============================================================================
