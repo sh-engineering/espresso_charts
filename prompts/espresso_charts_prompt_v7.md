@@ -110,15 +110,68 @@ Identify **one current trending topic** (past 1-2 days) and find an **authoritat
 
 > Every data source MUST include a direct URL link. No Wikipedia, blog posts, news articles, or social media as primary data sources.
 
-### Data URL Support
+### Live Data Pipeline
 
-When the data source provides a downloadable CSV, JSON, or Excel file at a stable URL, include it in the config as `data_url`. The runner will fetch the data directly instead of using hardcoded values.
+Most authoritative sources have APIs. When possible, write the API URL directly into the JSON config under `data_source`. The runner fetches the data at render time, so charts always use the latest data.
 
-**When to use `data_url`:** FRED series, World Bank indicators, Our World in Data CSVs, any API endpoint returning tabular data.
+**Available APIs:**
 
-**When to use inline `data`:** Small datasets you've manually assembled (rankings, category breakdowns, curated comparisons), or when the source URL requires authentication or complex query parameters.
+|Source             |Format|URL pattern                                                                |
+|-------------------|------|---------------------------------------------------------------------------|
+|FRED               |JSON  |`https://api.stlouisfed.org/fred/series/observations?series_id=XXX&api_key={{FRED_API_KEY}}&file_type=json`|
+|World Bank         |JSON  |`https://api.worldbank.org/v2/country/all/indicator/XXX?format=json&date=2000:2024`|
+|Our World in Data  |CSV   |`https://raw.githubusercontent.com/owid/etl/master/etl/steps/data/garden/XXX`|
+|EIA (US Energy)    |JSON  |`https://api.eia.gov/v2/XXX?api_key={{EIA_API_KEY}}`|
+|Eurostat           |JSON  |`https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/XXX`|
+|NASA               |JSON  |`https://data.nasa.gov/resource/XXX.json`|
 
-If you use `data_url`, you must also include a `data_processing` field with instructions for cleaning the fetched data (column selection, filtering, renaming) since raw downloads often contain more columns than needed.
+API keys use `{{SECRET_NAME}}` syntax. The runner resolves these from Colab's `userdata` secrets at runtime.
+
+**`data_source` schema (per chart):**
+
+```json
+"data_source": [
+  {
+    "url": "https://api.stlouisfed.org/fred/series/observations?series_id=CPIAUCSL&api_key={{FRED_API_KEY}}&file_type=json&observation_start=2020-01-01",
+    "format": "json",
+    "path": "observations",
+    "pick": ["date", "value"],
+    "rename": {"date": "Date", "value": "CPI"},
+    "types": {"CPI": "float"},
+    "date_parse": ["Date"]
+  }
+],
+"post": {
+  "sort_by": "Date",
+  "dropna": true,
+  "tail": 48
+}
+```
+
+**Fields:**
+
+- `url` -- API endpoint. Use `{{SECRET_NAME}}` for API keys.
+- `format` -- "json", "csv", or "excel"
+- `path` -- dot-separated path to drill into JSON response (e.g. "observations", "data.records")
+- `pick` -- array of column names to keep
+- `rename` -- dict mapping old column names to new ones
+- `types` -- dict mapping column names to types ("float", "int", "str")
+- `date_parse` -- array of column names to parse as dates
+- `filter` -- dict mapping column names to values (or arrays of values) to keep
+
+**`post` (post-processing, separate field):**
+
+- `sort_by` -- column name to sort by
+- `ascending` -- boolean (default true)
+- `dropna` -- boolean, drop rows with missing values
+- `tail` / `head` -- keep last/first N rows
+- `columns` -- array of column names for final selection
+
+**When to use `data_source`:** FRED series, World Bank indicators, Our World in Data CSVs, any API returning tabular data. Strongly preferred over inline data.
+
+**When to use inline `data`:** Small manually assembled datasets (rankings, category breakdowns, curated comparisons), or sources without stable APIs.
+
+**Fallback:** You can provide both `data_source` and inline `data`. The runner tries `data_source` first. If the API call fails, inline data is the fallback.
 
 -----
 
@@ -218,6 +271,33 @@ The number renders in the brand's dark ink with the significant digits or leadin
   "accent_line_color": "#3F5B83"
 }
 ```
+
+**Background:** Flat parchment (#F5F0E6) throughout. No gradients, no textures. The warmth comes from the color, the typefaces, and the composition.
+
+**The whole frame reads in under two seconds.** Number, unit, insight, tagline. That is the sequence. That is the cover.
+
+### The Grid Rhythm
+
+The grid alternates between number covers and chart thumbnails naturally:
+
+|Day      |Post type         |Thumbnail character  |
+|---------|------------------|---------------------|
+|Monday   |Reel (Story 0)    |Number-led cover     |
+|Tuesday  |Carousel (Story 0)|Chart-led first slide|
+|Wednesday|Reel (Story 1)    |Number-led cover     |
+|Thursday |--                |--                   |
+|Friday   |Reel (Story 2)    |Number-led cover     |
+|Saturday |Carousel (Story 2)|Chart-led first slide|
+
+Two Reels in a row (Wednesday, Friday) are the only adjacency risk, but they are different stories with different numbers and different color accents.
+
+### The eCoverTileInstagram Function
+
+`eCoverTileInstagram` should use the number-led template described above. The mechanical differences between Reel cover (9:16) and carousel cover (4:5) are handled in params. The design logic is the same: lead with the dominant number, not a topic name.
+
+### Future: Print Poster
+
+The cover tile is the poster compressed to a phone screen for three seconds. The poster is the cover tile expanded to A2 for permanent display. The design language is identical: dominant number (Playfair italic, significant digits in blue), accent rule, one-sentence insight, chart, annotation band with milestone callouts, source attribution. The poster includes a DM Mono masthead (wordmark left, issue number right), a central chart with warm dashed grid lines and blue data line, and a pull-quote insight block. A small right-angle triangle in blue sits in the bottom-right corner as a geometric accent at 0.6 opacity. A reader who knows the Instagram content recognizes the poster immediately.
 
 -----
 
@@ -372,9 +452,18 @@ config = json.loads(r'''
     {
       "type": "bar|line|stem|donut",
       "data": { "DimCol": ["..."], "MeasureCol": ["..."] },
-      "data_url": "https://example.com/data.csv",
-      "data_format": "csv",
-      "data_date": "YYYY-MM-DD",
+      "data_source": [
+        {
+          "url": "https://api.example.com/data?key={{API_KEY}}",
+          "format": "json",
+          "path": "records",
+          "pick": ["date", "value"],
+          "rename": {"date": "Year", "value": "Amount"},
+          "types": {"Amount": "float"},
+          "date_parse": ["Year"]
+        }
+      ],
+      "post": { "sort_by": "Year", "dropna": true },
       "params": { "...chart-type-specific params..." }
     }
   ],
@@ -413,7 +502,7 @@ config = json.loads(r'''
 }
 ```
 
-> **DATA:** Each chart can use inline `data` (dict), `data_url` (string URL to CSV/JSON/Excel), or both (inline as fallback). When using `data_url`, also set `data_format` ("csv", "json", or "excel").
+> **DATA:** Each chart can use inline `data` (dict), `data_source` (array of API configs), or both (inline as fallback if API fails). Use `data_source` whenever a stable API exists. API keys use `{{SECRET_NAME}}` placeholders resolved from Colab userdata.
 
 > **COVER:** Generated for reel thumbnail and Substack header. Not included in the carousel sequence. Uses the number-led template.
 
@@ -687,7 +776,9 @@ font_mono    = 'DM Mono'            # labels, ticks, source lines
 - [ ] Each story passes the "change your sense of scale" filter
 - [ ] All captions end with subscribe CTA
 - [ ] Every `data_date` comment above hardcoded data blocks
-- [ ] `data_url` provided when a stable download URL exists
+- [ ] `data_source` with API URL provided when a stable API exists
+- [ ] API keys use `{{SECRET_NAME}}` syntax, not hardcoded values
+- [ ] `post` processing (sort, dropna) included when using `data_source`
 
 **No Em Dashes:**
 
