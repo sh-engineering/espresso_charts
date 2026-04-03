@@ -464,9 +464,17 @@ def eSingleBarChartNewInstagram(
     value_label_offset_y = _int_keys(value_label_offset_y)
 
     # --- Standardized layout ---
+    # Auto-detect if all values are negative to swap margins
+    all_negative = (df_chart[col_measure] < 0).all()
+    all_positive = (df_chart[col_measure] >= 0).all()
+    if all_negative:
+        p_left, p_right = 0.05, 0.75  # wide right margin for category labels
+    else:
+        p_left, p_right = 0.10, 0.80  # standard: right margin for value labels
+
     fig, ax, L = _setup_chart(
         layout='4x5', face_color=face_color, dpi=dpi,
-        plot_left=0.10, plot_right=0.80,  # bar charts need right margin for value labels
+        plot_left=p_left, plot_right=p_right,
     )
     _add_titles(fig, txt_suptitle, txt_subtitle, L,
                 suptitle_color=suptitle_color, subtitle_color=subtitle_color,
@@ -555,7 +563,7 @@ def eSingleBarChartNewInstagram(
             category, xy=(cat_anchor, y_center),
             xytext=(off_cat, 0), textcoords='offset points',
             ha='left', va='center', fontsize=label_size,
-            color=tick_label_color, zorder=6,
+            color=tick_label_color, zorder=6, clip_on=False,
             bbox=dict(boxstyle='square,pad=0.1', facecolor=face_color,
                       edgecolor='none', alpha=0.8))
 
@@ -575,7 +583,7 @@ def eSingleBarChartNewInstagram(
             formatted, xy=(tip, y_center),
             xytext=(off_val, y_extra), textcoords='offset points',
             ha=ha_val, va='center',
-            fontsize=label_size, color=value_label_color, zorder=6,
+            fontsize=label_size, color=value_label_color, zorder=6, clip_on=False,
             bbox=dict(boxstyle='square,pad=0', facecolor=face_color,
                       edgecolor=face_color, alpha=0.85))
 
@@ -2238,7 +2246,9 @@ def eGenerateOpeningFrame(
         f":y={num_y}"
     )
     if font_serif:
-        num_filter += f":fontfile={font_serif}"
+        # Escape [ ] in font paths — ffmpeg interprets them as filter graph syntax
+        safe_serif = font_serif.replace("[", "\\[").replace("]", "\\]")
+        num_filter += f":fontfile={safe_serif}"
 
     lbl_filter = (
         f"drawtext=textfile={lbl_txt_path}"
@@ -2250,7 +2260,8 @@ def eGenerateOpeningFrame(
         f":y={lbl_y}"
     )
     if font_sans:
-        lbl_filter += f":fontfile={font_sans}"
+        safe_sans = font_sans.replace("[", "\\[").replace("]", "\\]")
+        lbl_filter += f":fontfile={safe_sans}"
 
     filter_chain = f"{num_filter},{lbl_filter}"
     if scrim_opacity > 0:
