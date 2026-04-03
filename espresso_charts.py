@@ -1442,11 +1442,20 @@ def eMultiLineChartAnimateInstagram(
     if aspect_ratio is not None: ax.set_box_aspect(aspect_ratio)
 
     line_objects, dot_objects = [], []
+    moving_labels = []  # value label that tracks the leading edge
     for idx in range(len(col_measure_list)):
         ln, = ax.plot([], [], color=colors[idx], linestyle=styles[idx], linewidth=widths[idx], zorder=9)
         line_objects.append(ln)
         dt, = ax.plot([], [], 'o', color=colors[idx], markersize=5, zorder=10, linewidth=0, label='_nolegend_')
         dot_objects.append(dt)
+        # Moving value label: shows current interpolated value at the line tip
+        ml = ax.annotate('', xy=(0, 0), xytext=(8, 6), textcoords='offset points',
+                         ha='left', va='bottom', color=colors[idx],
+                         fontsize=label_size, fontweight='bold', zorder=12,
+                         bbox=dict(boxstyle='square,pad=0.15', facecolor=face_color,
+                                   edgecolor=face_color, alpha=0.85))
+        ml.set_visible(False)
+        moving_labels.append(ml)
 
     if show_legend:
         leg_labels = legend_labels_custom if legend_labels_custom is not None else labels
@@ -1512,9 +1521,11 @@ def eMultiLineChartAnimateInstagram(
             if full >= n_rows:
                 line_objects[li].set_data(x_arr, y_all)
                 dot_objects[li].set_data([x_arr[-1]], [y_all[-1]])
+                tip_x, tip_y = x_arr[-1], y_all[-1]
             elif full == 0:
                 line_objects[li].set_data([x_arr[0]], [y_all[0]])
                 dot_objects[li].set_data([x_arr[0]], [y_all[0]])
+                tip_x, tip_y = x_arr[0], y_all[0]
             else:
                 xs2 = list(x_arr[:full]); ys2 = list(y_all[:full])
                 if full < n_rows:
@@ -1522,6 +1533,17 @@ def eMultiLineChartAnimateInstagram(
                     ys2.append(y_all[full-1] + frac*(y_all[full]-y_all[full-1]))
                 line_objects[li].set_data(xs2, ys2)
                 dot_objects[li].set_data([xs2[-1]], [ys2[-1]])
+                tip_x, tip_y = xs2[-1], ys2[-1]
+            # Update moving value label at the leading edge
+            if progress > 0.01:
+                val = tip_y / num_divisor
+                try:    fmt_s = num_format.format(val)
+                except: fmt_s = str(val)
+                moving_labels[li].set_visible(True)
+                moving_labels[li].set_text(fmt_s)
+                moving_labels[li].xy = (tip_x, tip_y)
+            else:
+                moving_labels[li].set_visible(False)
         for vi, vt in enumerate(value_targets):
             if vt['pos'] < reveal - 0.5:
                 val_objs[vi].set_visible(True)
@@ -1531,7 +1553,7 @@ def eMultiLineChartAnimateInstagram(
                 val_objs[vi].set_visible(False)
         if shade_patch is not None:
             shade_patch.set_visible(progress >= 0.99)
-        return line_objects + dot_objects + val_objs
+        return line_objects + dot_objects + moving_labels + val_objs
 
     anim   = animation.FuncAnimation(fig, update, frames=total_frames, interval=1000/fps, blit=False)
     writer = animation.FFMpegWriter(fps=fps, bitrate=3000,
@@ -1933,19 +1955,27 @@ def eCoverTileAnimateInstagram(
     eyebrow_obj = ax.text(0.5, eyebrow_y, txt_eyebrow or "", fontfamily='DM Mono',
                           fontsize=eyebrow_size, color=eyebrow_color,
                           ha='center', va='center', transform=ax.transAxes, alpha=1, zorder=4)
-    # Hero number — starts at 0, counts up
-    initial_text = _format_number(0.0) if count_up else txt_suptitle
-    number_obj = ax.text(0.5, suptitle_y, initial_text, fontsize=suptitle_size,
+    # Hero number — shows final value from frame 1
+    number_obj = ax.text(0.5, suptitle_y, txt_suptitle, fontsize=suptitle_size,
                          color=suptitle_color, ha='center', va='center',
                          fontweight=suptitle_font_weight, fontstyle=suptitle_font_style,
                          fontfamily=suptitle_font, linespacing=0.9,
                          transform=ax.transAxes, alpha=1, zorder=4)
-    # Unit — starts invisible, fades in after count completes
+    # Unit — visible from frame 1
     uc = unit_color or suptitle_color
     unit_obj = ax.text(0.5, suptitle_y - 0.12, txt_unit or "", fontfamily=suptitle_font,
                        fontsize=unit_size, fontstyle='italic', fontweight='normal',
                        color=uc, ha='center', va='top',
-                       transform=ax.transAxes, alpha=0, zorder=4)
+                       transform=ax.transAxes, alpha=0.75 if txt_unit else 0, zorder=4)
+    # Position unit below number using bounding box
+    if txt_unit:
+        try:
+            renderer = fig.canvas.get_renderer()
+            bb = number_obj.get_window_extent(renderer=renderer)
+            bb_ax = bb.transformed(ax.transAxes.inverted())
+            unit_obj.set_position((0.5, bb_ax.y0 - descender_pad))
+        except Exception:
+            pass
     # Accent line — visible immediately
     accent_obj, = ax.plot([], [], color=accent_line_color, linewidth=accent_line_width,
                           solid_capstyle='round', transform=ax.transAxes, zorder=3)
@@ -1989,27 +2019,8 @@ def eCoverTileAnimateInstagram(
     total_frames = total_anim + hold_frames
 
     def update(frame):
-        p = 1.0 if frame >= total_anim else frame / total_anim
-
-        # Number: count up (0.0 - 0.70 of animation)
-        nr = _ep(p, 0.0, 0.70)
-        if count_up:
-            number_obj.set_text(_format_number(nr))
-
-        # Unit: fade in after count reaches ~60% (0.55 - 0.75)
-        if txt_unit:
-            ur = _ep(p, 0.55, 0.75)
-            unit_obj.set_alpha(ur * 0.75)
-            # Position unit below number using bounding box
-            try:
-                renderer = fig.canvas.get_renderer()
-                bb = number_obj.get_window_extent(renderer=renderer)
-                bb_ax = bb.transformed(ax.transAxes.inverted())
-                uy = bb_ax.y0 - descender_pad
-            except Exception:
-                uy = suptitle_y - 0.12
-            unit_obj.set_position((0.5, uy))
-
+        # Cover tile is fully visible from frame 1.
+        # The animation duration creates a hold before the chart animation starts.
         return [number_obj, unit_obj]
 
     anim = animation.FuncAnimation(fig, update, frames=total_frames, interval=1000/fps, blit=False)
