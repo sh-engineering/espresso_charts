@@ -1050,39 +1050,126 @@ def eDonutChartInstagram(
 # ============================================================================
 def eCoverTileInstagram(
     txt_suptitle, txt_subtitle, txt_label="",
-    suptitle_color='#4b2e1a', suptitle_font='Playfair Display',
-    suptitle_font_weight='normal', suptitle_size=42, suptitle_y=0.6,
-    subtitle_color='#4b2e1a', subtitle_font='DM Mono',
-    subtitle_font_weight='normal', subtitle_size=18, subtitle_y=0.38,
-    txt_label_color='#857052', txt_label_font='DM Mono',
-    txt_label_font_weight='light', label_size=11, label_y=0.06,
+    # New cover-specific parameters
+    txt_eyebrow="", txt_issue="", txt_unit=None, txt_context=None,
+    eyebrow_y=0.78, eyebrow_size=9, eyebrow_color='#9e8b76',
+    unit_size=14, unit_color=None,
+    context_y=0.27, context_size=12, context_color='#79664a',
+    issue_size=8, descender_pad=0.015,
+    show_corner_mark=False, corner_mark_size=28,
+    suptitle_font_style='italic',
+    # Existing parameters (some defaults updated)
+    suptitle_color='#2A1F14', suptitle_font='Playfair Display',
+    suptitle_font_weight='bold', suptitle_size=86, suptitle_y=0.60,
+    subtitle_color='#2A1F14', subtitle_font='Source Serif 4',
+    subtitle_font_weight='normal', subtitle_size=16, subtitle_y=0.38,
+    txt_label_color='#CDAF7B', txt_label_font='DM Mono',
+    txt_label_font_weight='light', label_size=8, label_y=0.038,
     face_color='#F5F0E6', px_width=1080, px_height=1350, dpi=200,
     show_accent_line=True, accent_line_color='#3F5B83', accent_line_width=4,
-    accent_line_y=0.48, accent_line_length=0.15,
+    accent_line_y=0.465, accent_line_length=0.15,
 ):
-    """Cover tile — full-bleed typography, no plot area. Layout is custom per design."""
+    """Number-led cover tile with editorial layout.
+
+    If hero number + unit overlaps the accent line, reduce suptitle_y
+    or reduce suptitle_size in the config.
+
+    Layers: background, top rule, corners, eyebrow, hero number,
+    unit, accent line, insight (txt_subtitle), context, bottom rule,
+    source, corner mark.
+    """
+    rule_color = '#C8BBA8'
     plt.rcdefaults(); plt.rcParams['font.family'] = 'DM Mono'
     figsize = (px_width / dpi, px_height / dpi)
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=face_color)
     ax.set_facecolor(face_color); ax.set_xlim(0, 1); ax.set_ylim(0, 1); ax.axis('off')
     for spine in ax.spines.values(): spine.set_visible(False)
-    texts = [
-        {'text': txt_suptitle, 'xy': (0.5, suptitle_y), 'fontsize': suptitle_size,
-         'color': suptitle_color, 'ha': 'center', 'va': 'center',
-         'fontweight': suptitle_font_weight, 'family': suptitle_font, 'linespacing': 1.1},
-        {'text': txt_subtitle, 'xy': (0.5, subtitle_y), 'fontsize': subtitle_size,
-         'color': subtitle_color, 'ha': 'center', 'va': 'center',
-         'fontweight': subtitle_font_weight, 'family': subtitle_font, 'linespacing': 1.3},
-    ]
-    if txt_label:
-        texts.append({'text': txt_label, 'xy': (0.5, label_y), 'fontsize': label_size,
-                      'color': txt_label_color, 'ha': 'center', 'va': 'center',
-                      'fontweight': txt_label_font_weight, 'family': txt_label_font})
-    add_text(ax, texts)
+
+    # Layer 2: Top rule
+    ax.plot([0.08, 0.92], [0.895, 0.895], color=rule_color, linewidth=0.6,
+            transform=ax.transAxes, zorder=3)
+
+    # Layer 3: Corner labels
+    if txt_issue:
+        ax.text(0.08, 0.925, f"No. {txt_issue}", fontfamily='DM Mono',
+                fontsize=issue_size, color='#9e8b76', ha='left', va='center',
+                transform=ax.transAxes, zorder=4)
+    ax.text(0.92, 0.925, "Espresso Charts", fontfamily='DM Mono',
+            fontsize=issue_size, color='#9e8b76', ha='right', va='center',
+            transform=ax.transAxes, zorder=4)
+
+    # Layer 4: Eyebrow
+    if txt_eyebrow:
+        ax.text(0.5, eyebrow_y, txt_eyebrow, fontfamily='DM Mono',
+                fontsize=eyebrow_size, color=eyebrow_color,
+                ha='center', va='center', transform=ax.transAxes, zorder=4)
+
+    # Layer 5: Hero number
+    suptitle_obj = ax.text(
+        0.5, suptitle_y, txt_suptitle, fontsize=suptitle_size,
+        color=suptitle_color, ha='center', va='center',
+        fontweight=suptitle_font_weight, fontstyle=suptitle_font_style,
+        fontfamily=suptitle_font, linespacing=0.9, transform=ax.transAxes, zorder=4)
+
+    # Layer 6: Unit line (with descender fix)
+    if txt_unit:
+        uc = unit_color or suptitle_color
+        try:
+            renderer = fig.canvas.get_renderer()
+            bb = suptitle_obj.get_window_extent(renderer=renderer)
+            bb_axes = bb.transformed(ax.transAxes.inverted())
+            unit_y = bb_axes.y0 - descender_pad
+        except Exception:
+            unit_y = suptitle_y - 0.12  # fallback
+        ax.text(0.5, unit_y, txt_unit, fontfamily=suptitle_font,
+                fontsize=unit_size, fontstyle='italic', fontweight='normal',
+                color=uc, alpha=0.75, ha='center', va='top',
+                transform=ax.transAxes, zorder=4)
+
+    # Layer 7: Accent line
     if show_accent_line:
         half = accent_line_length / 2
         ax.plot([0.5 - half, 0.5 + half], [accent_line_y, accent_line_y],
-                color=accent_line_color, linewidth=accent_line_width, solid_capstyle='round')
+                color=accent_line_color, linewidth=accent_line_width,
+                solid_capstyle='round', transform=ax.transAxes, zorder=3)
+
+    # Layer 8: Insight sentence (txt_subtitle)
+    ax.text(0.5, subtitle_y, txt_subtitle, fontsize=subtitle_size,
+            color=subtitle_color, ha='center', va='center',
+            fontweight='semibold', fontstyle='italic',
+            fontfamily=suptitle_font, linespacing=1.35,
+            transform=ax.transAxes, zorder=4)
+
+    # Layer 9: Context sentence
+    if txt_context:
+        ax.text(0.5, context_y, txt_context, fontfamily=subtitle_font,
+                fontsize=context_size, fontstyle='italic', fontweight='light',
+                color=context_color, ha='center', va='center',
+                linespacing=1.5, transform=ax.transAxes, zorder=4)
+
+    # Layer 10: Bottom rule
+    ax.plot([0.08, 0.92], [0.07, 0.07], color=rule_color, linewidth=0.6,
+            transform=ax.transAxes, zorder=3)
+
+    # Layer 11: Source line
+    if txt_label:
+        ax.text(0.5, label_y, txt_label, fontfamily='DM Mono',
+                fontsize=label_size, color=txt_label_color,
+                ha='center', va='center', fontweight=txt_label_font_weight,
+                transform=ax.transAxes, zorder=4)
+
+    # Layer 12: Corner mark
+    if show_corner_mark:
+        fig_w_pts = fig.get_size_inches()[0] * fig.dpi
+        fig_h_pts = fig.get_size_inches()[1] * fig.dpi
+        cx = corner_mark_size / fig_w_pts
+        cy = corner_mark_size / fig_h_pts
+        triangle = mpatches.Polygon(
+            [[1.0 - cx, 0.0], [1.0, 0.0], [1.0, cy]],
+            closed=True, facecolor=accent_line_color, edgecolor='none',
+            alpha=0.65, transform=ax.transAxes, zorder=5)
+        ax.add_patch(triangle)
+
     plt.tight_layout(pad=0)
     return fig, ax
 
@@ -1731,68 +1818,201 @@ def eDonutChartAnimateInstagram(
 # ============================================================================
 def eCoverTileAnimateInstagram(
     txt_suptitle, txt_subtitle, txt_label="",
-    duration=1.5, hold_duration=1.0, fps=30,
+    duration=3.5, hold_duration=2.0, fps=30,
     output_file="espresso_cover_animated.mp4", easing='cubic',
+    # Legacy typewriter params (ignored, kept for backward compat)
     tw_suptitle_start=0.0, tw_suptitle_end=0, tw_subtitle_start=0, tw_subtitle_end=0,
-    suptitle_color='#4b2e1a', suptitle_font='Playfair Display', suptitle_font_weight='normal',
-    suptitle_size=42, suptitle_y=0.6,
-    subtitle_color='#4b2e1a', subtitle_font='DM Mono', subtitle_font_weight='normal',
-    subtitle_size=18, subtitle_y=0.38,
-    txt_label_color='#857052', txt_label_font='DM Mono', txt_label_font_weight='light',
-    label_size=11, label_y=0.06,
+    # New cover-specific parameters
+    txt_eyebrow="", txt_issue="", txt_unit=None, txt_context=None,
+    eyebrow_y=0.78, eyebrow_size=9, eyebrow_color='#9e8b76',
+    unit_size=14, unit_color=None,
+    context_y=0.27, context_size=12, context_color='#79664a',
+    issue_size=8, descender_pad=0.015,
+    show_corner_mark=False, corner_mark_size=28,
+    suptitle_font_style='italic',
+    # Existing parameters (some defaults updated)
+    suptitle_color='#2A1F14', suptitle_font='Playfair Display', suptitle_font_weight='bold',
+    suptitle_size=86, suptitle_y=0.6,
+    subtitle_color='#2A1F14', subtitle_font='Source Serif 4', subtitle_font_weight='normal',
+    subtitle_size=16, subtitle_y=0.38,
+    txt_label_color='#CDAF7B', txt_label_font='DM Mono', txt_label_font_weight='light',
+    label_size=8, label_y=0.038,
     face_color='#F5F0E6', px_width=1080, px_height=1920, dpi=200,
     show_accent_line=True, accent_line_color='#3F5B83', accent_line_width=4,
-    accent_line_y=0.48, accent_line_length=0.15,
+    accent_line_y=0.465, accent_line_length=0.15,
+    # Legacy params (ignored)
     accent_line_start=0.40, accent_line_end=0.65,
 ):
-    """Animated cover tile — full-bleed typography, no plot area. Layout is custom per design."""
+    """Animated number-led cover tile with editorial reveal sequence.
+
+    Uses alpha fade + subtle drift (not typewriter). Each element appears
+    in a staggered sequence over the animation duration.
+    """
+    rule_color = '#C8BBA8'
     ease_fn = _EASING.get(easing, _ease_out_cubic)
     plt.rcdefaults(); plt.rcParams['font.family'] = 'DM Mono'
     plt.rcParams["savefig.bbox"] = "standard"
-    figsize = (px_width/dpi, px_height/dpi)
+    figsize = (px_width / dpi, px_height / dpi)
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=face_color)
-    ax.set_facecolor(face_color); ax.set_xlim(0,1); ax.set_ylim(0,1); ax.axis('off')
+    ax.set_facecolor(face_color); ax.set_xlim(0, 1); ax.set_ylim(0, 1); ax.axis('off')
     for spine in ax.spines.values(): spine.set_visible(False)
     fig.patch.set_facecolor(face_color)
     fig.patch.set_edgecolor(face_color)
     fig.patch.set_linewidth(0)
     fig.patch.set_alpha(1)
 
-    suptitle_obj = ax.text(0.5, suptitle_y, "", fontsize=suptitle_size, color=suptitle_color,
-                            ha='center', va='center', fontweight=suptitle_font_weight,
-                            fontfamily=suptitle_font, linespacing=1.1, transform=ax.transAxes)
-    subtitle_obj = ax.text(0.5, subtitle_y, "", fontsize=subtitle_size, color=subtitle_color,
-                            ha='center', va='center', fontweight=subtitle_font_weight,
-                            fontfamily=subtitle_font, linespacing=1.3, transform=ax.transAxes)
-    if txt_label:
-        ax.text(0.5, label_y, txt_label, fontsize=label_size, color=txt_label_color,
-                ha='center', va='center', fontweight=txt_label_font_weight,
-                fontfamily=txt_label_font, transform=ax.transAxes)
-    accent_line_obj, = ax.plot([], [], color=accent_line_color, linewidth=accent_line_width,
-                                solid_capstyle='round', transform=ax.transAxes)
-    total_anim   = int(fps * duration)
-    hold_frames  = int(fps * hold_duration)
+    def _ep(gp, start, end):
+        """Element progress: 0 before start, 0-1 during, 1 after end."""
+        if gp <= start: return 0.0
+        if gp >= end: return 1.0
+        return _ease_out_cubic((gp - start) / (end - start))
+
+    # Create all elements (initially invisible)
+    # Top rule
+    top_rule, = ax.plot([], [], color=rule_color, linewidth=0.6,
+                        transform=ax.transAxes, zorder=3)
+    # Corners
+    issue_obj = ax.text(0.08, 0.925, f"No. {txt_issue}" if txt_issue else "",
+                        fontfamily='DM Mono', fontsize=issue_size, color='#9e8b76',
+                        ha='left', va='center', transform=ax.transAxes, alpha=0, zorder=4)
+    brand_obj = ax.text(0.92, 0.925, "Espresso Charts", fontfamily='DM Mono',
+                        fontsize=issue_size, color='#9e8b76', ha='right', va='center',
+                        transform=ax.transAxes, alpha=0, zorder=4)
+    # Eyebrow
+    eyebrow_obj = ax.text(0.5, eyebrow_y, txt_eyebrow or "", fontfamily='DM Mono',
+                          fontsize=eyebrow_size, color=eyebrow_color,
+                          ha='center', va='center', transform=ax.transAxes, alpha=0, zorder=4)
+    # Hero number
+    number_obj = ax.text(0.5, suptitle_y, txt_suptitle, fontsize=suptitle_size,
+                         color=suptitle_color, ha='center', va='center',
+                         fontweight=suptitle_font_weight, fontstyle=suptitle_font_style,
+                         fontfamily=suptitle_font, linespacing=0.9,
+                         transform=ax.transAxes, alpha=0, zorder=4)
+    # Unit
+    uc = unit_color or suptitle_color
+    unit_obj = ax.text(0.5, suptitle_y - 0.12, txt_unit or "", fontfamily=suptitle_font,
+                       fontsize=unit_size, fontstyle='italic', fontweight='normal',
+                       color=uc, ha='center', va='top',
+                       transform=ax.transAxes, alpha=0, zorder=4)
+    # Accent line
+    accent_obj, = ax.plot([], [], color=accent_line_color, linewidth=accent_line_width,
+                          solid_capstyle='round', transform=ax.transAxes, zorder=3)
+    # Insight
+    insight_obj = ax.text(0.5, subtitle_y, txt_subtitle, fontsize=subtitle_size,
+                          color=subtitle_color, ha='center', va='center',
+                          fontweight='semibold', fontstyle='italic',
+                          fontfamily=suptitle_font, linespacing=1.35,
+                          transform=ax.transAxes, alpha=0, zorder=4)
+    # Context
+    context_obj = ax.text(0.5, context_y, txt_context or "", fontfamily=subtitle_font,
+                          fontsize=context_size, fontstyle='italic', fontweight='light',
+                          color=context_color, ha='center', va='center',
+                          linespacing=1.5, transform=ax.transAxes, alpha=0, zorder=4)
+    # Bottom rule
+    bot_rule, = ax.plot([], [], color=rule_color, linewidth=0.6,
+                        transform=ax.transAxes, zorder=3)
+    # Source
+    source_obj = ax.text(0.5, label_y, txt_label or "", fontfamily='DM Mono',
+                         fontsize=label_size, color=txt_label_color,
+                         ha='center', va='center', fontweight=txt_label_font_weight,
+                         transform=ax.transAxes, alpha=0, zorder=4)
+    # Corner mark
+    corner_patch = None
+    if show_corner_mark:
+        fig_w_pts = fig.get_size_inches()[0] * fig.dpi
+        fig_h_pts = fig.get_size_inches()[1] * fig.dpi
+        cx = corner_mark_size / fig_w_pts
+        cy = corner_mark_size / fig_h_pts
+        corner_patch = mpatches.Polygon(
+            [[1.0 - cx, 0.0], [1.0, 0.0], [1.0, cy]],
+            closed=True, facecolor=accent_line_color, edgecolor='none',
+            alpha=0, transform=ax.transAxes, zorder=5)
+        ax.add_patch(corner_patch)
+
+    total_anim = int(fps * duration)
+    hold_frames = int(fps * hold_duration)
     total_frames = total_anim + hold_frames
 
     def update(frame):
-        progress = 1.0 if frame >= total_anim else ease_fn(frame / total_anim)
-        suptitle_obj.set_text(_typewriter(txt_suptitle, progress, tw_suptitle_start, tw_suptitle_end))
-        subtitle_obj.set_text(_typewriter(txt_subtitle,  progress, tw_subtitle_start,  tw_subtitle_end))
-        if show_accent_line:
-            if progress <= accent_line_start:
-                accent_line_obj.set_data([], [])
-            elif progress >= accent_line_end:
-                h = accent_line_length/2
-                accent_line_obj.set_data([0.5-h, 0.5+h], [accent_line_y, accent_line_y])
-            else:
-                t  = (progress-accent_line_start)/(accent_line_end-accent_line_start)
-                ch = (accent_line_length/2)*t
-                accent_line_obj.set_data([0.5-ch, 0.5+ch], [accent_line_y, accent_line_y])
-        return [suptitle_obj, subtitle_obj, accent_line_obj]
+        p = 1.0 if frame >= total_anim else frame / total_anim
 
-    anim   = animation.FuncAnimation(fig, update, frames=total_frames, interval=1000/fps, blit=False)
+        # Top rule: expand from center (0.00 - 0.07)
+        tr = _ep(p, 0.00, 0.07)
+        if tr > 0:
+            h = 0.42 * tr
+            top_rule.set_data([0.5 - h, 0.5 + h], [0.895, 0.895])
+
+        # Corners: fade + drift (0.02 - 0.09)
+        cr = _ep(p, 0.02, 0.09)
+        issue_obj.set_alpha(cr)
+        brand_obj.set_alpha(cr)
+        issue_obj.set_position((0.08, 0.925 + 0.012 * (1 - cr)))
+        brand_obj.set_position((0.92, 0.925 + 0.012 * (1 - cr)))
+
+        # Eyebrow: fade + drift (0.05 - 0.14)
+        ey = _ep(p, 0.05, 0.14)
+        eyebrow_obj.set_alpha(ey)
+        eyebrow_obj.set_position((0.5, eyebrow_y + 0.010 * (1 - ey)))
+
+        # Number: fade + scale (0.08 - 0.38)
+        nr = _ep(p, 0.08, 0.38)
+        number_obj.set_alpha(nr)
+        scale = 0.60 + 0.40 * nr
+        number_obj.set_fontsize(suptitle_size * scale)
+
+        # Unit: fade + drift down (0.36 - 0.44)
+        if txt_unit:
+            ur = _ep(p, 0.36, 0.44)
+            unit_obj.set_alpha(ur * 0.75)
+            # Compute unit position from number bounding box
+            try:
+                renderer = fig.canvas.get_renderer()
+                bb = number_obj.get_window_extent(renderer=renderer)
+                bb_ax = bb.transformed(ax.transAxes.inverted())
+                uy = bb_ax.y0 - descender_pad - 0.008 * (1 - ur)
+            except Exception:
+                uy = suptitle_y - 0.12 - 0.008 * (1 - ur)
+            unit_obj.set_position((0.5, uy))
+
+        # Accent line: expand from center (0.40 - 0.52)
+        al = _ep(p, 0.40, 0.52)
+        if show_accent_line and al > 0:
+            ah = (accent_line_length / 2) * al
+            accent_obj.set_data([0.5 - ah, 0.5 + ah], [accent_line_y, accent_line_y])
+
+        # Insight: fade + drift (0.48 - 0.68)
+        ir = _ep(p, 0.48, 0.68)
+        insight_obj.set_alpha(ir)
+        insight_obj.set_position((0.5, subtitle_y + 0.008 * (1 - ir)))
+
+        # Context: fade + drift (0.65 - 0.80)
+        if txt_context:
+            xr = _ep(p, 0.65, 0.80)
+            context_obj.set_alpha(xr)
+            context_obj.set_position((0.5, context_y + 0.006 * (1 - xr)))
+
+        # Bottom rule: expand (0.72 - 0.82)
+        br = _ep(p, 0.72, 0.82)
+        if br > 0:
+            bh = 0.42 * br
+            bot_rule.set_data([0.5 - bh, 0.5 + bh], [0.07, 0.07])
+
+        # Source: fade (0.80 - 0.90)
+        sr = _ep(p, 0.80, 0.90)
+        source_obj.set_alpha(sr)
+
+        # Corner mark: fade (0.88 - 1.00)
+        if corner_patch:
+            cm = _ep(p, 0.88, 1.00)
+            corner_patch.set_alpha(cm * 0.65)
+
+        return [top_rule, issue_obj, brand_obj, eyebrow_obj, number_obj,
+                unit_obj, accent_obj, insight_obj, context_obj,
+                bot_rule, source_obj]
+
+    anim = animation.FuncAnimation(fig, update, frames=total_frames, interval=1000/fps, blit=False)
     writer = animation.FFMpegWriter(fps=fps, bitrate=3000,
-                                    extra_args=['-vcodec','libx264','-pix_fmt','yuv420p'])
+                                    extra_args=['-vcodec', 'libx264', '-pix_fmt', 'yuv420p'])
     anim.save(output_file, writer=writer, dpi=dpi,
               savefig_kwargs={'facecolor': face_color, 'pad_inches': 0})
     print(f"Saved animated cover tile -> {output_file}  ({duration+hold_duration:.1f}s @ {fps}fps)")
@@ -2394,3 +2614,251 @@ class SubstackPublisher:
         if not r.ok: raise RuntimeError(f"Failed to publish {r.status_code}: {r.text}")
         print(f"Published: '{title}'\n    Live at: {self.pub_url}/p/{post.get('slug','')}")
         return r.json()
+
+
+# ============================================================================
+# DATA POSTER (Print-quality PDF)
+# ============================================================================
+
+def eDataPoster(
+    # Hero block
+    hero_number="8.1",
+    hero_number_color=None,
+    hero_unit="billion people",
+    hero_eyebrow="People on Earth, 2024",
+    # Insight block
+    insight_text="It took all of human history to reach one billion people. We added seven more in two centuries.",
+    insight_context="The first billion took roughly 300,000 years. The second took 127 years. The third took 33.",
+    # Chart data (simple line chart)
+    chart_x=None,
+    chart_y=None,
+    chart_x_labels=None,
+    chart_y_labels=None,
+    chart_y_format="{:.0f}",
+    chart_color='#3F5B83',
+    chart_fill_alpha=0.12,
+    # Annotations (list of dicts: {year, value, desc, color})
+    annotations=None,
+    # Metadata
+    issue_number="001",
+    issue_topic="World Population",
+    source_lines=None,
+    # Layout
+    accent_color='#3F5B83',
+    output_file="poster.pdf",
+    dpi=300,
+    paper_width_in=11.69,
+    paper_height_in=16.54,
+):
+    """Generate a print-quality data poster as PDF.
+
+    Renders the number-led poster template: masthead, hero number,
+    inline line chart, annotation band, insight block, and footer.
+    Matches the Espresso Charts visual system.
+
+    Parameters
+    ----------
+    hero_number : str
+        The dominant statistic, e.g. "8.1". Digits in accent_color.
+    hero_number_color : dict or None
+        Per-character color overrides: {0: '#3F5B83'} colors the first char blue.
+        If None, all digits and '.' render in accent_color, rest in ink.
+    hero_unit : str
+        Unit label below the number, e.g. "billion people"
+    chart_x, chart_y : array-like
+        Data for the line chart. If None, chart section is skipped.
+    annotations : list of dict
+        [{year: "1927", value: "2 billion", desc: "First milestone", color: "#A14516"}, ...]
+    source_lines : list of str
+        ["Source: UN World Population Prospects 2024", "population.un.org"]
+    """
+    fc = '#F5F0E6'
+    ink = '#2A1F14'
+    ink_light = '#4b2e1a'
+    ink_muted = '#79664a'
+    ink_faint = '#9e8b76'
+    rule_color = '#C8BBA8'
+
+    plt.rcdefaults()
+    plt.rcParams['font.family'] = 'DM Mono'
+
+    fig = plt.figure(figsize=(paper_width_in, paper_height_in), dpi=dpi, facecolor=fc)
+
+    # All coordinates in figure-relative (0-1)
+    # Margins: left=0.076, right=0.076 (52px / 680px from HTML)
+    ml, mr = 0.076, 0.924
+
+    # ── MASTHEAD ──
+    fig.text(ml, 0.970, "ESPRESSO CHARTS",
+             fontfamily='DM Mono', fontsize=7.5, fontweight=300,
+             color=ink_muted, ha='left', va='top')
+    fig.text(mr, 0.970, f"No. {issue_number}  \u00b7  {issue_topic}",
+             fontfamily='DM Mono', fontsize=7, fontweight=300,
+             color=ink_faint, ha='right', va='top')
+    # Masthead rule
+    fig.add_artist(plt.Line2D([ml, mr], [0.962, 0.962],
+                              color=rule_color, linewidth=0.5, transform=fig.transFigure))
+
+    # ── HERO NUMBER ──
+    fig.text(ml, 0.948, hero_eyebrow,
+             fontfamily='DM Mono', fontsize=7, fontweight=300,
+             color=ink_faint, ha='left', va='top')
+
+    # Number: color digits in accent, rest in ink
+    num_y = 0.935
+    # Simple approach: render the full number, color significant digits
+    fig.text(ml, num_y, hero_number,
+             fontfamily='Playfair Display', fontsize=72, fontweight=700,
+             fontstyle='italic', color=accent_color,
+             ha='left', va='top', linespacing=0.9)
+
+    # Unit label
+    fig.text(ml, num_y - 0.055, hero_unit,
+             fontfamily='Playfair Display', fontsize=18, fontweight=400,
+             fontstyle='italic', color=ink_muted,
+             ha='left', va='top')
+
+    # Accent rule
+    accent_y = num_y - 0.075
+    fig.add_artist(plt.Line2D([ml, ml + 0.06], [accent_y, accent_y],
+                              color=accent_color, linewidth=2, solid_capstyle='round',
+                              transform=fig.transFigure))
+
+    # ── CHART ──
+    chart_top = accent_y - 0.025
+    chart_bottom = chart_top - 0.28
+    chart_section_present = chart_x is not None and chart_y is not None
+
+    if chart_section_present:
+        ax = fig.add_axes([ml, chart_bottom, mr - ml, chart_top - chart_bottom])
+        ax.set_facecolor(fc)
+
+        # Style: warm grid, no spines
+        ax.grid(axis='y', color=rule_color, linewidth=0.4, linestyle=(0, (3, 4)), zorder=0)
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+        ax.tick_params(axis='both', length=0)
+
+        # Plot
+        ax.fill_between(chart_x, chart_y, alpha=chart_fill_alpha, color=chart_color, zorder=1)
+        ax.plot(chart_x, chart_y, color=chart_color, linewidth=1.8,
+                solid_capstyle='round', solid_joinstyle='round', zorder=2)
+        ax.plot(chart_x[-1], chart_y[-1], 'o', color=chart_color, markersize=4, zorder=3)
+
+        # Annotation dots on chart
+        if annotations:
+            for anno in annotations:
+                if 'chart_x' in anno and 'chart_y' in anno:
+                    ax.plot(anno['chart_x'], anno['chart_y'], 'o',
+                            color=anno.get('color', accent_color), markersize=3, zorder=3)
+
+        # X labels
+        if chart_x_labels:
+            ax.set_xticks([l[0] for l in chart_x_labels])
+            labels = ax.set_xticklabels([l[1] for l in chart_x_labels],
+                                         fontfamily='DM Mono', fontsize=6.5, color=ink_faint)
+            # Color the last label blue if it says "Now"
+            for lbl in labels:
+                if lbl.get_text() == "Now":
+                    lbl.set_color(chart_color)
+                    lbl.set_fontweight(400)
+        else:
+            ax.tick_params(axis='x', labelbottom=False)
+
+        # Y labels
+        if chart_y_labels:
+            ax.set_yticks(chart_y_labels)
+            ax.yaxis.set_major_formatter(
+                plt.FuncFormatter(lambda v, _: chart_y_format.format(v)))
+            ax.tick_params(axis='y', labelsize=6.5, labelcolor=ink_faint)
+        else:
+            ax.tick_params(axis='y', labelleft=False)
+
+        ax.set_xlim(min(chart_x), max(chart_x))
+        ax.margins(y=0.08)
+
+    # ── ANNOTATION BAND ──
+    anno_y = (chart_bottom - 0.015) if chart_section_present else (accent_y - 0.32)
+
+    if annotations:
+        n = len(annotations)
+        band_width = mr - ml
+        col_width = band_width / n
+
+        for i, anno in enumerate(annotations):
+            x_pos = ml + i * col_width + 0.015
+            dot_color = anno.get('color', accent_color)
+
+            # Colored dot (using a small circle via text)
+            fig.text(x_pos, anno_y, '\u25CF', fontsize=6, color=dot_color,
+                     ha='left', va='top', transform=fig.transFigure)
+
+            text_x = x_pos + 0.018
+            fig.text(text_x, anno_y, anno.get('year', ''),
+                     fontfamily='DM Mono', fontsize=6.5, fontweight=300,
+                     color=ink_faint, ha='left', va='top')
+            fig.text(text_x, anno_y - 0.015, anno.get('value', ''),
+                     fontfamily='Playfair Display', fontsize=10, fontweight=600,
+                     color=ink, ha='left', va='top')
+            fig.text(text_x, anno_y - 0.032, anno.get('desc', ''),
+                     fontfamily='Source Serif 4', fontsize=7.5, fontweight=300,
+                     color=ink_muted, ha='left', va='top', linespacing=1.4)
+
+    # ── INSIGHT BLOCK ──
+    insight_top = anno_y - 0.065 if annotations else (anno_y - 0.01)
+    # Rule
+    fig.add_artist(plt.Line2D([ml, mr], [insight_top, insight_top],
+                              color=rule_color, linewidth=0.5, transform=fig.transFigure))
+
+    fig.text(ml, insight_top - 0.02, insight_text,
+             fontfamily='Playfair Display', fontsize=14, fontweight=400,
+             fontstyle='italic', color=ink, ha='left', va='top',
+             linespacing=1.5, wrap=True,
+             transform=fig.transFigure)
+
+    # Rough estimate: insight text takes ~0.04 per line
+    n_insight_lines = max(1, len(insight_text) // 55 + 1)
+    context_y = insight_top - 0.02 - (n_insight_lines * 0.022) - 0.015
+
+    if insight_context:
+        fig.text(ml, context_y, insight_context,
+                 fontfamily='Source Serif 4', fontsize=8.5, fontweight=300,
+                 color=ink_muted, ha='left', va='top',
+                 linespacing=1.7, wrap=True,
+                 transform=fig.transFigure)
+
+    # ── FOOTER ──
+    footer_y = 0.035
+    fig.add_artist(plt.Line2D([ml, mr], [footer_y + 0.012, footer_y + 0.012],
+                              color=rule_color, linewidth=0.5, transform=fig.transFigure))
+
+    # Source (left)
+    if source_lines:
+        source_text = '\n'.join(source_lines)
+        fig.text(ml, footer_y, source_text,
+                 fontfamily='DM Mono', fontsize=5.5, fontweight=300,
+                 color=ink_faint, ha='left', va='top', linespacing=1.7)
+
+    # Tagline (right)
+    fig.text(mr, footer_y, "Thirty seconds of perspective",
+             fontfamily='Playfair Display', fontsize=7.5, fontstyle='italic',
+             color=ink_muted, ha='right', va='top')
+    fig.text(mr, footer_y - 0.013, "espressocharts.substack.com \u2615",
+             fontfamily='DM Mono', fontsize=5.5, fontweight=300,
+             color=ink_faint, ha='right', va='top')
+
+    # ── CORNER MARK ──
+    from matplotlib.patches import Polygon
+    corner_size = 0.018
+    triangle = Polygon(
+        [[1.0, 0.0], [1.0, corner_size], [1.0 - corner_size, 0.0]],
+        closed=True, facecolor=accent_color, edgecolor='none',
+        alpha=0.6, transform=fig.transFigure, zorder=10)
+    fig.add_artist(triangle)
+
+    # Save
+    fig.savefig(output_file, dpi=dpi, facecolor=fc,
+                bbox_inches=None, pad_inches=0)
+    plt.close(fig)
+    print(f"Poster saved -> {output_file}  ({paper_width_in:.1f}x{paper_height_in:.1f}in @ {dpi}dpi)")
+    return output_file
