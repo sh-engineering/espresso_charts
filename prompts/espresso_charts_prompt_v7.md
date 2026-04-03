@@ -266,9 +266,13 @@ The number renders in the brand's dark ink with the significant digits or leadin
 "cover": {
   "txt_suptitle": "8.1\nbillion",
   "txt_subtitle": "It took all of human history to reach one billion.\nWe added seven more in two centuries.",
-  "suptitle_size": 42,
-  "subtitle_size": 18,
-  "accent_line_color": "#3F5B83"
+  "txt_unit": "people on Earth",
+  "txt_eyebrow": "World Population · 2024",
+  "txt_issue": "001",
+  "suptitle_size": 86,
+  "subtitle_size": 16,
+  "accent_line_color": "#3F5B83",
+  "show_corner_mark": true
 }
 ```
 
@@ -313,17 +317,26 @@ Each story needs one Reel script. Same video file for Instagram and YouTube Shor
 
 ### REEL STRUCTURE (mandatory)
 
-1. **`cover_animate`** -- Parchment background with animated typewriter headline and accent line (3-4s hold)
+1. **`cover_animate`** -- Parchment background with animated typewriter headline and accent line (~5.5s default)
 1. **One chart animation** -- `bar_animate`, `line_animate`, `stem_animate`, or `donut_animate`
+
+These are rendered as separate clips and joined by `eConcatenateMP4`. The chart animation is not affected by cover timing.
 
 ### REEL TIMING
 
-Total reel duration must exceed voiceover duration by at least 3 seconds.
+Reel duration = cover clip + chart clip.
 
-- Voiceover duration ~ word count / 2.5 words per second (at 0.95 speed)
-- Reel duration = cover hold (3-4s) + chart animation `duration` + hold frames (`hold_frames` / 24 fps)
+**Cover clip** = `duration` + `hold_duration`.
+- Default: 3.5 + 2.0 = **5.5s**
+- Stories with context sentence: duration 3.5-4.0s
+- Stories with number-only hook: duration 2.5-3.0s
 
-Set `music.duration_ms` to match or slightly exceed total reel duration.
+**Chart clip** = chart `duration` + (`hold_frames` / fps).
+- Default: 12 + (150/30) = **17.0s**. Unchanged.
+
+**Total reel target: 20-28 seconds.**
+
+`music.duration_ms` must exceed total reel duration by at least 3000ms. Default: 26000.
 
 ### REEL SAFE ZONES
 
@@ -336,6 +349,8 @@ The `cover_animate` renders the story's Lead Number and insight on parchment wit
 - `suptitle_y`: 0.65 or lower (safe zone)
 - `txt_suptitle`: The Lead Number and unit, e.g. "+50%\nvs 28%"
 - `txt_subtitle`: One-sentence insight, max 2 lines
+- `duration`: 3.5 (default). Controls animation phase length.
+- `hold_duration`: 2.0 (default). Holds completed frame before chart cuts in.
 
 **Alternative: `opening_frame`** -- For AI-generated video backgrounds (Gemini Veo) with headline overlay. Use `"type": "opening_frame"` instead. Requires `video_prompt`, `number_text`, `label_text`. See opening frame docs for details.
 
@@ -451,9 +466,13 @@ config = json.loads(r'''
   "cover": {
     "txt_suptitle": "8.1\nbillion",
     "txt_subtitle": "It took all of human history to reach one billion.\nWe added seven more in two centuries.",
-    "suptitle_size": 42,
-    "subtitle_size": 18,
-    "accent_line_color": "#3F5B83"
+    "txt_unit": "people on Earth",
+    "txt_eyebrow": "World Population · 2024",
+    "txt_issue": "001",
+    "suptitle_size": 86,
+    "subtitle_size": 16,
+    "accent_line_color": "#3F5B83",
+    "show_corner_mark": true
   },
   "charts": [
     {
@@ -484,7 +503,9 @@ config = json.loads(r'''
           "suptitle_size": 42,
           "subtitle_size": 18,
           "suptitle_y": 0.65,
-          "accent_line_color": "#3F5B83"
+          "accent_line_color": "#3F5B83",
+          "duration": 3.5,
+          "hold_duration": 2.0
         }
       },
       {
@@ -500,6 +521,24 @@ config = json.loads(r'''
     [0, 0, "story_0_cover", "png"],
     [0, 1, "story_0_chart_1", "png"]
   ],
+  "poster": {
+    "hero_number": "8.1",
+    "hero_unit": "billion people",
+    "hero_eyebrow": "PEOPLE ON EARTH, 2024",
+    "insight_text": "It took all of human history to reach\none billion people. We added seven\nmore in two centuries.",
+    "insight_context": "The first billion took roughly 300,000 years.\nThe second took 127 years. The third took 33.",
+    "chart_x_labels": [[1800, "1800"], [1900, "1900"], [1950, "1950"], [2000, "2000"], [2024, "Now"]],
+    "chart_y_labels": [2, 4, 6, 8],
+    "chart_y_format": "{:.0f}B",
+    "annotations": [
+      {"year": "1927", "value": "2 billion", "desc": "First milestone", "color": "#A14516", "chart_x": 1927, "chart_y": 2.0},
+      {"year": "2024", "value": "8.1 billion", "desc": "37 years later", "color": "#4D5523", "chart_x": 2024, "chart_y": 8.1}
+    ],
+    "source_lines": ["SOURCE: UN World Population Prospects 2024", "population.un.org"],
+    "issue_number": "001",
+    "issue_topic": "World Population",
+    "accent_color": "#3F5B83"
+  },
   "copy": {
     "instagram": { "caption": "...", "hashtags": "..." },
     "instagram_reel": { "caption": "...", "hashtags": "..." },
@@ -516,9 +555,11 @@ config = json.loads(r'''
 
 > **COVER:** Generated for reel thumbnail and Substack header. Not included in the carousel sequence. Uses the number-led template.
 
-> **REEL:** `animated_charts` must contain both `cover_animate` AND one chart animation. `music.duration_ms` must exceed voiceover duration + 3000ms.
+> **REEL:** `animated_charts` must contain both `cover_animate` AND one chart animation. Cover default: 5.5s (3.5 + 2.0). Chart default: 17s. Total target: 20-28s. `music.duration_ms` must exceed total reel duration by at least 3000ms.
 
 > **CHART NOTES:** One entry per scheduled day. Each has `day`, `text`, and `image_asset`. Every Note stands alone.
+
+> **POSTER:** Every story gets a print-quality PDF poster (A3 at 300 DPI). The poster uses the story's Lead Number as the hero, the primary line chart data (auto-extracted from the first `line` chart), the insight text, and 2-3 annotation milestones. If the story has no line chart, provide `chart_x` and `chart_y` arrays explicitly. You do NOT need to provide `chart_x`/`chart_y` if a line chart exists in the story's `charts` array; the runner extracts the data automatically.
 
 ### Chart Parameter Reference by Type
 
@@ -612,16 +653,24 @@ config = json.loads(r'''
 
 ```json
 {
-  "txt_suptitle": "+50%\nvs 28%",
-  "txt_subtitle": "Crude oil surged 50% in three weeks.\nGasoline prices rose just 28%.",
-  "suptitle_size": 42,
-  "subtitle_size": 18,
-  "suptitle_y": 0.65,
-  "accent_line_color": "#3F5B83"
+  "txt_suptitle": "53\nyears",
+  "txt_subtitle": "The gap between the last crew to leave\nlow Earth orbit and the next one.",
+  "txt_unit": "between Moon missions",
+  "txt_eyebrow": "Human Spaceflight · 2026",
+  "txt_issue": "001",
+  "suptitle_size": 86,
+  "subtitle_size": 16,
+  "suptitle_y": 0.60,
+  "subtitle_y": 0.38,
+  "accent_line_color": "#3F5B83",
+  "show_corner_mark": true,
+  "count_up": true,
+  "duration": 3.5,
+  "hold_duration": 2.0
 }
 ```
 
-> `suptitle_y` must be 0.65 or lower (reel safe zone). If `txt_suptitle` runs to 3+ lines, reduce `suptitle_size` to 36 and `subtitle_size` to 16.
+> `suptitle_size` defaults to 86. The hero number is the largest element on screen. Frame 0 shows the final number (Instagram thumbnail). Frame 1+ the number counts up from 0 while the accent line expands and the insight/unit text fades in. `txt_unit` appears below the hero number (e.g. "years", "million tons", "km²"). `txt_eyebrow` is the topic label above the number. `count_up: true` (default) parses the numeric value from `txt_suptitle` and animates from 0.
 
 **`opening_frame` params (alternative, requires Gemini Veo):**
 
@@ -783,14 +832,14 @@ font_mono    = 'DM Mono'            # labels, ticks, source lines
 - [ ] Valid JSON inside `config = json.loads(r''' ... ''')`
 - [ ] `week` object has correct year, month, week_start
 - [ ] 3 stories with unique `id` (0, 1, 2) and `slug`
-- [ ] Each story has: `cover`, `charts`, `reel`, `story_files`, `copy`
+- [ ] Each story has: `cover`, `charts`, `reel`, `story_files`, `poster`, `copy`
 - [ ] Bar chart data sorted ascending
 - [ ] All text uses `\n` for line breaks
 - [ ] All colors as hex codes: `"#3F5B83"`, never `"color_blue"`
 - [ ] Voiceover ~50 words each
 - [ ] Every reel has both `cover_animate` AND at least 1 chart animation
 - [ ] Reel total duration > voiceover duration + 3 seconds
-- [ ] `music.duration_ms` matches or exceeds total reel duration
+- [ ] `music.duration_ms` exceeds total reel duration (cover + chart) by at least 3000ms
 - [ ] `cover_animate` uses `suptitle_y: 0.65` or lower
 - [ ] `copy` includes: `instagram`, `instagram_reel`, `youtube_shorts`, `substack_article`, `substack_chart_notes`
 - [ ] `substack_chart_notes` is an array with one entry per scheduled day
@@ -800,6 +849,7 @@ font_mono    = 'DM Mono'            # labels, ticks, source lines
 - [ ] **First chart headline is completely self-explanatory** (test: show it with no context)
 - [ ] Each story passes the "change your sense of scale" filter
 - [ ] All captions end with subscribe CTA
+- [ ] Every story has a `poster` config with `hero_number`, `hero_unit`, `insight_text`, and `annotations`
 - [ ] Every `data_date` comment above hardcoded data blocks
 - [ ] `data_source` with API URL provided when a stable API exists
 - [ ] API keys use `{{SECRET_NAME}}` syntax, not hardcoded values
