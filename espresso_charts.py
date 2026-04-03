@@ -1544,13 +1544,16 @@ def eMultiLineChartAnimateInstagram(
                 moving_labels[li].xy = (tip_x, tip_y)
             else:
                 moving_labels[li].set_visible(False)
-        for vi, vt in enumerate(value_targets):
-            if vt['pos'] < reveal - 0.5:
-                val_objs[vi].set_visible(True)
-                val_objs[vi].set_text(vt['formatted'])
-                val_objs[vi].xy = (vt['x'], vt['y'])
-            else:
-                val_objs[vi].set_visible(False)
+        # Fixed position value labels — hide when moving labels are active
+        # (moving labels already show the value at the leading edge)
+        if not moving_labels:
+            for vi, vt in enumerate(value_targets):
+                if vt['pos'] < reveal - 0.5:
+                    val_objs[vi].set_visible(True)
+                    val_objs[vi].set_text(vt['formatted'])
+                    val_objs[vi].xy = (vt['x'], vt['y'])
+                else:
+                    val_objs[vi].set_visible(False)
         if shade_patch is not None:
             shade_patch.set_visible(progress >= 0.99)
         return line_objects + dot_objects + moving_labels + val_objs
@@ -2692,8 +2695,8 @@ def eDataPoster(
     hero_unit="billion people",
     hero_eyebrow="People on Earth, 2024",
     # Insight block
-    insight_text="It took all of human history to reach one billion people. We added seven more in two centuries.",
-    insight_context="The first billion took roughly 300,000 years. The second took 127 years. The third took 33.",
+    insight_text="It took all of human history to reach one billion people.\nWe added seven more in two centuries.",
+    insight_context="The first billion took roughly 300,000 years.\nThe second took 127 years. The third took 33.",
     # Chart data (simple line chart)
     chart_x=None,
     chart_y=None,
@@ -2715,31 +2718,13 @@ def eDataPoster(
     paper_width_in=11.69,
     paper_height_in=16.54,
 ):
-    """Generate a print-quality data poster as PDF.
+    """Generate a print-quality data poster as PDF (A3 portrait).
 
-    Renders the number-led poster template: masthead, hero number,
-    inline line chart, annotation band, insight block, and footer.
-    Matches the Espresso Charts visual system.
-
-    Parameters
-    ----------
-    hero_number : str
-        The dominant statistic, e.g. "8.1". Digits in accent_color.
-    hero_number_color : dict or None
-        Per-character color overrides: {0: '#3F5B83'} colors the first char blue.
-        If None, all digits and '.' render in accent_color, rest in ink.
-    hero_unit : str
-        Unit label below the number, e.g. "billion people"
-    chart_x, chart_y : array-like
-        Data for the line chart. If None, chart section is skipped.
-    annotations : list of dict
-        [{year: "1927", value: "2 billion", desc: "First milestone", color: "#A14516"}, ...]
-    source_lines : list of str
-        ["Source: UN World Population Prospects 2024", "population.un.org"]
+    Layout uses the full page height with generous typography.
+    Hero number renders at 120pt, insight at 22pt.
     """
     fc = '#F5F0E6'
     ink = '#2A1F14'
-    ink_light = '#4b2e1a'
     ink_muted = '#79664a'
     ink_faint = '#9e8b76'
     rule_color = '#C8BBA8'
@@ -2748,94 +2733,82 @@ def eDataPoster(
     plt.rcParams['font.family'] = 'DM Mono'
 
     fig = plt.figure(figsize=(paper_width_in, paper_height_in), dpi=dpi, facecolor=fc)
-
-    # All coordinates in figure-relative (0-1)
-    # Margins: left=0.076, right=0.076 (52px / 680px from HTML)
     ml, mr = 0.076, 0.924
 
     # ── MASTHEAD ──
-    fig.text(ml, 0.970, "ESPRESSO CHARTS",
-             fontfamily='DM Mono', fontsize=7.5, fontweight=300,
+    fig.text(ml, 0.972, "ESPRESSO CHARTS",
+             fontfamily='DM Mono', fontsize=9, fontweight=300,
              color=ink_muted, ha='left', va='top')
-    fig.text(mr, 0.970, f"No. {issue_number}  \u00b7  {issue_topic}",
-             fontfamily='DM Mono', fontsize=7, fontweight=300,
+    fig.text(mr, 0.972, f"No. {issue_number}  \u00b7  {issue_topic}",
+             fontfamily='DM Mono', fontsize=8, fontweight=300,
              color=ink_faint, ha='right', va='top')
-    # Masthead rule
-    fig.add_artist(plt.Line2D([ml, mr], [0.962, 0.962],
+    fig.add_artist(plt.Line2D([ml, mr], [0.963, 0.963],
                               color=rule_color, linewidth=0.5, transform=fig.transFigure))
 
-    # ── HERO NUMBER ──
-    fig.text(ml, 0.948, hero_eyebrow,
-             fontfamily='DM Mono', fontsize=7, fontweight=300,
+    # ── EYEBROW ──
+    fig.text(ml, 0.950, hero_eyebrow,
+             fontfamily='DM Mono', fontsize=9, fontweight=300,
              color=ink_faint, ha='left', va='top')
 
-    # Number: color digits in accent, rest in ink
+    # ── HERO NUMBER (120pt) ──
     num_y = 0.935
-    # Simple approach: render the full number, color significant digits
     fig.text(ml, num_y, hero_number,
-             fontfamily='Playfair Display', fontsize=72, fontweight=700,
+             fontfamily='Playfair Display', fontsize=120, fontweight=700,
              fontstyle='italic', color=accent_color,
-             ha='left', va='top', linespacing=0.9)
+             ha='left', va='top', linespacing=0.85)
 
-    # Unit label
-    fig.text(ml, num_y - 0.055, hero_unit,
-             fontfamily='Playfair Display', fontsize=18, fontweight=400,
+    # ── UNIT LABEL ──
+    fig.text(ml, num_y - 0.075, hero_unit,
+             fontfamily='Playfair Display', fontsize=26, fontweight=400,
              fontstyle='italic', color=ink_muted,
              ha='left', va='top')
 
-    # Accent rule
-    accent_y = num_y - 0.075
-    fig.add_artist(plt.Line2D([ml, ml + 0.06], [accent_y, accent_y],
-                              color=accent_color, linewidth=2, solid_capstyle='round',
+    # ── ACCENT RULE ──
+    accent_y = num_y - 0.105
+    fig.add_artist(plt.Line2D([ml, ml + 0.055], [accent_y, accent_y],
+                              color=accent_color, linewidth=2.5, solid_capstyle='round',
                               transform=fig.transFigure))
 
     # ── CHART ──
     chart_top = accent_y - 0.025
-    chart_bottom = chart_top - 0.28
+    chart_height = 0.32
+    chart_bottom = chart_top - chart_height
     chart_section_present = chart_x is not None and chart_y is not None
 
     if chart_section_present:
-        ax = fig.add_axes([ml, chart_bottom, mr - ml, chart_top - chart_bottom])
+        ax = fig.add_axes([ml, chart_bottom, mr - ml, chart_height])
         ax.set_facecolor(fc)
-
-        # Style: warm grid, no spines
         ax.grid(axis='y', color=rule_color, linewidth=0.4, linestyle=(0, (3, 4)), zorder=0)
         for spine in ax.spines.values():
             spine.set_visible(False)
         ax.tick_params(axis='both', length=0)
 
-        # Plot
         ax.fill_between(chart_x, chart_y, alpha=chart_fill_alpha, color=chart_color, zorder=1)
-        ax.plot(chart_x, chart_y, color=chart_color, linewidth=1.8,
+        ax.plot(chart_x, chart_y, color=chart_color, linewidth=2.2,
                 solid_capstyle='round', solid_joinstyle='round', zorder=2)
-        ax.plot(chart_x[-1], chart_y[-1], 'o', color=chart_color, markersize=4, zorder=3)
+        ax.plot(chart_x[-1], chart_y[-1], 'o', color=chart_color, markersize=5, zorder=3)
 
-        # Annotation dots on chart
         if annotations:
             for anno in annotations:
                 if 'chart_x' in anno and 'chart_y' in anno:
                     ax.plot(anno['chart_x'], anno['chart_y'], 'o',
-                            color=anno.get('color', accent_color), markersize=3, zorder=3)
+                            color=anno.get('color', accent_color), markersize=4, zorder=3)
 
-        # X labels
         if chart_x_labels:
             ax.set_xticks([l[0] for l in chart_x_labels])
             labels = ax.set_xticklabels([l[1] for l in chart_x_labels],
-                                         fontfamily='DM Mono', fontsize=6.5, color=ink_faint)
-            # Color the last label blue if it says "Now"
+                                         fontfamily='DM Mono', fontsize=8, color=ink_faint)
             for lbl in labels:
                 if lbl.get_text() == "Now":
-                    lbl.set_color(chart_color)
-                    lbl.set_fontweight(400)
+                    lbl.set_color(chart_color); lbl.set_fontweight(400)
         else:
             ax.tick_params(axis='x', labelbottom=False)
 
-        # Y labels
         if chart_y_labels:
             ax.set_yticks(chart_y_labels)
             ax.yaxis.set_major_formatter(
                 plt.FuncFormatter(lambda v, _: chart_y_format.format(v)))
-            ax.tick_params(axis='y', labelsize=6.5, labelcolor=ink_faint)
+            ax.tick_params(axis='y', labelsize=8, labelcolor=ink_faint)
         else:
             ax.tick_params(axis='y', labelleft=False)
 
@@ -2843,7 +2816,7 @@ def eDataPoster(
         ax.margins(y=0.08)
 
     # ── ANNOTATION BAND ──
-    anno_y = (chart_bottom - 0.015) if chart_section_present else (accent_y - 0.32)
+    anno_y = (chart_bottom - 0.018) if chart_section_present else (accent_y - 0.35)
 
     if annotations:
         n = len(annotations)
@@ -2851,78 +2824,73 @@ def eDataPoster(
         col_width = band_width / n
 
         for i, anno in enumerate(annotations):
-            x_pos = ml + i * col_width + 0.015
+            x_pos = ml + i * col_width + 0.012
             dot_color = anno.get('color', accent_color)
 
-            # Colored dot (using a small circle via text)
-            fig.text(x_pos, anno_y, '\u25CF', fontsize=6, color=dot_color,
+            fig.text(x_pos, anno_y, '\u25CF', fontsize=8, color=dot_color,
                      ha='left', va='top', transform=fig.transFigure)
 
-            text_x = x_pos + 0.018
-            fig.text(text_x, anno_y, anno.get('year', ''),
-                     fontfamily='DM Mono', fontsize=6.5, fontweight=300,
+            text_x = x_pos + 0.020
+            fig.text(text_x, anno_y + 0.002, anno.get('year', ''),
+                     fontfamily='DM Mono', fontsize=8, fontweight=300,
                      color=ink_faint, ha='left', va='top')
-            fig.text(text_x, anno_y - 0.015, anno.get('value', ''),
-                     fontfamily='Playfair Display', fontsize=10, fontweight=600,
+            fig.text(text_x, anno_y - 0.016, anno.get('value', ''),
+                     fontfamily='Playfair Display', fontsize=14, fontweight=600,
                      color=ink, ha='left', va='top')
-            fig.text(text_x, anno_y - 0.032, anno.get('desc', ''),
-                     fontfamily='Source Serif 4', fontsize=7.5, fontweight=300,
+            fig.text(text_x, anno_y - 0.038, anno.get('desc', ''),
+                     fontfamily='Source Serif 4', fontsize=10, fontweight=300,
                      color=ink_muted, ha='left', va='top', linespacing=1.4)
 
     # ── INSIGHT BLOCK ──
-    insight_top = anno_y - 0.065 if annotations else (anno_y - 0.01)
-    # Rule
+    insight_top = anno_y - 0.075 if annotations else (anno_y - 0.015)
     fig.add_artist(plt.Line2D([ml, mr], [insight_top, insight_top],
                               color=rule_color, linewidth=0.5, transform=fig.transFigure))
 
-    fig.text(ml, insight_top - 0.02, insight_text,
-             fontfamily='Playfair Display', fontsize=14, fontweight=400,
+    fig.text(ml, insight_top - 0.022, insight_text,
+             fontfamily='Playfair Display', fontsize=22, fontweight=400,
              fontstyle='italic', color=ink, ha='left', va='top',
-             linespacing=1.5, wrap=True,
-             transform=fig.transFigure)
+             linespacing=1.45, transform=fig.transFigure)
 
-    # Rough estimate: insight text takes ~0.04 per line
-    n_insight_lines = max(1, len(insight_text) // 55 + 1)
-    context_y = insight_top - 0.02 - (n_insight_lines * 0.022) - 0.015
+    # Estimate insight height
+    n_insight_lines = max(1, insight_text.count('\n') + 1)
+    context_y = insight_top - 0.022 - (n_insight_lines * 0.028) - 0.018
 
     if insight_context:
         fig.text(ml, context_y, insight_context,
-                 fontfamily='Source Serif 4', fontsize=8.5, fontweight=300,
+                 fontfamily='Source Serif 4', fontsize=13, fontweight=300,
                  color=ink_muted, ha='left', va='top',
-                 linespacing=1.7, wrap=True,
-                 transform=fig.transFigure)
+                 linespacing=1.6, transform=fig.transFigure)
 
     # ── FOOTER ──
-    footer_y = 0.035
-    fig.add_artist(plt.Line2D([ml, mr], [footer_y + 0.012, footer_y + 0.012],
+    footer_y = 0.040
+    fig.add_artist(plt.Line2D([ml, mr], [footer_y + 0.015, footer_y + 0.015],
                               color=rule_color, linewidth=0.5, transform=fig.transFigure))
 
-    # Source (left)
     if source_lines:
         source_text = '\n'.join(source_lines)
         fig.text(ml, footer_y, source_text,
-                 fontfamily='DM Mono', fontsize=5.5, fontweight=300,
+                 fontfamily='DM Mono', fontsize=7, fontweight=300,
                  color=ink_faint, ha='left', va='top', linespacing=1.7)
 
-    # Tagline (right)
     fig.text(mr, footer_y, "Thirty seconds of perspective",
-             fontfamily='Playfair Display', fontsize=7.5, fontstyle='italic',
+             fontfamily='Playfair Display', fontsize=10, fontstyle='italic',
              color=ink_muted, ha='right', va='top')
-    fig.text(mr, footer_y - 0.013, "espressocharts.substack.com \u2615",
-             fontfamily='DM Mono', fontsize=5.5, fontweight=300,
+    fig.text(mr, footer_y - 0.016, "espressocharts.substack.com \u2615",
+             fontfamily='DM Mono', fontsize=7, fontweight=300,
              color=ink_faint, ha='right', va='top')
 
     # ── CORNER MARK ──
     from matplotlib.patches import Polygon
-    corner_size = 0.018
+    corner_size = 0.020
     triangle = Polygon(
         [[1.0, 0.0], [1.0, corner_size], [1.0 - corner_size, 0.0]],
         closed=True, facecolor=accent_color, edgecolor='none',
         alpha=0.6, transform=fig.transFigure, zorder=10)
     fig.add_artist(triangle)
 
-    # Save
-    fig.savefig(output_file, dpi=dpi, facecolor=fc,
+    # Save — use format='pdf' explicitly for reliable PDF output
+    fmt = 'pdf' if output_file.lower().endswith('.pdf') else None
+    fig.savefig(output_file, format=fmt, dpi=dpi, facecolor=fc,
                 bbox_inches=None, pad_inches=0)
     plt.close(fig)
     print(f"Poster saved -> {output_file}  ({paper_width_in:.1f}x{paper_height_in:.1f}in @ {dpi}dpi)")
