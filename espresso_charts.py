@@ -2720,8 +2720,8 @@ def eDataPoster(
 ):
     """Generate a print-quality data poster as PDF (A3 portrait).
 
-    Layout uses the full page height with generous typography.
-    Hero number renders at 120pt, insight at 22pt.
+    Hero number at 120pt. Chart has no Y axis — first/last data points
+    are labeled directly. PDF rendered via PIL (no reportlab needed).
     """
     fc = '#F5F0E6'
     ink = '#2A1F14'
@@ -2758,27 +2758,27 @@ def eDataPoster(
              ha='left', va='top', linespacing=0.85)
 
     # ── UNIT LABEL ──
-    fig.text(ml, num_y - 0.095, hero_unit,
+    fig.text(ml, num_y - 0.110, hero_unit,
              fontfamily='Playfair Display', fontsize=26, fontweight=400,
              fontstyle='italic', color=ink_muted,
              ha='left', va='top')
 
     # ── ACCENT RULE ──
-    accent_y = num_y - 0.120
+    accent_y = num_y - 0.140
     fig.add_artist(plt.Line2D([ml, ml + 0.055], [accent_y, accent_y],
                               color=accent_color, linewidth=2.5, solid_capstyle='round',
                               transform=fig.transFigure))
 
     # ── CHART ──
-    chart_top = accent_y - 0.025
-    chart_height = 0.32
+    chart_top = accent_y - 0.030
+    chart_height = 0.30
     chart_bottom = chart_top - chart_height
     chart_section_present = chart_x is not None and chart_y is not None
 
     if chart_section_present:
         ax = fig.add_axes([ml, chart_bottom, mr - ml, chart_height])
         ax.set_facecolor(fc)
-        ax.grid(axis='y', color=rule_color, linewidth=0.4, linestyle=(0, (3, 4)), zorder=0)
+        ax.grid(axis='y', color=rule_color, linewidth=0.3, linestyle=(0, (3, 4)), zorder=0)
         for spine in ax.spines.values():
             spine.set_visible(False)
         ax.tick_params(axis='both', length=0)
@@ -2787,36 +2787,48 @@ def eDataPoster(
         ax.plot(chart_x, chart_y, color=chart_color, linewidth=2.2,
                 solid_capstyle='round', solid_joinstyle='round', zorder=2)
         ax.plot(chart_x[-1], chart_y[-1], 'o', color=chart_color, markersize=5, zorder=3)
+        ax.plot(chart_x[0], chart_y[0], 'o', color=chart_color, markersize=4, zorder=3)
 
+        # Annotation dots on chart
         if annotations:
             for anno in annotations:
                 if 'chart_x' in anno and 'chart_y' in anno:
                     ax.plot(anno['chart_x'], anno['chart_y'], 'o',
                             color=anno.get('color', accent_color), markersize=4, zorder=3)
 
+        # X axis labels
         if chart_x_labels:
             ax.set_xticks([l[0] for l in chart_x_labels])
-            labels = ax.set_xticklabels([l[1] for l in chart_x_labels],
-                                         fontfamily='DM Mono', fontsize=8, color=ink_faint)
-            for lbl in labels:
+            xlabels = ax.set_xticklabels([l[1] for l in chart_x_labels],
+                                          fontfamily='DM Mono', fontsize=9.5, color=ink_faint)
+            for lbl in xlabels:
                 if lbl.get_text() == "Now":
                     lbl.set_color(chart_color); lbl.set_fontweight(400)
         else:
             ax.tick_params(axis='x', labelbottom=False)
 
-        if chart_y_labels:
-            ax.set_yticks(chart_y_labels)
-            ax.yaxis.set_major_formatter(
-                plt.FuncFormatter(lambda v, _: chart_y_format.format(v)))
-            ax.tick_params(axis='y', labelsize=8, labelcolor=ink_faint)
-        else:
-            ax.tick_params(axis='y', labelleft=False)
+        # No Y axis — value labels on first and last data points instead
+        ax.set_yticks([])
+        ax.tick_params(axis='y', labelleft=False)
+
+        # First data point label
+        first_label = chart_y_format.format(chart_y[0])
+        ax.annotate(first_label, xy=(chart_x[0], chart_y[0]),
+                    xytext=(-6, 8), textcoords='offset points',
+                    ha='right', va='bottom', fontfamily='DM Mono',
+                    fontsize=10, color=chart_color, fontweight=400, zorder=5)
+        # Last data point label
+        last_label = chart_y_format.format(chart_y[-1])
+        ax.annotate(last_label, xy=(chart_x[-1], chart_y[-1]),
+                    xytext=(6, 8), textcoords='offset points',
+                    ha='left', va='bottom', fontfamily='DM Mono',
+                    fontsize=10, color=chart_color, fontweight=400, zorder=5)
 
         ax.set_xlim(min(chart_x), max(chart_x))
-        ax.margins(y=0.08)
+        ax.margins(y=0.10)
 
     # ── ANNOTATION BAND ──
-    anno_y = (chart_bottom - 0.018) if chart_section_present else (accent_y - 0.35)
+    anno_y = (chart_bottom - 0.020) if chart_section_present else (accent_y - 0.35)
 
     if annotations:
         n = len(annotations)
@@ -2827,37 +2839,37 @@ def eDataPoster(
             x_pos = ml + i * col_width + 0.012
             dot_color = anno.get('color', accent_color)
 
-            fig.text(x_pos, anno_y, '\u25CF', fontsize=8, color=dot_color,
+            fig.text(x_pos, anno_y, '\u25CF', fontsize=9, color=dot_color,
                      ha='left', va='top', transform=fig.transFigure)
 
-            text_x = x_pos + 0.020
+            text_x = x_pos + 0.022
             fig.text(text_x, anno_y + 0.002, anno.get('year', ''),
-                     fontfamily='DM Mono', fontsize=8, fontweight=300,
+                     fontfamily='DM Mono', fontsize=9, fontweight=300,
                      color=ink_faint, ha='left', va='top')
-            fig.text(text_x, anno_y - 0.016, anno.get('value', ''),
-                     fontfamily='Playfair Display', fontsize=14, fontweight=600,
+            fig.text(text_x, anno_y - 0.018, anno.get('value', ''),
+                     fontfamily='Playfair Display', fontsize=17, fontweight=600,
                      color=ink, ha='left', va='top')
-            fig.text(text_x, anno_y - 0.038, anno.get('desc', ''),
-                     fontfamily='Source Serif 4', fontsize=10, fontweight=300,
+            fig.text(text_x, anno_y - 0.042, anno.get('desc', ''),
+                     fontfamily='Source Serif 4', fontsize=12, fontweight=300,
                      color=ink_muted, ha='left', va='top', linespacing=1.4)
 
     # ── INSIGHT BLOCK ──
-    insight_top = anno_y - 0.075 if annotations else (anno_y - 0.015)
+    insight_top = anno_y - 0.085 if annotations else (anno_y - 0.015)
     fig.add_artist(plt.Line2D([ml, mr], [insight_top, insight_top],
                               color=rule_color, linewidth=0.5, transform=fig.transFigure))
 
-    fig.text(ml, insight_top - 0.022, insight_text,
-             fontfamily='Playfair Display', fontsize=22, fontweight=400,
+    fig.text(ml, insight_top - 0.025, insight_text,
+             fontfamily='Playfair Display', fontsize=26, fontweight=400,
              fontstyle='italic', color=ink, ha='left', va='top',
              linespacing=1.45, transform=fig.transFigure)
 
     # Estimate insight height
     n_insight_lines = max(1, insight_text.count('\n') + 1)
-    context_y = insight_top - 0.022 - (n_insight_lines * 0.028) - 0.018
+    context_top = insight_top - 0.025 - (n_insight_lines * 0.032) - 0.020
 
     if insight_context:
-        fig.text(ml, context_y, insight_context,
-                 fontfamily='Source Serif 4', fontsize=13, fontweight=300,
+        fig.text(ml, context_top, insight_context,
+                 fontfamily='Source Serif 4', fontsize=15, fontweight=300,
                  color=ink_muted, ha='left', va='top',
                  linespacing=1.6, transform=fig.transFigure)
 
@@ -2888,27 +2900,18 @@ def eDataPoster(
         alpha=0.6, transform=fig.transFigure, zorder=10)
     fig.add_artist(triangle)
 
-    # Save — render as PNG first, then wrap in PDF via reportlab
-    # (matplotlib's PDF backend crashes on variable font style flags)
+    # ── SAVE ──
+    # Render to PNG, then convert to PDF via PIL (avoids matplotlib
+    # PDF backend crash on variable font style flags)
     if output_file.lower().endswith('.pdf'):
         import tempfile
-        from reportlab.lib.pagesizes import landscape
-        from reportlab.lib.units import inch
-        from reportlab.pdfgen import canvas as rl_canvas
-
-        # Render high-res PNG to temp file
+        from PIL import Image as PILImage
         with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
             tmp_png = tmp.name
         fig.savefig(tmp_png, dpi=dpi, facecolor=fc, bbox_inches=None, pad_inches=0)
         plt.close(fig)
-
-        # Wrap PNG in PDF at exact paper size
-        page_w = paper_width_in * 72   # points
-        page_h = paper_height_in * 72
-        c = rl_canvas.Canvas(output_file, pagesize=(page_w, page_h))
-        c.drawImage(tmp_png, 0, 0, width=page_w, height=page_h,
-                    preserveAspectRatio=True, anchor='c')
-        c.save()
+        img = PILImage.open(tmp_png)
+        img.save(output_file, 'PDF', resolution=dpi)
         os.unlink(tmp_png)
     else:
         fig.savefig(output_file, dpi=dpi, facecolor=fc, bbox_inches=None, pad_inches=0)
