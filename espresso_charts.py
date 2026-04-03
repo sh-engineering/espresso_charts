@@ -541,21 +541,25 @@ def eSingleBarChartNewInstagram(
         y_center = patch.get_y() + patch.get_height() / 2
         x_start  = patch.get_x()
         x_end    = x_start + patch.get_width()
-        is_pos   = (x_end >= x_start)
+        is_pos   = (value >= 0)
 
+        # Category label: always at x=0 (the axis), reading rightward.
+        # For positive bars: label sits inside the bar near its base (parchment bbox).
+        # For negative bars: label sits in the right margin (bars extend left).
         cat_extra = 0
         if isinstance(label_custom_offset, dict):
             cat_extra = label_custom_offset.get(idx, 0)
-        ha_cat  = 'left' if is_pos else 'right'
-        off_cat = 8 + offset_label_x + cat_extra if is_pos else -8 - offset_label_x - cat_extra
+        cat_anchor = 0
+        off_cat = 8 + offset_label_x + cat_extra
         ax.annotate(
-            category, xy=(x_start if is_pos else x_end, y_center),
+            category, xy=(cat_anchor, y_center),
             xytext=(off_cat, 0), textcoords='offset points',
-            ha=ha_cat, va='center', fontsize=label_size,
+            ha='left', va='center', fontsize=label_size,
             color=tick_label_color, zorder=6,
             bbox=dict(boxstyle='square,pad=0.1', facecolor=face_color,
                       edgecolor='none', alpha=0.8))
 
+        # Value label: at the tip of the bar
         val       = value / num_divisor
         formatted = num_format.format(val) if num_format else str(val)
         x_extra = 0
@@ -564,10 +568,11 @@ def eSingleBarChartNewInstagram(
         y_extra = 0
         if isinstance(value_label_offset_y, dict):
             y_extra = value_label_offset_y.get(idx, 0)
+        tip = x_end if is_pos else x_start
         ha_val  = 'left' if is_pos else 'right'
         off_val = 8 + x_extra if is_pos else -8 - x_extra
         ax.annotate(
-            formatted, xy=(x_end, y_center),
+            formatted, xy=(tip, y_center),
             xytext=(off_val, y_extra), textcoords='offset points',
             ha=ha_val, va='center',
             fontsize=label_size, color=value_label_color, zorder=6,
@@ -836,15 +841,22 @@ def eStemChartNewInstagram(
                     y_max if y_max is not None else cur_max)
 
     ax.set_xticks(xpos)
-    ax.set_xticklabels(cats, color=tick_label_color, va=xtick_align_va, ha=xtick_align_ha,
-                        fontsize=label_size, rotation=90 if rotate_labels else 0,
-                        bbox=dict(boxstyle="square,pad=0.1", facecolor="white",
-                                  edgecolor="white", alpha=0.7))
-    for lbl in ax.get_xticklabels():
-        x0, y0 = lbl.get_position()
-        lbl.set_position((x0, y0 + x_tick_label_y_offset))
-    ax.tick_params(axis="x", length=0, pad=8)
+    ax.set_xticklabels([])  # hide default tick labels
+    ax.tick_params(axis="x", length=0)
     ax.set_yticks([])
+
+    # Place category labels manually at y=0 in data coordinates.
+    # This ensures labels align with the x-axis line regardless of plot limits.
+    # va="top" -> top of text box touches y=0 (labels hang below axis)
+    # va="bottom" -> bottom of text box touches y=0 (labels sit above axis)
+    label_y_data = 0 + x_tick_label_y_offset  # offset is in data units
+    for idx, (xp, cat) in enumerate(zip(xpos, cats)):
+        ax.text(xp, label_y_data, cat, color=tick_label_color,
+                fontsize=label_size, ha=xtick_align_ha, va=xtick_align_va,
+                rotation=90 if rotate_labels else 0,
+                bbox=dict(boxstyle="square,pad=0.1", facecolor="white",
+                          edgecolor="white", alpha=0.7),
+                transform=ax.transData, clip_on=False)
 
     if reference_bands: add_reference_bands(ax, reference_bands, orientation='horizontal')
     if vlines: add_vlines(ax, vlines)
@@ -1189,8 +1201,11 @@ def eSingleBarChartAnimateInstagram(
     val_anns = []
     for idx in range(n):
         y_center = bars[idx].get_y() + bars[idx].get_height() / 2
-        ann = ax.annotate("", xy=(0, y_center), xytext=(8, 0),
-                          textcoords='offset points', ha='left', va='center',
+        is_pos = measure_vals[idx] >= 0
+        ha_v = 'left' if is_pos else 'right'
+        off_v = 8 if is_pos else -8
+        ann = ax.annotate("", xy=(0, y_center), xytext=(off_v, 0),
+                          textcoords='offset points', ha=ha_v, va='center',
                           fontsize=label_size, color=value_label_color, zorder=6)
         val_anns.append(ann)
 
@@ -1510,14 +1525,19 @@ def eStemChartAnimateInstagram(
                 y_max if y_max is not None else dmax + margin)
 
     ax.set_xticks(xpos)
-    ax.set_xticklabels(cats, color=tick_label_color, va=xtick_align_va, ha=xtick_align_ha,
-                        fontsize=label_size, rotation=90 if rotate_labels else 0,
-                        bbox=dict(boxstyle="square,pad=0.1", facecolor="white",
-                                  edgecolor="white", alpha=0.7))
-    for lbl in ax.get_xticklabels():
-        x0, y0 = lbl.get_position()
-        lbl.set_position((x0, y0 + x_tick_label_y_offset))
-    ax.tick_params(axis="x", length=0, pad=8); ax.set_yticks([])
+    ax.set_xticklabels([])  # hide default tick labels
+    ax.tick_params(axis="x", length=0)
+    ax.set_yticks([])
+
+    # Place category labels manually at y=0 in data coordinates
+    label_y_data = 0 + x_tick_label_y_offset
+    for idx, (xp, cat) in enumerate(zip(xpos, cats)):
+        ax.text(xp, label_y_data, cat, color=tick_label_color,
+                fontsize=label_size, ha=xtick_align_ha, va=xtick_align_va,
+                rotation=90 if rotate_labels else 0,
+                bbox=dict(boxstyle="square,pad=0.1", facecolor="white",
+                          edgecolor="white", alpha=0.7),
+                transform=ax.transData, clip_on=False)
 
     def _resolve_offsets(i, val, g_y, per_y, per_x, legacy):
         base_y  = g_y if val >= 0 else -g_y
