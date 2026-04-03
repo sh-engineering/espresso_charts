@@ -1054,7 +1054,7 @@ def eCoverTileInstagram(
     txt_eyebrow="", txt_issue="", txt_unit=None, txt_context=None,
     eyebrow_y=0.78, eyebrow_size=9, eyebrow_color='#9e8b76',
     unit_size=14, unit_color=None,
-    context_y=0.27, context_size=12, context_color='#79664a',
+    context_y=0.16, context_size=12, context_color='#79664a',
     issue_size=8, descender_pad=0.015,
     show_corner_mark=False, corner_mark_size=28,
     suptitle_font_style='italic',
@@ -1062,12 +1062,12 @@ def eCoverTileInstagram(
     suptitle_color='#2A1F14', suptitle_font='Playfair Display',
     suptitle_font_weight='bold', suptitle_size=86, suptitle_y=0.60,
     subtitle_color='#2A1F14', subtitle_font='Source Serif 4',
-    subtitle_font_weight='normal', subtitle_size=16, subtitle_y=0.38,
+    subtitle_font_weight='normal', subtitle_size=16, subtitle_y=0.26,
     txt_label_color='#CDAF7B', txt_label_font='DM Mono',
     txt_label_font_weight='light', label_size=8, label_y=0.038,
     face_color='#F5F0E6', px_width=1080, px_height=1350, dpi=200,
     show_accent_line=True, accent_line_color='#3F5B83', accent_line_width=4,
-    accent_line_y=0.465, accent_line_length=0.15,
+    accent_line_y=0.36, accent_line_length=0.15,
 ):
     """Number-led cover tile with editorial layout.
 
@@ -1851,7 +1851,7 @@ def eCoverTileAnimateInstagram(
     txt_eyebrow="", txt_issue="", txt_unit=None, txt_context=None,
     eyebrow_y=0.78, eyebrow_size=9, eyebrow_color='#9e8b76',
     unit_size=14, unit_color=None,
-    context_y=0.27, context_size=12, context_color='#79664a',
+    context_y=0.16, context_size=12, context_color='#79664a',
     issue_size=8, descender_pad=0.015,
     show_corner_mark=False, corner_mark_size=28,
     suptitle_font_style='italic',
@@ -1862,12 +1862,12 @@ def eCoverTileAnimateInstagram(
     suptitle_color='#2A1F14', suptitle_font='Playfair Display', suptitle_font_weight='bold',
     suptitle_size=86, suptitle_y=0.6,
     subtitle_color='#2A1F14', subtitle_font='Source Serif 4', subtitle_font_weight='normal',
-    subtitle_size=16, subtitle_y=0.38,
+    subtitle_size=16, subtitle_y=0.26,
     txt_label_color='#CDAF7B', txt_label_font='DM Mono', txt_label_font_weight='light',
     label_size=8, label_y=0.038,
     face_color='#F5F0E6', px_width=1080, px_height=1920, dpi=200,
     show_accent_line=True, accent_line_color='#3F5B83', accent_line_width=4,
-    accent_line_y=0.465, accent_line_length=0.15,
+    accent_line_y=0.36, accent_line_length=0.15,
     # Legacy params (ignored)
     accent_line_start=0.40, accent_line_end=0.65,
 ):
@@ -2758,13 +2758,13 @@ def eDataPoster(
              ha='left', va='top', linespacing=0.85)
 
     # ── UNIT LABEL ──
-    fig.text(ml, num_y - 0.075, hero_unit,
+    fig.text(ml, num_y - 0.095, hero_unit,
              fontfamily='Playfair Display', fontsize=26, fontweight=400,
              fontstyle='italic', color=ink_muted,
              ha='left', va='top')
 
     # ── ACCENT RULE ──
-    accent_y = num_y - 0.105
+    accent_y = num_y - 0.120
     fig.add_artist(plt.Line2D([ml, ml + 0.055], [accent_y, accent_y],
                               color=accent_color, linewidth=2.5, solid_capstyle='round',
                               transform=fig.transFigure))
@@ -2888,10 +2888,31 @@ def eDataPoster(
         alpha=0.6, transform=fig.transFigure, zorder=10)
     fig.add_artist(triangle)
 
-    # Save — use format='pdf' explicitly for reliable PDF output
-    fmt = 'pdf' if output_file.lower().endswith('.pdf') else None
-    fig.savefig(output_file, format=fmt, dpi=dpi, facecolor=fc,
-                bbox_inches=None, pad_inches=0)
-    plt.close(fig)
+    # Save — render as PNG first, then wrap in PDF via reportlab
+    # (matplotlib's PDF backend crashes on variable font style flags)
+    if output_file.lower().endswith('.pdf'):
+        import tempfile
+        from reportlab.lib.pagesizes import landscape
+        from reportlab.lib.units import inch
+        from reportlab.pdfgen import canvas as rl_canvas
+
+        # Render high-res PNG to temp file
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+            tmp_png = tmp.name
+        fig.savefig(tmp_png, dpi=dpi, facecolor=fc, bbox_inches=None, pad_inches=0)
+        plt.close(fig)
+
+        # Wrap PNG in PDF at exact paper size
+        page_w = paper_width_in * 72   # points
+        page_h = paper_height_in * 72
+        c = rl_canvas.Canvas(output_file, pagesize=(page_w, page_h))
+        c.drawImage(tmp_png, 0, 0, width=page_w, height=page_h,
+                    preserveAspectRatio=True, anchor='c')
+        c.save()
+        os.unlink(tmp_png)
+    else:
+        fig.savefig(output_file, dpi=dpi, facecolor=fc, bbox_inches=None, pad_inches=0)
+        plt.close(fig)
+
     print(f"Poster saved -> {output_file}  ({paper_width_in:.1f}x{paper_height_in:.1f}in @ {dpi}dpi)")
     return output_file
