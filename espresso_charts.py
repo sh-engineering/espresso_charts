@@ -1938,8 +1938,9 @@ def eCoverTileAnimateInstagram(
             result += '\n' + remaining_lines
         return result
 
-    # Create all elements — static elements at full alpha from frame 1.
-    # Only the hero number (count-up) and unit (fade after count) animate.
+    # Create all elements.
+    # Chrome (rules, corners, eyebrow, source) + hero number visible from frame 1.
+    # Accent line expands, insight/context/unit fade in for motion.
 
     # Top rule — visible immediately
     top_rule, = ax.plot([0.08, 0.92], [0.895, 0.895], color=rule_color, linewidth=0.6,
@@ -1955,44 +1956,32 @@ def eCoverTileAnimateInstagram(
     eyebrow_obj = ax.text(0.5, eyebrow_y, txt_eyebrow or "", fontfamily='DM Mono',
                           fontsize=eyebrow_size, color=eyebrow_color,
                           ha='center', va='center', transform=ax.transAxes, alpha=1, zorder=4)
-    # Hero number — shows final value from frame 1
+    # Hero number — final value from frame 1
     number_obj = ax.text(0.5, suptitle_y, txt_suptitle, fontsize=suptitle_size,
                          color=suptitle_color, ha='center', va='center',
                          fontweight=suptitle_font_weight, fontstyle=suptitle_font_style,
                          fontfamily=suptitle_font, linespacing=0.9,
                          transform=ax.transAxes, alpha=1, zorder=4)
-    # Unit — visible from frame 1
+    # Unit — fades in
     uc = unit_color or suptitle_color
     unit_obj = ax.text(0.5, suptitle_y - 0.12, txt_unit or "", fontfamily=suptitle_font,
                        fontsize=unit_size, fontstyle='italic', fontweight='normal',
                        color=uc, ha='center', va='top',
-                       transform=ax.transAxes, alpha=0.75 if txt_unit else 0, zorder=4)
-    # Position unit below number using bounding box
-    if txt_unit:
-        try:
-            renderer = fig.canvas.get_renderer()
-            bb = number_obj.get_window_extent(renderer=renderer)
-            bb_ax = bb.transformed(ax.transAxes.inverted())
-            unit_obj.set_position((0.5, bb_ax.y0 - descender_pad))
-        except Exception:
-            pass
-    # Accent line — visible immediately
+                       transform=ax.transAxes, alpha=0, zorder=4)
+    # Accent line — expands from center
     accent_obj, = ax.plot([], [], color=accent_line_color, linewidth=accent_line_width,
                           solid_capstyle='round', transform=ax.transAxes, zorder=3)
-    if show_accent_line:
-        half = accent_line_length / 2
-        accent_obj.set_data([0.5 - half, 0.5 + half], [accent_line_y, accent_line_y])
-    # Insight — visible immediately
+    # Insight — fades in with drift
     insight_obj = ax.text(0.5, subtitle_y, txt_subtitle, fontsize=subtitle_size,
                           color=subtitle_color, ha='center', va='center',
                           fontweight='semibold', fontstyle='italic',
                           fontfamily=suptitle_font, linespacing=1.35,
-                          transform=ax.transAxes, alpha=1, zorder=4)
-    # Context — visible immediately
+                          transform=ax.transAxes, alpha=0, zorder=4)
+    # Context — fades in with drift
     context_obj = ax.text(0.5, context_y, txt_context or "", fontfamily=subtitle_font,
                           fontsize=context_size, fontstyle='italic', fontweight='light',
                           color=context_color, ha='center', va='center',
-                          linespacing=1.5, transform=ax.transAxes, alpha=1, zorder=4)
+                          linespacing=1.5, transform=ax.transAxes, alpha=0, zorder=4)
     # Bottom rule — visible immediately
     bot_rule, = ax.plot([0.08, 0.92], [0.07, 0.07], color=rule_color, linewidth=0.6,
                         transform=ax.transAxes, zorder=3)
@@ -2019,9 +2008,72 @@ def eCoverTileAnimateInstagram(
     total_frames = total_anim + hold_frames
 
     def update(frame):
-        # Cover tile is fully visible from frame 1.
-        # The animation duration creates a hold before the chart animation starts.
-        return [number_obj, unit_obj]
+        # Frame 0: complete cover with final number (Instagram thumbnail)
+        if frame == 0:
+            number_obj.set_text(txt_suptitle)
+            number_obj.set_alpha(1)
+            if txt_unit:
+                unit_obj.set_alpha(0.75)
+                try:
+                    renderer = fig.canvas.get_renderer()
+                    bb = number_obj.get_window_extent(renderer=renderer)
+                    bb_ax = bb.transformed(ax.transAxes.inverted())
+                    unit_obj.set_position((0.5, bb_ax.y0 - descender_pad))
+                except Exception:
+                    unit_obj.set_position((0.5, suptitle_y - 0.12))
+            if show_accent_line:
+                ah = accent_line_length / 2
+                accent_obj.set_data([0.5 - ah, 0.5 + ah], [accent_line_y, accent_line_y])
+            insight_obj.set_alpha(1)
+            insight_obj.set_position((0.5, subtitle_y))
+            if txt_context:
+                context_obj.set_alpha(1)
+                context_obj.set_position((0.5, context_y))
+            return [number_obj, unit_obj, accent_obj, insight_obj, context_obj]
+
+        # Frame 1+: count up from 0
+        p = 1.0 if frame >= total_anim else frame / total_anim
+
+        # Number: count up (0.0 - 0.55)
+        nr = _ep(p, 0.0, 0.55)
+        if count_up:
+            number_obj.set_text(_format_number(nr))
+        number_obj.set_alpha(1)
+
+        # Unit: fade in (0.40 - 0.60)
+        if txt_unit:
+            ur = _ep(p, 0.40, 0.60)
+            unit_obj.set_alpha(ur * 0.75)
+            try:
+                renderer = fig.canvas.get_renderer()
+                bb = number_obj.get_window_extent(renderer=renderer)
+                bb_ax = bb.transformed(ax.transAxes.inverted())
+                uy = bb_ax.y0 - descender_pad
+            except Exception:
+                uy = suptitle_y - 0.12
+            unit_obj.set_position((0.5, uy))
+
+        # Accent line: expand from center (0.15 - 0.35)
+        if show_accent_line:
+            al = _ep(p, 0.15, 0.35)
+            if al > 0:
+                ah = (accent_line_length / 2) * al
+                accent_obj.set_data([0.5 - ah, 0.5 + ah], [accent_line_y, accent_line_y])
+            else:
+                accent_obj.set_data([], [])
+
+        # Insight: fade + drift up (0.45 - 0.70)
+        ir = _ep(p, 0.45, 0.70)
+        insight_obj.set_alpha(ir)
+        insight_obj.set_position((0.5, subtitle_y + 0.010 * (1 - ir)))
+
+        # Context: fade + drift up (0.60 - 0.80)
+        if txt_context:
+            xr = _ep(p, 0.60, 0.80)
+            context_obj.set_alpha(xr)
+            context_obj.set_position((0.5, context_y + 0.008 * (1 - xr)))
+
+        return [number_obj, unit_obj, accent_obj, insight_obj, context_obj]
 
     anim = animation.FuncAnimation(fig, update, frames=total_frames, interval=1000/fps, blit=False)
     writer = animation.FFMpegWriter(fps=fps, bitrate=3000,
