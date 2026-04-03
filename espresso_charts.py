@@ -2245,9 +2245,24 @@ def eGenerateOpeningFrame(
         f":x=({vid_w}-text_w)/2"
         f":y={num_y}"
     )
-    if font_serif:
-        # Escape [ ] in font paths — ffmpeg interprets them as filter graph syntax
-        safe_serif = font_serif.replace("[", "\\[").replace("]", "\\]")
+    # ffmpeg cannot handle [ ] in font paths (filter graph syntax conflict).
+    # Create temp symlinks with clean names if needed.
+    _temp_font_links = []
+    def _ffmpeg_safe_font(font_path):
+        if not font_path or ('[' not in font_path and ']' not in font_path):
+            return font_path
+        import tempfile
+        clean_name = os.path.basename(font_path).replace('[', '_').replace(']', '_').replace(',', '_')
+        link_path = os.path.join(tempfile.gettempdir(), clean_name)
+        if not os.path.exists(link_path):
+            os.symlink(font_path, link_path)
+        _temp_font_links.append(link_path)
+        return link_path
+
+    safe_serif = _ffmpeg_safe_font(font_serif)
+    safe_sans  = _ffmpeg_safe_font(font_sans)
+
+    if safe_serif:
         num_filter += f":fontfile={safe_serif}"
 
     lbl_filter = (
@@ -2259,8 +2274,7 @@ def eGenerateOpeningFrame(
         f":x=({vid_w}-text_w)/2"
         f":y={lbl_y}"
     )
-    if font_sans:
-        safe_sans = font_sans.replace("[", "\\[").replace("]", "\\]")
+    if safe_sans:
         lbl_filter += f":fontfile={safe_sans}"
 
     filter_chain = f"{num_filter},{lbl_filter}"
@@ -2281,8 +2295,8 @@ def eGenerateOpeningFrame(
     if r.returncode != 0:
         raise RuntimeError(f"ffmpeg overlay failed:\n{r.stderr}")
 
-    # Cleanup temp text files
-    for p in [num_txt_path, lbl_txt_path]:
+    # Cleanup temp text files and font symlinks
+    for p in [num_txt_path, lbl_txt_path] + _temp_font_links:
         if os.path.exists(p):
             os.remove(p)
 
