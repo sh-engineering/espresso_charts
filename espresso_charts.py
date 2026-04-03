@@ -1916,57 +1916,62 @@ def eCoverTileAnimateInstagram(
             result += '\n' + remaining_lines
         return result
 
-    # Create all elements (initially invisible)
-    # Top rule
-    top_rule, = ax.plot([], [], color=rule_color, linewidth=0.6,
+    # Create all elements — static elements at full alpha from frame 1.
+    # Only the hero number (count-up) and unit (fade after count) animate.
+
+    # Top rule — visible immediately
+    top_rule, = ax.plot([0.08, 0.92], [0.895, 0.895], color=rule_color, linewidth=0.6,
                         transform=ax.transAxes, zorder=3)
-    # Corners
+    # Corners — visible immediately
     issue_obj = ax.text(0.08, 0.925, f"No. {txt_issue}" if txt_issue else "",
                         fontfamily='DM Mono', fontsize=issue_size, color='#9e8b76',
-                        ha='left', va='center', transform=ax.transAxes, alpha=0, zorder=4)
+                        ha='left', va='center', transform=ax.transAxes, alpha=1, zorder=4)
     brand_obj = ax.text(0.92, 0.925, "Espresso Charts", fontfamily='DM Mono',
                         fontsize=issue_size, color='#9e8b76', ha='right', va='center',
-                        transform=ax.transAxes, alpha=0, zorder=4)
-    # Eyebrow
+                        transform=ax.transAxes, alpha=1, zorder=4)
+    # Eyebrow — visible immediately
     eyebrow_obj = ax.text(0.5, eyebrow_y, txt_eyebrow or "", fontfamily='DM Mono',
                           fontsize=eyebrow_size, color=eyebrow_color,
-                          ha='center', va='center', transform=ax.transAxes, alpha=0, zorder=4)
-    # Hero number (starts showing "0" or empty)
+                          ha='center', va='center', transform=ax.transAxes, alpha=1, zorder=4)
+    # Hero number — starts at 0, counts up
     initial_text = _format_number(0.0) if count_up else txt_suptitle
     number_obj = ax.text(0.5, suptitle_y, initial_text, fontsize=suptitle_size,
                          color=suptitle_color, ha='center', va='center',
                          fontweight=suptitle_font_weight, fontstyle=suptitle_font_style,
                          fontfamily=suptitle_font, linespacing=0.9,
-                         transform=ax.transAxes, alpha=0, zorder=4)
-    # Unit
+                         transform=ax.transAxes, alpha=1, zorder=4)
+    # Unit — starts invisible, fades in after count completes
     uc = unit_color or suptitle_color
     unit_obj = ax.text(0.5, suptitle_y - 0.12, txt_unit or "", fontfamily=suptitle_font,
                        fontsize=unit_size, fontstyle='italic', fontweight='normal',
                        color=uc, ha='center', va='top',
                        transform=ax.transAxes, alpha=0, zorder=4)
-    # Accent line
+    # Accent line — visible immediately
     accent_obj, = ax.plot([], [], color=accent_line_color, linewidth=accent_line_width,
                           solid_capstyle='round', transform=ax.transAxes, zorder=3)
-    # Insight
+    if show_accent_line:
+        half = accent_line_length / 2
+        accent_obj.set_data([0.5 - half, 0.5 + half], [accent_line_y, accent_line_y])
+    # Insight — visible immediately
     insight_obj = ax.text(0.5, subtitle_y, txt_subtitle, fontsize=subtitle_size,
                           color=subtitle_color, ha='center', va='center',
                           fontweight='semibold', fontstyle='italic',
                           fontfamily=suptitle_font, linespacing=1.35,
-                          transform=ax.transAxes, alpha=0, zorder=4)
-    # Context
+                          transform=ax.transAxes, alpha=1, zorder=4)
+    # Context — visible immediately
     context_obj = ax.text(0.5, context_y, txt_context or "", fontfamily=subtitle_font,
                           fontsize=context_size, fontstyle='italic', fontweight='light',
                           color=context_color, ha='center', va='center',
-                          linespacing=1.5, transform=ax.transAxes, alpha=0, zorder=4)
-    # Bottom rule
-    bot_rule, = ax.plot([], [], color=rule_color, linewidth=0.6,
+                          linespacing=1.5, transform=ax.transAxes, alpha=1, zorder=4)
+    # Bottom rule — visible immediately
+    bot_rule, = ax.plot([0.08, 0.92], [0.07, 0.07], color=rule_color, linewidth=0.6,
                         transform=ax.transAxes, zorder=3)
-    # Source
+    # Source — visible immediately
     source_obj = ax.text(0.5, label_y, txt_label or "", fontfamily='DM Mono',
                          fontsize=label_size, color=txt_label_color,
                          ha='center', va='center', fontweight=txt_label_font_weight,
-                         transform=ax.transAxes, alpha=0, zorder=4)
-    # Corner mark
+                         transform=ax.transAxes, alpha=1, zorder=4)
+    # Corner mark — visible immediately
     corner_patch = None
     if show_corner_mark:
         fig_w_pts = fig.get_size_inches()[0] * fig.dpi
@@ -1976,7 +1981,7 @@ def eCoverTileAnimateInstagram(
         corner_patch = mpatches.Polygon(
             [[1.0 - cx, 0.0], [1.0, 0.0], [1.0, cy]],
             closed=True, facecolor=accent_line_color, edgecolor='none',
-            alpha=0, transform=ax.transAxes, zorder=5)
+            alpha=0.65, transform=ax.transAxes, zorder=5)
         ax.add_patch(corner_patch)
 
     total_anim = int(fps * duration)
@@ -1986,81 +1991,26 @@ def eCoverTileAnimateInstagram(
     def update(frame):
         p = 1.0 if frame >= total_anim else frame / total_anim
 
-        # Top rule: expand from center (0.00 - 0.07)
-        tr = _ep(p, 0.00, 0.07)
-        if tr > 0:
-            h = 0.42 * tr
-            top_rule.set_data([0.5 - h, 0.5 + h], [0.895, 0.895])
-
-        # Corners: fade + drift (0.02 - 0.09)
-        cr = _ep(p, 0.02, 0.09)
-        issue_obj.set_alpha(cr)
-        brand_obj.set_alpha(cr)
-        issue_obj.set_position((0.08, 0.925 + 0.012 * (1 - cr)))
-        brand_obj.set_position((0.92, 0.925 + 0.012 * (1 - cr)))
-
-        # Eyebrow: fade + drift (0.05 - 0.14)
-        ey = _ep(p, 0.05, 0.14)
-        eyebrow_obj.set_alpha(ey)
-        eyebrow_obj.set_position((0.5, eyebrow_y + 0.010 * (1 - ey)))
-
-        # Number: fade + count-up (0.08 - 0.38)
-        nr = _ep(p, 0.08, 0.38)
-        number_obj.set_alpha(nr)
+        # Number: count up (0.0 - 0.70 of animation)
+        nr = _ep(p, 0.0, 0.70)
         if count_up:
             number_obj.set_text(_format_number(nr))
-        # Scale: start at 0.6x, end at 1.0x
-        scale = 0.60 + 0.40 * nr
-        number_obj.set_fontsize(suptitle_size * scale)
 
-        # Unit: fade + drift down (0.36 - 0.44)
+        # Unit: fade in after count reaches ~60% (0.55 - 0.75)
         if txt_unit:
-            ur = _ep(p, 0.36, 0.44)
+            ur = _ep(p, 0.55, 0.75)
             unit_obj.set_alpha(ur * 0.75)
+            # Position unit below number using bounding box
             try:
                 renderer = fig.canvas.get_renderer()
                 bb = number_obj.get_window_extent(renderer=renderer)
                 bb_ax = bb.transformed(ax.transAxes.inverted())
-                uy = bb_ax.y0 - descender_pad - 0.008 * (1 - ur)
+                uy = bb_ax.y0 - descender_pad
             except Exception:
-                uy = suptitle_y - 0.12 - 0.008 * (1 - ur)
+                uy = suptitle_y - 0.12
             unit_obj.set_position((0.5, uy))
 
-        # Accent line: expand from center (0.40 - 0.52)
-        al = _ep(p, 0.40, 0.52)
-        if show_accent_line and al > 0:
-            ah = (accent_line_length / 2) * al
-            accent_obj.set_data([0.5 - ah, 0.5 + ah], [accent_line_y, accent_line_y])
-
-        # Insight: fade + drift (0.48 - 0.68)
-        ir = _ep(p, 0.48, 0.68)
-        insight_obj.set_alpha(ir)
-        insight_obj.set_position((0.5, subtitle_y + 0.008 * (1 - ir)))
-
-        # Context: fade + drift (0.65 - 0.80)
-        if txt_context:
-            xr = _ep(p, 0.65, 0.80)
-            context_obj.set_alpha(xr)
-            context_obj.set_position((0.5, context_y + 0.006 * (1 - xr)))
-
-        # Bottom rule: expand (0.72 - 0.82)
-        br = _ep(p, 0.72, 0.82)
-        if br > 0:
-            bh = 0.42 * br
-            bot_rule.set_data([0.5 - bh, 0.5 + bh], [0.07, 0.07])
-
-        # Source: fade (0.80 - 0.90)
-        sr = _ep(p, 0.80, 0.90)
-        source_obj.set_alpha(sr)
-
-        # Corner mark: fade (0.88 - 1.00)
-        if corner_patch:
-            cm = _ep(p, 0.88, 1.00)
-            corner_patch.set_alpha(cm * 0.65)
-
-        return [top_rule, issue_obj, brand_obj, eyebrow_obj, number_obj,
-                unit_obj, accent_obj, insight_obj, context_obj,
-                bot_rule, source_obj]
+        return [number_obj, unit_obj]
 
     anim = animation.FuncAnimation(fig, update, frames=total_frames, interval=1000/fps, blit=False)
     writer = animation.FFMpegWriter(fps=fps, bitrate=3000,
