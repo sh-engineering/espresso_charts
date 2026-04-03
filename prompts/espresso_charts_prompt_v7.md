@@ -313,7 +313,7 @@ Each story needs one Reel script. Same video file for Instagram and YouTube Shor
 
 ### REEL STRUCTURE (mandatory)
 
-1. **`opening_frame`** -- AI-generated video background (Gemini Veo) with headline statistic overlay (~5s)
+1. **`cover_animate`** -- Parchment background with animated typewriter headline and accent line (3-4s hold)
 1. **One chart animation** -- `bar_animate`, `line_animate`, `stem_animate`, or `donut_animate`
 
 ### REEL TIMING
@@ -321,7 +321,7 @@ Each story needs one Reel script. Same video file for Instagram and YouTube Shor
 Total reel duration must exceed voiceover duration by at least 3 seconds.
 
 - Voiceover duration ~ word count / 2.5 words per second (at 0.95 speed)
-- Reel duration = opening frame (~5s) + chart animation `duration` + hold frames (`hold_frames` / 24 fps)
+- Reel duration = cover hold (3-4s) + chart animation `duration` + hold frames (`hold_frames` / 24 fps)
 
 Set `music.duration_ms` to match or slightly exceed total reel duration.
 
@@ -329,23 +329,15 @@ Set `music.duration_ms` to match or slightly exceed total reel duration.
 
 Instagram overlays UI on Reels. Top ~15% and bottom ~35% are covered. Only the **middle ~50%** is guaranteed visible. The standardized layout system handles this automatically for chart animations.
 
-### OPENING FRAME GUIDELINES
+### COVER ANIMATE GUIDELINES
 
-The `opening_frame` uses Gemini Veo to generate a short cinematic video clip, then overlays the story's Lead Number and a short label.
+The `cover_animate` renders the story's Lead Number and insight on parchment with animated typewriter reveal and an expanding accent line. This is the default.
 
-**`video_prompt` rules:**
+- `suptitle_y`: 0.65 or lower (safe zone)
+- `txt_suptitle`: The Lead Number and unit, e.g. "+50%\nvs 28%"
+- `txt_subtitle`: One-sentence insight, max 2 lines
 
-- Describe **visuals only**: slow, abstract, cinematic motion
-- Warm tones preferred (golden light, amber, earth tones)
-- **Never** request text, UI elements, people's faces, or recognizable brands
-- Keep prompts short and atmospheric (1-2 sentences)
-- Good: "Slow cinematic macro of coffee beans in warm golden light, shallow depth of field, abstract"
-- Good: "Gentle aerial drift over golden wheat fields at sunset, soft haze, no people"
-- Bad: "A chart showing GDP growth" (Veo generates real video, not graphics)
-
-**`number_text`:** The Lead Number. Examples: "+28 days", "4.2%", "$11.4T", "8.1 billion"
-
-**`label_text`:** Short context phrase, max 8 words. Use single quotes inside, ffmpeg drawtext cannot handle double quotes.
+**Alternative: `opening_frame`** -- For AI-generated video backgrounds (Gemini Veo) with headline overlay. Use `"type": "opening_frame"` instead. Requires `video_prompt`, `number_text`, `label_text`. See opening frame docs for details.
 
 -----
 
@@ -370,6 +362,8 @@ Every Instagram caption and every Chart Note ends with:
 
 **Length:** 600-900 words. **Charts:** 2-5.
 
+**Chart placement:** The article body must include inline image markers showing exactly which chart to insert and where. Use the format `![Chart: description](story_N_chart_M.png)` at the exact position each chart should appear. Every chart referenced in the newsletter must have a placement marker.
+
 **Structure:**
 
 ```
@@ -378,9 +372,15 @@ Every Instagram caption and every Chart Note ends with:
 
 [Hook paragraph: connect the story to the trending moment. Name the primary data source.]
 
-[Data section 1: what Chart 1 and Chart 2 show. Specific numbers. Active voice.]
+![Chart: headline of chart 1](story_0_chart_1.png)
 
-[Data section 2: deeper breakdown, historical context, or geographic variation.]
+[Data section 1: what Chart 1 shows. Specific numbers. Active voice.]
+
+![Chart: headline of chart 2](story_0_chart_2.png)
+
+[Data section 2: what Chart 2 shows. Deeper breakdown, historical context, or geographic variation.]
+
+![Chart: headline of chart 3](story_0_chart_3.png)
 
 [Implication: one concrete takeaway. No "only time will tell."]
 
@@ -390,6 +390,13 @@ Every Instagram caption and every Chart Note ends with:
 
 **Tags:** [tags]
 ```
+
+**Rules:**
+
+- Every chart image listed in the newsletter's chart set must appear in the body
+- Place each chart BEFORE the paragraph that discusses it, not after
+- The description inside the marker should match or summarize the chart's `txt_suptitle`
+- The filename must match the actual asset filename from `story_files`
 
 -----
 
@@ -470,11 +477,14 @@ config = json.loads(r'''
   "reel": {
     "animated_charts": [
       {
-        "type": "opening_frame",
+        "type": "cover_animate",
         "params": {
-          "video_prompt": "...",
-          "number_text": "...",
-          "label_text": "..."
+          "txt_suptitle": "+50%\nvs 28%",
+          "txt_subtitle": "Crude oil surged 50% in three weeks.\nGasoline prices rose just 28%.",
+          "suptitle_size": 42,
+          "subtitle_size": 18,
+          "suptitle_y": 0.65,
+          "accent_line_color": "#3F5B83"
         }
       },
       {
@@ -506,7 +516,7 @@ config = json.loads(r'''
 
 > **COVER:** Generated for reel thumbnail and Substack header. Not included in the carousel sequence. Uses the number-led template.
 
-> **REEL:** `animated_charts` must contain both `opening_frame` AND one chart animation. `music.duration_ms` must exceed voiceover duration + 3000ms.
+> **REEL:** `animated_charts` must contain both `cover_animate` AND one chart animation. `music.duration_ms` must exceed voiceover duration + 3000ms.
 
 > **CHART NOTES:** One entry per scheduled day. Each has `day`, `text`, and `image_asset`. Every Note stands alone.
 
@@ -598,11 +608,26 @@ config = json.loads(r'''
 
 > Always set `pct_colors`. Use `#FFFFFF` on dark segments, `#4b2e1a` on light.
 
-**`opening_frame` params:**
+**`cover_animate` params (default reel opener):**
 
 ```json
 {
-  "video_prompt": "Slow cinematic macro of water droplets on leaves, warm golden backlight, shallow depth of field, no text, no people",
+  "txt_suptitle": "+50%\nvs 28%",
+  "txt_subtitle": "Crude oil surged 50% in three weeks.\nGasoline prices rose just 28%.",
+  "suptitle_size": 42,
+  "subtitle_size": 18,
+  "suptitle_y": 0.65,
+  "accent_line_color": "#3F5B83"
+}
+```
+
+> `suptitle_y` must be 0.65 or lower (reel safe zone). If `txt_suptitle` runs to 3+ lines, reduce `suptitle_size` to 36 and `subtitle_size` to 16.
+
+**`opening_frame` params (alternative, requires Gemini Veo):**
+
+```json
+{
+  "video_prompt": "Slow cinematic macro of water droplets on leaves, warm golden backlight, no text, no people",
   "number_text": "8.1 billion",
   "label_text": "people on Earth right now",
   "number_size": 130,
@@ -613,7 +638,7 @@ config = json.loads(r'''
 }
 ```
 
-> Use single quotes inside `label_text`. Never double quotes.
+> Use `opening_frame` only when specifically requested. Requires Gemini Veo API access.
 
 **`bar_animate` / `stem_animate`:**
 
@@ -763,15 +788,15 @@ font_mono    = 'DM Mono'            # labels, ticks, source lines
 - [ ] All text uses `\n` for line breaks
 - [ ] All colors as hex codes: `"#3F5B83"`, never `"color_blue"`
 - [ ] Voiceover ~50 words each
-- [ ] Every reel has both `opening_frame` AND at least 1 chart animation
+- [ ] Every reel has both `cover_animate` AND at least 1 chart animation
 - [ ] Reel total duration > voiceover duration + 3 seconds
 - [ ] `music.duration_ms` matches or exceeds total reel duration
-- [ ] `opening_frame` has `video_prompt` (no text/people/brands), `number_text`, `label_text`
-- [ ] `label_text` uses single quotes only (no double quotes)
-- [ ] `video_prompt` describes slow, abstract, cinematic visuals
+- [ ] `cover_animate` uses `suptitle_y: 0.65` or lower
 - [ ] `copy` includes: `instagram`, `instagram_reel`, `youtube_shorts`, `substack_article`, `substack_chart_notes`
 - [ ] `substack_chart_notes` is an array with one entry per scheduled day
 - [ ] No Chart Note contains a teaser or promo
+- [ ] Substack article body contains `![Chart: ...](filename.png)` markers for every chart
+- [ ] Chart markers placed BEFORE the paragraph discussing each chart
 - [ ] **First chart headline is completely self-explanatory** (test: show it with no context)
 - [ ] Each story passes the "change your sense of scale" filter
 - [ ] All captions end with subscribe CTA
