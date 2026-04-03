@@ -1830,6 +1830,9 @@ def eCoverTileAnimateInstagram(
     issue_size=8, descender_pad=0.015,
     show_corner_mark=False, corner_mark_size=28,
     suptitle_font_style='italic',
+    # Count-up animation
+    count_up=True,
+    count_format=None,
     # Existing parameters (some defaults updated)
     suptitle_color='#2A1F14', suptitle_font='Playfair Display', suptitle_font_weight='bold',
     suptitle_size=86, suptitle_y=0.6,
@@ -1845,9 +1848,22 @@ def eCoverTileAnimateInstagram(
 ):
     """Animated number-led cover tile with editorial reveal sequence.
 
+    The hero number counts up from 0 to the target value (when count_up=True).
     Uses alpha fade + subtle drift (not typewriter). Each element appears
     in a staggered sequence over the animation duration.
+
+    Parameters
+    ----------
+    count_up : bool
+        If True, the hero number animates from 0 to its final value.
+        The function parses prefix ('+', '$') and suffix ('%', 'M', etc.)
+        from txt_suptitle automatically.
+    count_format : str or None
+        Format string for the counting number. If None, auto-detected
+        from txt_suptitle (e.g. "14.29" uses "{:.2f}", "53" uses "{:.0f}").
     """
+    import re
+
     rule_color = '#C8BBA8'
     ease_fn = _EASING.get(easing, _ease_out_cubic)
     plt.rcdefaults(); plt.rcParams['font.family'] = 'DM Mono'
@@ -1861,11 +1877,44 @@ def eCoverTileAnimateInstagram(
     fig.patch.set_linewidth(0)
     fig.patch.set_alpha(1)
 
+    # Parse hero number for count-up animation
+    # Extract prefix (non-numeric start), numeric core, suffix (non-numeric end)
+    # Handles: "+28", "53", "14.29", "$11.4T", "27", "14.29M", "+50%"
+    num_prefix, num_value, num_suffix, num_decimals = "", 0.0, "", 0
+    if count_up and txt_suptitle:
+        # Split on newlines, count up only the first line
+        first_line = txt_suptitle.split('\n')[0]
+        remaining_lines = '\n'.join(txt_suptitle.split('\n')[1:])
+        m = re.match(r'^([^0-9]*?)([\d,.]+)(.*?)$', first_line)
+        if m:
+            num_prefix = m.group(1)
+            num_str = m.group(2).replace(',', '')
+            num_suffix = m.group(3)
+            num_value = float(num_str)
+            num_decimals = len(num_str.split('.')[1]) if '.' in num_str else 0
+            if count_format is None:
+                if num_decimals > 0:
+                    count_format = f"{{:,.{num_decimals}f}}"
+                else:
+                    count_format = "{:,.0f}"
+        else:
+            count_up = False  # can't parse, fall back to fade only
+
     def _ep(gp, start, end):
-        """Element progress: 0 before start, 0-1 during, 1 after end."""
         if gp <= start: return 0.0
         if gp >= end: return 1.0
         return _ease_out_cubic((gp - start) / (end - start))
+
+    def _format_number(progress):
+        """Format the hero number at a given count-up progress (0-1)."""
+        if not count_up:
+            return txt_suptitle
+        current = num_value * progress
+        formatted = count_format.format(current)
+        result = f"{num_prefix}{formatted}{num_suffix}"
+        if remaining_lines:
+            result += '\n' + remaining_lines
+        return result
 
     # Create all elements (initially invisible)
     # Top rule
@@ -1882,8 +1931,9 @@ def eCoverTileAnimateInstagram(
     eyebrow_obj = ax.text(0.5, eyebrow_y, txt_eyebrow or "", fontfamily='DM Mono',
                           fontsize=eyebrow_size, color=eyebrow_color,
                           ha='center', va='center', transform=ax.transAxes, alpha=0, zorder=4)
-    # Hero number
-    number_obj = ax.text(0.5, suptitle_y, txt_suptitle, fontsize=suptitle_size,
+    # Hero number (starts showing "0" or empty)
+    initial_text = _format_number(0.0) if count_up else txt_suptitle
+    number_obj = ax.text(0.5, suptitle_y, initial_text, fontsize=suptitle_size,
                          color=suptitle_color, ha='center', va='center',
                          fontweight=suptitle_font_weight, fontstyle=suptitle_font_style,
                          fontfamily=suptitle_font, linespacing=0.9,
@@ -1954,9 +2004,12 @@ def eCoverTileAnimateInstagram(
         eyebrow_obj.set_alpha(ey)
         eyebrow_obj.set_position((0.5, eyebrow_y + 0.010 * (1 - ey)))
 
-        # Number: fade + scale (0.08 - 0.38)
+        # Number: fade + count-up (0.08 - 0.38)
         nr = _ep(p, 0.08, 0.38)
         number_obj.set_alpha(nr)
+        if count_up:
+            number_obj.set_text(_format_number(nr))
+        # Scale: start at 0.6x, end at 1.0x
         scale = 0.60 + 0.40 * nr
         number_obj.set_fontsize(suptitle_size * scale)
 
@@ -1964,7 +2017,6 @@ def eCoverTileAnimateInstagram(
         if txt_unit:
             ur = _ep(p, 0.36, 0.44)
             unit_obj.set_alpha(ur * 0.75)
-            # Compute unit position from number bounding box
             try:
                 renderer = fig.canvas.get_renderer()
                 bb = number_obj.get_window_extent(renderer=renderer)
