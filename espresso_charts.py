@@ -1067,7 +1067,7 @@ def eCoverTileInstagram(
     txt_label_font_weight='light', label_size=8, label_y=0.038,
     face_color='#F5F0E6', px_width=1080, px_height=1350, dpi=200,
     show_accent_line=True, accent_line_color='#3F5B83', accent_line_width=4,
-    accent_line_y=0.25, accent_line_length=0.15,
+    accent_line_y=0.29, accent_line_length=0.15,
 ):
     """Number-led cover tile with editorial layout.
 
@@ -1867,7 +1867,7 @@ def eCoverTileAnimateInstagram(
     label_size=8, label_y=0.038,
     face_color='#F5F0E6', px_width=1080, px_height=1920, dpi=200,
     show_accent_line=True, accent_line_color='#3F5B83', accent_line_width=4,
-    accent_line_y=0.25, accent_line_length=0.15,
+    accent_line_y=0.29, accent_line_length=0.15,
     # Legacy params (ignored)
     accent_line_start=0.40, accent_line_end=0.65,
 ):
