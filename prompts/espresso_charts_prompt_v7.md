@@ -252,7 +252,7 @@ The number renders in the brand's dark ink with the significant digits or leadin
 
 **Elements (top to bottom):**
 
-1. **Wordmark:** "ESPRESSO CHARTS" in DM Mono, all caps, wide tracking, ink-faint, top left. Issue number top right ("No. 001").
+1. **Wordmark:** "ESPRESSO CHARTS" in DM Mono, all caps, wide tracking, ink-faint, top right. Publication date top left (e.g. "April 6, 2026").
 2. **Dominant number:** Playfair Display italic, the Lead Number. Significant digits in blue, rest in dark ink.
 3. **Unit label:** Small italic below the number ("billion people", "years", "degrees"). The unit transforms a number into a fact.
 4. **Accent rule:** 28-40px wide, 2-2.5px tall, brand color, left-aligned below the unit. A breath between data and insight.
@@ -268,7 +268,7 @@ The number renders in the brand's dark ink with the significant digits or leadin
   "txt_subtitle": "It took all of human history to reach one billion.\nWe added seven more in two centuries.",
   "txt_unit": "people on Earth",
   "txt_eyebrow": "World Population · 2024",
-  "txt_issue": "001",
+  "txt_issue": "April 6, 2026",
   "suptitle_size": 86,
   "subtitle_size": 16,
   "accent_line_color": "#3F5B83",
@@ -468,7 +468,7 @@ config = json.loads(r'''
     "txt_subtitle": "It took all of human history to reach one billion.\nWe added seven more in two centuries.",
     "txt_unit": "people on Earth",
     "txt_eyebrow": "World Population · 2024",
-    "txt_issue": "001",
+    "txt_issue": "April 6, 2026",
     "suptitle_size": 86,
     "subtitle_size": 16,
     "accent_line_color": "#3F5B83",
@@ -656,15 +656,11 @@ config = json.loads(r'''
   "txt_suptitle": "53\nyears",
   "txt_subtitle": "The gap between the last crew to leave\nlow Earth orbit and the next one.",
   "txt_unit": "between Moon missions",
-  "txt_eyebrow": "Human Spaceflight · 2026",
-  "txt_issue": "001",
+  "txt_eyebrow": "Human Spaceflight \u00b7 2026",
+  "txt_issue": "April 6, 2026",
   "suptitle_size": 86,
-  "subtitle_size": 16,
-  "suptitle_y": 0.60,
-  "subtitle_y": 0.38,
   "accent_line_color": "#3F5B83",
   "show_corner_mark": true,
-  "count_up": true,
   "duration": 3.5,
   "hold_duration": 2.0
 }
