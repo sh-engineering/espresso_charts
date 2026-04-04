@@ -344,11 +344,14 @@ Instagram overlays UI on Reels. Top ~15% and bottom ~35% are covered. Only the *
 
 ### COVER ANIMATE GUIDELINES
 
-The `cover_animate` renders the story's Lead Number and insight on parchment with animated typewriter reveal and an expanding accent line. This is the default.
+The `cover_animate` renders the story's Lead Number and insight on parchment. The number is visible from frame 1 (for the Instagram grid thumbnail). Surrounding elements (unit, accent line, insight) animate in.
 
-- `suptitle_y`: 0.65 or lower (safe zone)
-- `txt_suptitle`: The Lead Number and unit, e.g. "+50%\nvs 28%"
+- `txt_suptitle`: The Lead Number, e.g. "53\nyears", "27\nmillion tons"
 - `txt_subtitle`: One-sentence insight, max 2 lines
+- `txt_unit`: Unit label below the number (e.g. "between Moon missions")
+- `txt_eyebrow`: Topic label (e.g. "Human Spaceflight \u00b7 2026")
+- `txt_issue`: Date string (e.g. "April 6, 2026")
+- Do NOT set `suptitle_y`, `subtitle_y`, or `accent_line_y` — the defaults handle layout
 - `duration`: 3.5 (default). Controls animation phase length.
 - `hold_duration`: 2.0 (default). Holds completed frame before chart cuts in.
 
@@ -500,12 +503,14 @@ config = json.loads(r'''
       {
         "type": "cover_animate",
         "params": {
-          "txt_suptitle": "+50%\nvs 28%",
-          "txt_subtitle": "Crude oil surged 50% in three weeks.\nGasoline prices rose just 28%.",
-          "suptitle_size": 42,
-          "subtitle_size": 18,
-          "suptitle_y": 0.65,
+          "txt_suptitle": "53\nyears",
+          "txt_subtitle": "The gap between the last crew to leave\nlow Earth orbit and the next one.",
+          "txt_unit": "between Moon missions",
+          "txt_eyebrow": "Human Spaceflight \u00b7 2026",
+          "txt_issue": "April 6, 2026",
+          "suptitle_size": 86,
           "accent_line_color": "#3F5B83",
+          "show_corner_mark": true,
           "duration": 3.5,
           "hold_duration": 2.0
         }
@@ -838,7 +843,7 @@ font_mono    = 'DM Mono'            # labels, ticks, source lines
 - [ ] Every reel has both `cover_animate` AND at least 1 chart animation
 - [ ] Reel total duration > voiceover duration + 3 seconds
 - [ ] `music.duration_ms` exceeds total reel duration (cover + chart) by at least 3000ms
-- [ ] `cover_animate` uses `suptitle_y: 0.65` or lower
+- [ ] `cover_animate` does NOT override `suptitle_y`, `subtitle_y`, or `accent_line_y` (defaults handle layout)
 - [ ] `copy` includes: `instagram`, `instagram_reel`, `youtube_shorts`, `substack_article`, `substack_chart_notes`
 - [ ] `substack_chart_notes` is an array with one entry per scheduled day
 - [ ] No Chart Note contains a teaser or promo
