@@ -182,7 +182,7 @@ API keys use `{{SECRET_NAME}}` syntax. The runner resolves these from Colab's `u
 |Format        |Charts          |Principle                                                              |
 |--------------|----------------|-----------------------------------------------------------------------|
 |**Carousel**  |3-5             |Each slide adds a distinct analytical layer. See depth framework below.|
-|**Newsletter**|2-5             |Use as many as the story and data genuinely support.                   |
+|**Newsletter**|2-4             |Keep it tight. Every chart must earn its place.                        |
 |**Reel**      |1 animated chart|The single most compelling visual from the story.                      |
 |**Chart Note**|1 static chart  |The single most surprising or instructive chart.                       |
 
@@ -363,7 +363,7 @@ Each story needs complete copy for:
 - **Instagram carousel caption** (150-250 words) + hashtags (10-15)
 - **Instagram Reel caption** (50-100 words) + hashtags (5-8)
 - **YouTube Shorts description** (50-80 words, search-optimized) + hashtags (5-8)
-- **Substack article** (headline, subhead, body 600-900 words, tags)
+- **Substack article** (headline, subhead, body 300-450 words, tags)
 - **Substack Chart Notes** -- one per day the story is active. Each Note is 2-4 sentences delivering one real data insight. Always paired with one chart image. No teasers.
 
 ### CTA rule
@@ -375,7 +375,9 @@ Every Instagram caption and every Chart Note ends with:
 
 ## STEP 6: SUBSTACK ARTICLE
 
-**Length:** 600-900 words. **Charts:** 2-5.
+**Length:** 300-450 words. **Charts:** 2-4.
+
+Think espresso, not drip coffee. The reader should finish in under two minutes and walk away with one clear insight. Every sentence earns its place. No throat-clearing, no padding.
 
 **Chart placement:** The article body must include inline image markers showing exactly which chart to insert and where. Use the format `![Chart: description](story_N_chart_M.png)` at the exact position each chart should appear. Every chart referenced in the newsletter must have a placement marker.
 
@@ -385,19 +387,17 @@ Every Instagram caption and every Chart Note ends with:
 ### [Headline]
 *[Subhead]*
 
-[Hook paragraph: connect the story to the trending moment. Name the primary data source.]
+[Hook: one paragraph connecting the story to the trending moment. Name the source. 2-3 sentences max.]
 
 ![Chart: headline of chart 1](story_0_chart_1.png)
 
-[Data section 1: what Chart 1 shows. Specific numbers. Active voice.]
+[What chart 1 shows. Specific numbers. 2-3 sentences.]
 
 ![Chart: headline of chart 2](story_0_chart_2.png)
 
-[Data section 2: what Chart 2 shows. Deeper breakdown, historical context, or geographic variation.]
+[What chart 2 shows. One additional angle. 2-3 sentences.]
 
-![Chart: headline of chart 3](story_0_chart_3.png)
-
-[Implication: one concrete takeaway. No "only time will tell."]
+[One concrete takeaway. No "only time will tell."]
 
 ---
 *Sources: [Source with URL]*
@@ -412,6 +412,8 @@ Every Instagram caption and every Chart Note ends with:
 - Place each chart BEFORE the paragraph that discusses it, not after
 - The description inside the marker should match or summarize the chart's `txt_suptitle`
 - The filename must match the actual asset filename from `story_files`
+- No section headings with ### inside the body (the article is too short for sections)
+- One paragraph per chart, max 3 sentences each
 
 -----
 
