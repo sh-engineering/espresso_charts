@@ -359,12 +359,23 @@ def add_hlines(ax, lines):
             linewidth=ln.get('width', 1.0), alpha=ln.get('alpha', 0.8),
             zorder=ln.get('zorder', 5))
         if ln.get('label'):
-            lc   = ln.get('label_color', color)
-            ls   = ln.get('label_size', 10)
-            xlim = ax.get_xlim()
-            ax.text(xlim[1], ln['y'], f"  {ln['label']}",
-                    ha='left', va='center', color=lc, fontsize=ls,
-                    zorder=ln.get('zorder', 5) + 1)
+            lc = ln.get('label_color', color)
+            ls = ln.get('label_size', 10)
+            ha = ln.get('label_ha', 'left')
+            zo = ln.get('zorder', 5) + 1
+            if ha == 'right':
+                ax.text(0.98, ln['y'], ln['label'],
+                        ha='right', va='bottom', color=lc, fontsize=ls,
+                        transform=ax.get_yaxis_transform(), zorder=zo)
+            elif ha == 'left_inside':
+                ax.text(0.02, ln['y'], ln['label'],
+                        ha='left', va='bottom', color=lc, fontsize=ls,
+                        transform=ax.get_yaxis_transform(), zorder=zo)
+            else:
+                xlim = ax.get_xlim()
+                ax.text(xlim[1], ln['y'], f"  {ln['label']}",
+                        ha='left', va='center', color=lc, fontsize=ls,
+                        zorder=zo)
     return ax
 
 
