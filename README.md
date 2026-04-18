@@ -1,97 +1,79 @@
 # Espresso Charts
 
-**Thirty seconds of perspective.** Data journalism in chart form, published across Instagram, YouTube Shorts, and Substack.
+**Thirty seconds of perspective.** Data journalism in chart form. One story per day, one chart per story.
 
 ## System Overview
 
-The production pipeline is config-driven: a Python file containing a JSON config is loaded into a Google Colab notebook that renders all assets (charts, animations, voiceovers, posters, and copy) automatically.
+Daily single-chart stories published across Instagram Reels, YouTube Shorts, and Substack. The production pipeline is config-driven: a JSON config loaded into a Google Colab notebook renders all assets automatically.
 
 ### Files
 
 | File | Purpose |
 |---|---|
-| `espresso_charts.py` | Core charting library (matplotlib). All chart functions, audio pipeline, poster generator, GitHub uploader, Substack publisher. |
-| `espresso_charts_runner.ipynb` | Colab notebook. Loads JSON config, renders all assets for the week. |
-| `espresso_charts_prompt_v7.md` | Weekly story generation prompt. Feed to Claude/GPT to produce the config + editorial calendar. |
-| `config_YYYY_MM_DD.py` | Weekly config file. Contains all data, chart params, copy, and metadata for 3 stories. |
+| `espresso_charts.py` | Core charting library (matplotlib). Charts, animations, poster, audio, publishing. |
+| `espresso_charts_runner.ipynb` | Colab notebook. JSON config in, all assets out. |
+| `espresso_charts_prompt_v8.md` | Weekly prompt. Feed to Claude to produce 7 daily stories. |
+| `config_YYYY_MM_DD.py` | Weekly config. 7 stories with data, chart params, copy. |
+| `cadence.md` | Publishing schedule and workflow. |
+| `story_history.md` | Story log for topic repetition avoidance. |
 
-### Weekly Cadence
+### Daily Model
 
-Three stories per week (Story 0 = Monday, Story 1 = Wednesday, Story 2 = Friday).
-
-| Day | Instagram | YouTube | Substack |
-|---|---|---|---|
-| Mon | Reel (Story 0) | Short (Story 0) | Chart Note |
-| Tue | Carousel (Story 0) | | Chart Note |
-| Wed | Reel (Story 1) | Short (Story 1) | Chart Note |
-| Thu | | | Newsletter (Story 1) + Chart Note |
-| Fri | Reel (Story 2) | Short (Story 2) | Chart Note |
-| Sat | Carousel (Story 2) | | Chart Note |
-| Sun | | | Chart Note |
+One story per day (Mon-Sat). Each story = one number + one chart + one Reel + one Note + one poster. Sunday = auto-assembled weekly digest. No multi-chart carousels or long-form articles in the daily cadence.
 
 ---
 
 ## Chart Library (`espresso_charts.py`)
 
-### Static Charts (4:5 Instagram Carousels)
+### Static Charts (4:5 Instagram)
 
-| Function | Type | Use |
-|---|---|---|
-| `eSingleBarChartNewInstagram` | Horizontal bar | Rankings, comparisons |
-| `eMultiLineChartInstagram` | Multi-line | Trends over time |
-| `eStemChartNewInstagram` | Lollipop/stem | Magnitude with categorical x-axis |
-| `eDonutChartInstagram` | Donut | Part-to-whole (3-5 slices) |
-| `eCoverTileInstagram` | Cover tile | Number-led editorial cover |
+| Function | Type |
+|---|---|
+| `eSingleBarChartNewInstagram` | Horizontal bar (rankings, comparisons) |
+| `eMultiLineChartInstagram` | Multi-line (trends over time) |
+| `eStemChartNewInstagram` | Lollipop/stem (magnitude, categorical x) |
+| `eDonutChartInstagram` | Donut (part-to-whole, 3-5 slices) |
+| `eCoverTileInstagram` | Number-led editorial cover |
 
-### Animated Charts (9:16 Reels/Shorts)
+### Animated Charts (9:16 Reels)
 
-| Function | Type | Notes |
-|---|---|---|
-| `eSingleBarChartAnimateInstagram` | Bar | Bars grow with eased animation |
-| `eMultiLineChartAnimateInstagram` | Line | Line draws with moving value label at tip |
-| `eStemChartAnimateInstagram` | Stem | Stems grow from zero |
-| `eDonutChartAnimateInstagram` | Donut | Wedges sweep open |
-| `eCoverTileAnimateInstagram` | Cover | Frame 0 = complete design (thumbnail). Frame 1+ = elements animate in |
+| Function | Notes |
+|---|---|
+| `eSingleBarChartAnimateInstagram` | Bars grow with easing |
+| `eMultiLineChartAnimateInstagram` | Line draws with moving value label at tip |
+| `eStemChartAnimateInstagram` | Stems grow from zero |
+| `eDonutChartAnimateInstagram` | Wedges sweep open |
+| `eCoverTileAnimateInstagram` | Frame 0 = complete (thumbnail). Frame 1+ = elements animate in |
 
 ### Poster
 
-| Function | Type | Notes |
-|---|---|---|
-| `eDataPoster` | Print PDF (A3) | Hero number 120pt, insight headline 28pt, hero chart + extra chart images, annotation band |
+| Function | Notes |
+|---|---|
+| `eDataPoster` | A3 PDF. Hero 120pt, insight headline 28pt, hero chart + extra charts, annotations. |
 
-### Audio Pipeline
+### Audio
 
 | Function | Purpose |
 |---|---|
-| `eGenerateVoiceover` | ElevenLabs TTS (default: "george" voice, British male) |
+| `eGenerateVoiceover` | ElevenLabs TTS ("george" voice) |
 | `eGenerateMusic` | ElevenLabs AI music (presets: `lofi_coffee`, `editorial_minimal`, `upbeat_data`) |
-| `eAddAudio` | Combine video + voiceover + music with fade controls |
-| `eConcatenateMP4` | Join cover animation + chart animation into one reel |
+| `eAddAudio` | Combine video + voiceover + music |
+| `eConcatenateMP4` | Join cover + chart clips |
 
 ### Helpers
 
 | Function | Purpose |
 |---|---|
-| `save_chart` | Save with locked dimensions (never `bbox_inches='tight'`) |
-| `fetch_fred_series` | Pull data from FRED API |
-| `add_hlines` | Horizontal reference lines with `label_ha` support (`right`, `left_inside`, default) |
-| `add_vlines` | Vertical reference lines |
+| `add_hlines` | Horizontal lines with `label_ha` support (`right`, `left_inside`, default) |
+| `add_vlines` | Vertical lines |
 | `add_reference_bands` | Shaded bands |
-| `add_custom_annotations` | Callout annotations with optional arrows |
-| `add_text` / `add_lines` | Manual text and line overlays |
-
-### Publishing
-
-| Class/Function | Purpose |
-|---|---|
-| `GitHubUploader` | Push assets to GitHub repo |
-| `SubstackPublisher` | Create draft/scheduled/published Substack posts |
+| `add_custom_annotations` | Callout annotations |
+| `GitHubUploader` | Push assets to GitHub |
+| `SubstackPublisher` | Substack API integration |
 
 ---
 
 ## Color System
-
-All colors must be hex values in configs (the runner does not resolve color name strings inside nested dicts).
 
 ```python
 color_blue   = '#3F5B83'
@@ -101,230 +83,86 @@ color_sand   = '#CDAF7B'
 face_color   = '#F5F0E6'
 ```
 
+All config values must be hex codes. The runner does not resolve color name strings.
+
 ## Font System
 
-Three font families, all from Google Fonts:
+| Font | Role |
+|---|---|
+| Playfair Display | Headlines, hero numbers, cover tiles (700 italic) |
+| Source Serif 4 | Body text, subtitles (300-400) |
+| DM Mono | Labels, ticks, masthead (300-400) |
 
-| Font | Role | Weight |
-|---|---|---|
-| Playfair Display | Headlines, hero numbers, cover tiles | 700 italic (hero), 400 italic (insight) |
-| Source Serif 4 | Body text, subtitles, context | 300 (light), 400 (regular) |
-| DM Mono | Labels, ticks, eyebrows, source lines, masthead | 300 (light), 400 (regular) |
-
-### Installation (required at start of every Colab session)
+Install at start of every Colab session:
 
 ```python
 from espresso_charts import install_espresso_fonts
 install_espresso_fonts()
 ```
 
-This downloads fonts from Google Fonts GitHub (`raw.githubusercontent.com`), deletes matplotlib's font cache, rebuilds the font manager, and registers each font via `addfont()`. Order matters: delete cache, then `_load_fontmanager(try_read_cache=False)`, then `addfont()` last.
+---
+
+## Cover Tile
+
+Number-led editorial layout (B template). 12 visual layers: background, top rule, date + brand corners, eyebrow, hero number (86pt), unit (24pt), accent line, insight sentence, context, bottom rule, source, corner mark.
+
+**Cover animate:** Frame 0 = complete design (Instagram thumbnail). Frame 1+ = accent line expands, unit/insight fade in. Do NOT set position overrides (`suptitle_y`, `subtitle_y`, `accent_line_y`).
 
 ---
 
-## Cover Tile Design
+## Data Poster
 
-The cover tile is a number-led editorial layout with 12 visual layers:
+A3 PDF at 300 DPI. Layout: hero number 120pt, insight headline 28pt, hero chart with first/last value labels (no Y axis), extra chart images side-by-side, annotation band, context, footer. PDF rendered via PIL (no reportlab needed).
 
-1. **Background** — parchment fill (#F5F0E6)
-2. **Top rule** — thin horizontal line
-3. **Corner labels** — date (left), "Espresso Charts" (right), DM Mono
-4. **Eyebrow** — topic + year, DM Mono, centered
-5. **Hero number** — Playfair Display 86pt bold italic
-6. **Unit line** — 24pt below the number (e.g. "of the world's trees, cut")
-7. **Accent line** — short colored rule, expands from center in animation
-8. **Insight sentence** — Playfair italic, the story's one-sentence hook
-9. **Context sentence** — Source Serif 4 light italic (optional)
-10. **Bottom rule**
-11. **Source line** — DM Mono, centered
-12. **Corner mark** — small triangle, bottom-right
+---
 
-### Cover Animate Behavior
+## Data Sources
 
-- **Frame 0:** Complete design visible (Instagram grid thumbnail)
-- **Frame 1+:** Accent line expands, unit/insight/context fade in with subtle drift
-- **No position overrides needed** — do NOT set `suptitle_y`, `subtitle_y`, or `accent_line_y` in config
+**Tier 1 (daily story ideas):** Our World in Data, Gapminder, NASA, NOAA, UN Data, World Bank
 
-### Config Example
+**Tier 2 (domain-specific):** USGS, IUCN, Global Carbon Project, FAO, IRENA, Copernicus, Met Office Hadley Centre
 
-```json
-{
-  "type": "cover_animate",
-  "params": {
-    "txt_suptitle": "46%",
-    "txt_subtitle": "Nearly half of all trees that existed\nwhen humans arrived are gone.",
-    "txt_unit": "of the world's trees, cut",
-    "txt_eyebrow": "Global Forests \u00b7 FAO 2025",
-    "txt_issue": "April 14, 2026",
-    "suptitle_size": 86,
-    "accent_line_color": "#4D5523",
-    "show_corner_mark": true,
-    "duration": 3.5,
-    "hold_duration": 2.0
-  }
-}
+**Tier 3 (carousel deep-dives only):** FRED, IMF, OECD, Eurostat, BLS, BEA, IEA
+
+**OWID Rule:** Discover and download via Our World in Data, cite the underlying primary source.
+
+**Macro exclusion:** GDP, CPI, NFP, rate decisions belong to Macro Ledger, not Espresso Charts.
+
+---
+
+## Story Log
+
+`story_history.md` at repo root. Append after each week:
+
+```markdown
+| Date | Slug | Lead Number | Source | Chart Type |
+|------|------|-------------|--------|------------|
+| 2026-04-14 | global_trees_46pct | 46% | FAO 2025 | bar |
 ```
 
----
-
-## Data Poster (`eDataPoster`)
-
-Print-quality A3 PDF poster. Layout:
-
-- **Masthead** — ESPRESSO CHARTS + No. + topic
-- **Hero number** — 120pt Playfair italic in accent color
-- **Unit label** — 26pt below number
-- **Insight headline** — 28pt Playfair italic, large and readable
-- **Accent rule**
-- **Hero chart** — line chart with first/last value labels (no Y axis)
-- **Extra charts** — 2-3 smaller chart images side-by-side (auto-collected by runner)
-- **Annotation band** — 2-3 milestone callouts with colored dots
-- **Context** — Source Serif 4, supporting detail
-- **Footer** — source lines + tagline + corner mark
-
-### PDF Generation
-
-Matplotlib's PDF backend crashes on variable fonts (`StyleFlags invalid value`). The poster renders to a temp PNG at full DPI, then wraps it in PDF via PIL (`Image.save(format='PDF')`). No extra dependencies needed beyond Pillow.
-
-### Config Example
-
-```json
-"poster": {
-  "hero_number": "46%",
-  "hero_unit": "of the world's trees, cut",
-  "hero_eyebrow": "GLOBAL FORESTS, FAO 2025",
-  "insight_text": "Nearly half of all trees that existed\nwhen humans arrived are gone.",
-  "insight_context": "An estimated 3.04 trillion trees remain.\nBefore human civilization, the number was 5.6 trillion.",
-  "chart_x_labels": [[1990, "1990"], [2000, "2000"], [2010, "2010"], [2025, "Now"]],
-  "chart_y_format": "{:.1f}T",
-  "annotations": [
-    {"year": "1990", "value": "3.5T trees", "desc": "Earliest estimate", "color": "#4D5523"}
-  ],
-  "source_lines": ["SOURCE: FAO Global Forest Assessment 2025", "fao.org"],
-  "issue_number": "015",
-  "issue_topic": "Global Forests",
-  "accent_color": "#4D5523"
-}
-```
-
-The runner auto-extracts `chart_x`/`chart_y` from the first line chart in the story. If no line chart exists, provide them explicitly. Extra chart images are collected automatically from the story's rendered PNGs.
+Inject last 30 entries into weekly prompts to avoid repetition.
 
 ---
 
-## Runner Pipeline
+## Production Rules
 
-The runner processes each story in this order:
-
-1. **Cover** (PNG) — `eCoverTileInstagram`
-2. **Static charts** (PNG) — bar, line, stem, donut
-3. **Copy** (text files) — captions, articles, chart notes
-4. **Poster** (PDF) — `eDataPoster` with auto-collected extra charts
-5. **Reel** (MP4) — cover_animate + chart_animate + voiceover + music
-6. **GitHub push** — all assets uploaded to repo
-
-### Data Pipeline
-
-- `_resolve_secrets()` — replaces `{{SECRET_NAME}}` with Colab userdata secrets
-- `make_df()` — tries `data_source` API first, falls back to inline `data`
-- `_post_process()` — sort, dropna, tail/head, column selection
-
-### Running
-
-```python
-from espresso_charts import *
-install_espresso_fonts()
-
-# Load config
-exec(open("config_2026_04_14.py").read())
-
-# Run everything
-run_config(config)
-
-# Run one story, charts only
-run_config(config, story_ids=[0], only='charts')
-
-# Run one specific chart
-run_config(config, story_ids=[1], chart_indices=[2])
-```
-
----
-
-## Config Schema
-
-```python
-config = json.loads(r'''
-{
-  "week": {"year": "2026", "month": "04", "week_start": "14"},
-  "defaults": {
-    "face_color": "#F5F0E6",
-    "dpi": 200,
-    "suptitle_font": "Playfair Display",
-    "subtitle_font": "Source Serif 4",
-    "voiceover": {"voice_name": "george", "model": "multilingual_v2", "speed": 0.95},
-    "audio_mix": {"vo_delay": 0.5, "music_volume": 0.12}
-  },
-  "stories": [
-    {
-      "id": 0,
-      "slug": "story_slug",
-      "cover": { ... },
-      "charts": [ ... ],
-      "reel": { ... },
-      "poster": { ... },
-      "story_files": [ ... ],
-      "copy": { ... }
-    }
-  ]
-}
-''')
-```
-
----
-
-## Key Production Rules
+### Daily Story Rules
+- 1 chart per story, 1 number per chart
+- Headline IS the number, not the topic
+- Voiceover: 30-40 words maximum
+- Reel: 14-18 seconds total (cover 2-3s, chart 8-12s)
+- No `substack_article` for daily stories
+- `substack_note`: 2-4 sentences, lead with the number
 
 ### Config Rules
-- Bar chart data must be sorted ascending (smallest first)
-- All text uses `\n` for line breaks
-- Colors as hex strings (`"#3F5B83"`) — the runner does not resolve color names in nested dicts
-- Dollar signs in matplotlib text: escape as `\\$`
-- JSON requires string keys for index-based dicts (`{"0": 4}`)
+- Bar chart data sorted ascending
+- All text uses `\n`, all colors as hex
+- Dollar signs: `\\$`
+- JSON string keys for index dicts (`{"0": 4}`)
+- Cover: do NOT override position params
 
-### Cover Tile Rules
-- Do NOT set `suptitle_y`, `subtitle_y`, or `accent_line_y` — defaults handle layout
-- `txt_issue` is a date string (e.g. "April 14, 2026"), not an issue number
-- `suptitle_size` defaults to 86
-- `unit_size` defaults to 24
-
-### Reel Rules
-- Every reel starts with `cover_animate`, followed by one chart animation
-- `line_animate` must never include `x_ticks` or `x_tick_labels` (causes categorical converter crash)
-- `music.duration_ms` must exceed total reel duration
-- Voiceover target: 33-50 words
-
-### Writing Rules
-- No em dashes anywhere
-- No exclamation marks in analytical text
-- No emojis except single coffee emoji in sign-offs
-- Substack articles: 300-450 words (espresso length)
-- Chart notes: 2-4 sentences, real insight, no teasers
-
-### Known Bugs / Workarounds
-- ffmpeg `%` in drawtext: use `expansion=none` + `textfile=`
-- ffmpeg `[]` in font paths: copy to bracket-free temp paths
-- matplotlib PDF + variable fonts: render PNG, wrap in PDF via PIL
-- Colab runtime caching: `importlib.reload()` after uploading new `.py` files
-
----
-
-## Approved Data Sources
-
-| Domain | Sources |
-|---|---|
-| Macroeconomics | FRED, IMF, OECD, World Bank, Eurostat, BLS, BEA |
-| Energy / Climate | IEA, EIA, IRENA, Our World in Data, NOAA |
-| Demographics | UN Data, Census Bureau, Pew Research, UNESCO |
-| Science / Space | NASA, ESA, NOAA, USGS |
-| Trade | WTO, World Bank, UNCTAD, WIPO |
-
-No aggregators, news articles, or Wikipedia as primary sources.
+### Known Bugs
+- ffmpeg `%` in drawtext: `expansion=none` + `textfile=`
+- ffmpeg `[]` in font paths: temp symlinks
+- matplotlib PDF + variable fonts: render PNG, wrap via PIL
+- Colab caching: `importlib.reload()` after uploading new `.py`
