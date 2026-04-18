@@ -1064,7 +1064,7 @@ def eCoverTileInstagram(
     # New cover-specific parameters
     txt_eyebrow="", txt_issue="", txt_unit=None, txt_context=None,
     eyebrow_y=0.78, eyebrow_size=9, eyebrow_color='#9e8b76',
-    unit_size=14, unit_color=None,
+    unit_size=24, unit_color=None,
     context_y=0.10, context_size=12, context_color='#79664a',
     issue_size=8, descender_pad=0.015,
     show_corner_mark=False, corner_mark_size=28,
@@ -1861,7 +1861,7 @@ def eCoverTileAnimateInstagram(
     # New cover-specific parameters
     txt_eyebrow="", txt_issue="", txt_unit=None, txt_context=None,
     eyebrow_y=0.78, eyebrow_size=9, eyebrow_color='#9e8b76',
-    unit_size=14, unit_color=None,
+    unit_size=24, unit_color=None,
     context_y=0.10, context_size=12, context_color='#79664a',
     issue_size=8, descender_pad=0.015,
     show_corner_mark=False, corner_mark_size=28,
@@ -2708,7 +2708,7 @@ def eDataPoster(
     # Insight block
     insight_text="It took all of human history to reach one billion people.\nWe added seven more in two centuries.",
     insight_context="The first billion took roughly 300,000 years.\nThe second took 127 years. The third took 33.",
-    # Chart data (simple line chart)
+    # Chart data (hero line chart)
     chart_x=None,
     chart_y=None,
     chart_x_labels=None,
@@ -2716,6 +2716,9 @@ def eDataPoster(
     chart_y_format="{:.0f}",
     chart_color='#3F5B83',
     chart_fill_alpha=0.12,
+    # Extra charts (list of PNG file paths, rendered as smaller supporting charts)
+    extra_charts=None,
+    extra_chart_labels=None,
     # Annotations (list of dicts: {year, value, desc, color})
     annotations=None,
     # Metadata
@@ -2731,8 +2734,16 @@ def eDataPoster(
 ):
     """Generate a print-quality data poster as PDF (A3 portrait).
 
-    Hero number at 120pt. Chart has no Y axis — first/last data points
-    are labeled directly. PDF rendered via PIL (no reportlab needed).
+    Layout: hero number + insight headline at top, hero chart below,
+    optional 2-3 extra chart images in a row, annotation band, context, footer.
+
+    Parameters
+    ----------
+    extra_charts : list of str or None
+        Paths to PNG files of additional charts. Rendered side-by-side
+        below the hero chart. Max 3 recommended.
+    extra_chart_labels : list of str or None
+        Optional short labels below each extra chart.
     """
     fc = '#F5F0E6'
     ink = '#2A1F14'
@@ -2745,6 +2756,7 @@ def eDataPoster(
 
     fig = plt.figure(figsize=(paper_width_in, paper_height_in), dpi=dpi, facecolor=fc)
     ml, mr = 0.076, 0.924
+    content_w = mr - ml
 
     # ── MASTHEAD ──
     fig.text(ml, 0.972, "ESPRESSO CHARTS",
@@ -2769,25 +2781,36 @@ def eDataPoster(
              ha='left', va='top', linespacing=0.85)
 
     # ── UNIT LABEL ──
-    fig.text(ml, num_y - 0.110, hero_unit,
+    unit_y = num_y - 0.110
+    fig.text(ml, unit_y, hero_unit,
              fontfamily='Playfair Display', fontsize=26, fontweight=400,
              fontstyle='italic', color=ink_muted,
              ha='left', va='top')
 
+    # ── INSIGHT TEXT (headline — large, right below number block) ──
+    insight_y = unit_y - 0.045
+    fig.text(ml, insight_y, insight_text,
+             fontfamily='Playfair Display', fontsize=28, fontweight=400,
+             fontstyle='italic', color=ink, ha='left', va='top',
+             linespacing=1.4, transform=fig.transFigure)
+
+    n_insight_lines = max(1, insight_text.count('\n') + 1)
+    insight_bottom = insight_y - (n_insight_lines * 0.030) - 0.010
+
     # ── ACCENT RULE ──
-    accent_y = num_y - 0.140
-    fig.add_artist(plt.Line2D([ml, ml + 0.055], [accent_y, accent_y],
+    fig.add_artist(plt.Line2D([ml, ml + 0.055], [insight_bottom, insight_bottom],
                               color=accent_color, linewidth=2.5, solid_capstyle='round',
                               transform=fig.transFigure))
 
-    # ── CHART ──
-    chart_top = accent_y - 0.030
-    chart_height = 0.30
+    # ── HERO CHART ──
+    chart_top = insight_bottom - 0.020
+    has_extras = extra_charts and len(extra_charts) > 0
+    chart_height = 0.22 if has_extras else 0.28
     chart_bottom = chart_top - chart_height
     chart_section_present = chart_x is not None and chart_y is not None
 
     if chart_section_present:
-        ax = fig.add_axes([ml, chart_bottom, mr - ml, chart_height])
+        ax = fig.add_axes([ml, chart_bottom, content_w, chart_height])
         ax.set_facecolor(fc)
         ax.grid(axis='y', color=rule_color, linewidth=0.3, linestyle=(0, (3, 4)), zorder=0)
         for spine in ax.spines.values():
@@ -2800,14 +2823,12 @@ def eDataPoster(
         ax.plot(chart_x[-1], chart_y[-1], 'o', color=chart_color, markersize=5, zorder=3)
         ax.plot(chart_x[0], chart_y[0], 'o', color=chart_color, markersize=4, zorder=3)
 
-        # Annotation dots on chart
         if annotations:
             for anno in annotations:
                 if 'chart_x' in anno and 'chart_y' in anno:
                     ax.plot(anno['chart_x'], anno['chart_y'], 'o',
                             color=anno.get('color', accent_color), markersize=4, zorder=3)
 
-        # X axis labels
         if chart_x_labels:
             ax.set_xticks([l[0] for l in chart_x_labels])
             xlabels = ax.set_xticklabels([l[1] for l in chart_x_labels],
@@ -2818,17 +2839,13 @@ def eDataPoster(
         else:
             ax.tick_params(axis='x', labelbottom=False)
 
-        # No Y axis — value labels on first and last data points instead
-        ax.set_yticks([])
-        ax.tick_params(axis='y', labelleft=False)
+        ax.set_yticks([]); ax.tick_params(axis='y', labelleft=False)
 
-        # First data point label
         first_label = chart_y_format.format(chart_y[0])
         ax.annotate(first_label, xy=(chart_x[0], chart_y[0]),
                     xytext=(-6, 8), textcoords='offset points',
                     ha='right', va='bottom', fontfamily='DM Mono',
                     fontsize=10, color=chart_color, fontweight=400, zorder=5)
-        # Last data point label
         last_label = chart_y_format.format(chart_y[-1])
         ax.annotate(last_label, xy=(chart_x[-1], chart_y[-1]),
                     xytext=(6, 8), textcoords='offset points',
@@ -2838,13 +2855,47 @@ def eDataPoster(
         ax.set_xlim(min(chart_x), max(chart_x))
         ax.margins(y=0.10)
 
+    # ── EXTRA CHARTS (side-by-side images) ──
+    cursor_y = chart_bottom - 0.015 if chart_section_present else (insight_bottom - 0.30)
+
+    if has_extras:
+        from PIL import Image as PILImage
+        n_extra = min(len(extra_charts), 3)
+        gap = 0.02
+        each_w = (content_w - gap * (n_extra - 1)) / n_extra
+        extra_h = 0.14
+        labels = extra_chart_labels or [None] * n_extra
+
+        for i in range(n_extra):
+            img_path = extra_charts[i]
+            if not os.path.isfile(img_path):
+                continue
+            x_left = ml + i * (each_w + gap)
+            ax_e = fig.add_axes([x_left, cursor_y - extra_h, each_w, extra_h])
+            ax_e.set_facecolor(fc)
+            for spine in ax_e.spines.values():
+                spine.set_visible(False)
+            ax_e.set_xticks([]); ax_e.set_yticks([])
+
+            img = PILImage.open(img_path)
+            ax_e.imshow(img, aspect='auto')
+
+            if labels[i]:
+                fig.text(x_left + each_w / 2, cursor_y - extra_h - 0.008,
+                         labels[i], fontfamily='DM Mono', fontsize=7.5,
+                         fontweight=300, color=ink_faint,
+                         ha='center', va='top')
+
+        cursor_y = cursor_y - extra_h - 0.025
+    else:
+        cursor_y = cursor_y - 0.005
+
     # ── ANNOTATION BAND ──
-    anno_y = (chart_bottom - 0.020) if chart_section_present else (accent_y - 0.35)
+    anno_y = cursor_y
 
     if annotations:
         n = len(annotations)
-        band_width = mr - ml
-        col_width = band_width / n
+        col_width = content_w / n
 
         for i, anno in enumerate(annotations):
             x_pos = ml + i * col_width + 0.012
@@ -2864,22 +2915,15 @@ def eDataPoster(
                      fontfamily='Source Serif 4', fontsize=12, fontweight=300,
                      color=ink_muted, ha='left', va='top', linespacing=1.4)
 
-    # ── INSIGHT BLOCK ──
-    insight_top = anno_y - 0.085 if annotations else (anno_y - 0.015)
-    fig.add_artist(plt.Line2D([ml, mr], [insight_top, insight_top],
-                              color=rule_color, linewidth=0.5, transform=fig.transFigure))
+        cursor_y = anno_y - 0.080
+    else:
+        cursor_y = anno_y - 0.010
 
-    fig.text(ml, insight_top - 0.025, insight_text,
-             fontfamily='Playfair Display', fontsize=26, fontweight=400,
-             fontstyle='italic', color=ink, ha='left', va='top',
-             linespacing=1.45, transform=fig.transFigure)
-
-    # Estimate insight height
-    n_insight_lines = max(1, insight_text.count('\n') + 1)
-    context_top = insight_top - 0.025 - (n_insight_lines * 0.032) - 0.020
-
+    # ── CONTEXT ──
     if insight_context:
-        fig.text(ml, context_top, insight_context,
+        fig.add_artist(plt.Line2D([ml, mr], [cursor_y, cursor_y],
+                                  color=rule_color, linewidth=0.5, transform=fig.transFigure))
+        fig.text(ml, cursor_y - 0.018, insight_context,
                  fontfamily='Source Serif 4', fontsize=15, fontweight=300,
                  color=ink_muted, ha='left', va='top',
                  linespacing=1.6, transform=fig.transFigure)
@@ -2912,8 +2956,6 @@ def eDataPoster(
     fig.add_artist(triangle)
 
     # ── SAVE ──
-    # Render to PNG, then convert to PDF via PIL (avoids matplotlib
-    # PDF backend crash on variable font style flags)
     if output_file.lower().endswith('.pdf'):
         import tempfile
         from PIL import Image as PILImage

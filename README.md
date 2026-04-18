@@ -1,289 +1,330 @@
-# Espresso Charts — Stories
+# Espresso Charts
 
-Data stories that turn trending topics into visual insights within 24 hours.
+**Thirty seconds of perspective.** Data journalism in chart form, published across Instagram, YouTube Shorts, and Substack.
 
-Published on [Instagram](https://instagram.com/espressocharts), [YouTube](https://youtube.com/@espressocharts), and [Substack](https://espressocharts.substack.com).
+## System Overview
 
-**Goal:** Grow Substack free subscribers. Every post on Instagram and YouTube is top-of-funnel. Every caption ends with a prompt to subscribe at espressocharts.substack.com.
+The production pipeline is config-driven: a Python file containing a JSON config is loaded into a Google Colab notebook that renders all assets (charts, animations, voiceovers, posters, and copy) automatically.
 
----
+### Files
 
-## Weekly Schedule at a Glance
+| File | Purpose |
+|---|---|
+| `espresso_charts.py` | Core charting library (matplotlib). All chart functions, audio pipeline, poster generator, GitHub uploader, Substack publisher. |
+| `espresso_charts_runner.ipynb` | Colab notebook. Loads JSON config, renders all assets for the week. |
+| `espresso_charts_prompt_v7.md` | Weekly story generation prompt. Feed to Claude/GPT to produce the config + editorial calendar. |
+| `config_YYYY_MM_DD.py` | Weekly config file. Contains all data, chart params, copy, and metadata for 3 stories. |
 
-All times CET (Berlin).
+### Weekly Cadence
 
-| Day | Instagram | YouTube Shorts | Substack |
-|-----|-----------|----------------|----------|
-| **Mon** | Reel 09–11 | Short 09–11 | Story 0 — Chart Note |
-| **Tue** | Story 0 Carousel 09–11 | — | Story 0 — Chart Note |
-| **Wed** | Reel 09–11 | Short 09–11 | Story 1 — Chart Note |
-| **Thu** | — | — | Story 1 Newsletter 06–08 · Story 1 — Chart Note |
-| **Fri** | Reel 09–11 | Short 09–11 | Story 2 — Chart Note |
-| **Sat** | Story 2 Carousel 12–14 | — | Story 2 — Chart Note |
-| **Sun** | — | — | Story 2 — Chart Note |
+Three stories per week (Story 0 = Monday, Story 1 = Wednesday, Story 2 = Friday).
 
-### Story Publishing Map
-
-| Story | Reel + Short | Carousel | Newsletter |
-|-------|-------------|----------|------------|
-| **Story 0** | Mon 09–11 | Tue 09–11 | — |
-| **Story 1** | Wed 09–11 | — | Thu 06–08 |
-| **Story 2** | Fri 09–11 | Sat 12–14 | — |
-
----
-
-## What Each Format Is
-
-| Format | What it is |
-|--------|------------|
-| **Reel** | 15–25 second animated chart video with voiceover and music. The hook that drives people to the carousel or newsletter. |
-| **YouTube Short** | Same video as the Reel, uploaded to YouTube with an adapted title and description. |
-| **Carousel** | 3–5 static chart slides posted as a swipeable Instagram post. Starts directly on the first chart — no cover slide. Each slide adds a distinct layer: overall trend, breakdown by category, historical context, geographic comparison, share of total. |
-| **Newsletter** | Full Substack article, 600–900 words, 2–5 charts. The deepest version of the story. |
-| **Chart Note** | 2–4 sentences delivering one real data insight from the story, with one chart image attached. No teasers. Every Note must stand alone as something worth reading. |
+| Day | Instagram | YouTube | Substack |
+|---|---|---|---|
+| Mon | Reel (Story 0) | Short (Story 0) | Chart Note |
+| Tue | Carousel (Story 0) | | Chart Note |
+| Wed | Reel (Story 1) | Short (Story 1) | Chart Note |
+| Thu | | | Newsletter (Story 1) + Chart Note |
+| Fri | Reel (Story 2) | Short (Story 2) | Chart Note |
+| Sat | Carousel (Story 2) | | Chart Note |
+| Sun | | | Chart Note |
 
 ---
 
-## Posting Time Guidance
+## Chart Library (`espresso_charts.py`)
 
-Exact minutes do not matter. What matters is landing in the right window when the audience is active.
+### Static Charts (4:5 Instagram Carousels)
 
-| Platform | Best windows (CET) | Notes |
-|----------|-------------------|-------|
-| **Instagram Reels** | 08:00–11:00 · 18:00–20:00 | Morning window preferred. Avoid posting mid-afternoon (12:00–17:00). |
-| **Instagram Carousels** | 08:00–11:00 · 19:00–21:00 | Saves rate is highest in the evening window. Morning is reliable either way. |
-| **YouTube Shorts** | Same window as the Reel | Upload within 30 minutes of the Instagram Reel. |
-| **Substack Newsletter** | 06:00–08:00 | Early morning catches readers before work. Thursday is the strongest newsletter day. |
-| **Substack Chart Notes** | Any time | Notes surface in a feed, not an inbox. Publish when ready. |
+| Function | Type | Use |
+|---|---|---|
+| `eSingleBarChartNewInstagram` | Horizontal bar | Rankings, comparisons |
+| `eMultiLineChartInstagram` | Multi-line | Trends over time |
+| `eStemChartNewInstagram` | Lollipop/stem | Magnitude with categorical x-axis |
+| `eDonutChartInstagram` | Donut | Part-to-whole (3-5 slices) |
+| `eCoverTileInstagram` | Cover tile | Number-led editorial cover |
 
----
+### Animated Charts (9:16 Reels/Shorts)
 
-## Weekly Totals
+| Function | Type | Notes |
+|---|---|---|
+| `eSingleBarChartAnimateInstagram` | Bar | Bars grow with eased animation |
+| `eMultiLineChartAnimateInstagram` | Line | Line draws with moving value label at tip |
+| `eStemChartAnimateInstagram` | Stem | Stems grow from zero |
+| `eDonutChartAnimateInstagram` | Donut | Wedges sweep open |
+| `eCoverTileAnimateInstagram` | Cover | Frame 0 = complete design (thumbnail). Frame 1+ = elements animate in |
 
-| Platform | Format | Count |
-|----------|--------|-------|
-| Instagram | Reels | 3 |
-| Instagram | Carousels | 2 |
-| YouTube Shorts | Shorts | 3 |
-| Substack | Newsletter | 1 |
-| Substack | Chart Notes | 7 |
-| **Total** | | **16 pieces/week** |
+### Poster
 
----
+| Function | Type | Notes |
+|---|---|---|
+| `eDataPoster` | Print PDF (A3) | Hero number 120pt, insight headline 28pt, hero chart + extra chart images, annotation band |
 
-## Repository Structure
+### Audio Pipeline
 
-```
-espresso_charts_stories/
-├── README.md
-├── weekly_packs/
-│   └── 2026_02_23.md
-└── assets/
-    └── 2026/
-        └── 02/
-            ├── 23/             ← Story 0 (Monday Reel date)
-            │   ├── story_0_cover.png
-            │   ├── story_0_chart_1.png
-            │   ├── story_0_chart_2.png
-            │   ├── story_0_chart_3.png
-            │   ├── story_0_chart_4.png
-            │   ├── story_0_reel.mp4
-            │   └── story_0_reel_with_voice.mp4
-            ├── 25/             ← Story 1 (Wednesday Reel date)
-            │   └── ...
-            └── 27/             ← Story 2 (Friday Reel date)
-                └── ...
-```
+| Function | Purpose |
+|---|---|
+| `eGenerateVoiceover` | ElevenLabs TTS (default: "george" voice, British male) |
+| `eGenerateMusic` | ElevenLabs AI music (presets: `lofi_coffee`, `editorial_minimal`, `upbeat_data`) |
+| `eAddAudio` | Combine video + voiceover + music with fade controls |
+| `eConcatenateMP4` | Join cover animation + chart animation into one reel |
 
-Each story's assets live in `assets/YYYY/MM/DD/` where DD is the Reel publish date. Weekly packs live in `weekly_packs/` named by the Monday of that week.
+### Helpers
 
-### File Naming
+| Function | Purpose |
+|---|---|
+| `save_chart` | Save with locked dimensions (never `bbox_inches='tight'`) |
+| `fetch_fred_series` | Pull data from FRED API |
+| `add_hlines` | Horizontal reference lines with `label_ha` support (`right`, `left_inside`, default) |
+| `add_vlines` | Vertical reference lines |
+| `add_reference_bands` | Shaded bands |
+| `add_custom_annotations` | Callout annotations with optional arrows |
+| `add_text` / `add_lines` | Manual text and line overlays |
 
-Files are prefixed with the story's series ID (`story_0`, `story_1`, `story_2`) so any file can be identified at a glance regardless of which folder it sits in. The ID resets each week — Story 0 is always Monday, Story 1 is always Wednesday, Story 2 is always Friday.
+### Publishing
 
-| File | Name |
-|------|------|
-| Cover tile | `story_N_cover.png` |
-| Charts | `story_N_chart_1.png`, `story_N_chart_2.png`, etc. (numbered in carousel order) |
-| Reel (no audio) | `story_N_reel.mp4` |
-| Reel (with voiceover + music) | `story_N_reel_with_voice.mp4` |
-| Weekly editorial calendar | `weekly_packs/YYYY_MM_DD.md` |
-
-Charts are numbered in the order they appear in the carousel. The cover tile is generated for the reel thumbnail and Substack header but does not appear as a carousel slide.
+| Class/Function | Purpose |
+|---|---|
+| `GitHubUploader` | Push assets to GitHub repo |
+| `SubstackPublisher` | Create draft/scheduled/published Substack posts |
 
 ---
 
-## End-to-End Pipeline
+## Color System
 
-```
-Claude Prompt → JSON config + weekly_pack.md
-                    ↓
-         Google Colab Notebook
-                    ↓
-    covers, charts, reels, audio (assets/)
-                    ↓
-              GitHub repo
-                    ↓
-    Schedule via weekly_pack.md calendar
+All colors must be hex values in configs (the runner does not resolve color name strings inside nested dicts).
+
+```python
+color_blue   = '#3F5B83'
+color_orange = '#A14516'
+color_green  = '#4D5523'
+color_sand   = '#CDAF7B'
+face_color   = '#F5F0E6'
 ```
 
-### Step 1: Generate Content (Claude)
+## Font System
 
-Paste the full `espresso_charts_prompt_v3.md` prompt into Claude. It will search for trending topics and return two outputs:
+Three font families, all from Google Fonts:
 
-**Output A — JSON config block:**
+| Font | Role | Weight |
+|---|---|---|
+| Playfair Display | Headlines, hero numbers, cover tiles | 700 italic (hero), 400 italic (insight) |
+| Source Serif 4 | Body text, subtitles, context | 300 (light), 400 (regular) |
+| DM Mono | Labels, ticks, eyebrows, source lines, masthead | 300 (light), 400 (regular) |
+
+### Installation (required at start of every Colab session)
+
+```python
+from espresso_charts import install_espresso_fonts
+install_espresso_fonts()
+```
+
+This downloads fonts from Google Fonts GitHub (`raw.githubusercontent.com`), deletes matplotlib's font cache, rebuilds the font manager, and registers each font via `addfont()`. Order matters: delete cache, then `_load_fontmanager(try_read_cache=False)`, then `addfont()` last.
+
+---
+
+## Cover Tile Design
+
+The cover tile is a number-led editorial layout with 12 visual layers:
+
+1. **Background** — parchment fill (#F5F0E6)
+2. **Top rule** — thin horizontal line
+3. **Corner labels** — date (left), "Espresso Charts" (right), DM Mono
+4. **Eyebrow** — topic + year, DM Mono, centered
+5. **Hero number** — Playfair Display 86pt bold italic
+6. **Unit line** — 24pt below the number (e.g. "of the world's trees, cut")
+7. **Accent line** — short colored rule, expands from center in animation
+8. **Insight sentence** — Playfair italic, the story's one-sentence hook
+9. **Context sentence** — Source Serif 4 light italic (optional)
+10. **Bottom rule**
+11. **Source line** — DM Mono, centered
+12. **Corner mark** — small triangle, bottom-right
+
+### Cover Animate Behavior
+
+- **Frame 0:** Complete design visible (Instagram grid thumbnail)
+- **Frame 1+:** Accent line expands, unit/insight/context fade in with subtle drift
+- **No position overrides needed** — do NOT set `suptitle_y`, `subtitle_y`, or `accent_line_y` in config
+
+### Config Example
+
+```json
+{
+  "type": "cover_animate",
+  "params": {
+    "txt_suptitle": "46%",
+    "txt_subtitle": "Nearly half of all trees that existed\nwhen humans arrived are gone.",
+    "txt_unit": "of the world's trees, cut",
+    "txt_eyebrow": "Global Forests \u00b7 FAO 2025",
+    "txt_issue": "April 14, 2026",
+    "suptitle_size": 86,
+    "accent_line_color": "#4D5523",
+    "show_corner_mark": true,
+    "duration": 3.5,
+    "hold_duration": 2.0
+  }
+}
+```
+
+---
+
+## Data Poster (`eDataPoster`)
+
+Print-quality A3 PDF poster. Layout:
+
+- **Masthead** — ESPRESSO CHARTS + No. + topic
+- **Hero number** — 120pt Playfair italic in accent color
+- **Unit label** — 26pt below number
+- **Insight headline** — 28pt Playfair italic, large and readable
+- **Accent rule**
+- **Hero chart** — line chart with first/last value labels (no Y axis)
+- **Extra charts** — 2-3 smaller chart images side-by-side (auto-collected by runner)
+- **Annotation band** — 2-3 milestone callouts with colored dots
+- **Context** — Source Serif 4, supporting detail
+- **Footer** — source lines + tagline + corner mark
+
+### PDF Generation
+
+Matplotlib's PDF backend crashes on variable fonts (`StyleFlags invalid value`). The poster renders to a temp PNG at full DPI, then wraps it in PDF via PIL (`Image.save(format='PDF')`). No extra dependencies needed beyond Pillow.
+
+### Config Example
+
+```json
+"poster": {
+  "hero_number": "46%",
+  "hero_unit": "of the world's trees, cut",
+  "hero_eyebrow": "GLOBAL FORESTS, FAO 2025",
+  "insight_text": "Nearly half of all trees that existed\nwhen humans arrived are gone.",
+  "insight_context": "An estimated 3.04 trillion trees remain.\nBefore human civilization, the number was 5.6 trillion.",
+  "chart_x_labels": [[1990, "1990"], [2000, "2000"], [2010, "2010"], [2025, "Now"]],
+  "chart_y_format": "{:.1f}T",
+  "annotations": [
+    {"year": "1990", "value": "3.5T trees", "desc": "Earliest estimate", "color": "#4D5523"}
+  ],
+  "source_lines": ["SOURCE: FAO Global Forest Assessment 2025", "fao.org"],
+  "issue_number": "015",
+  "issue_topic": "Global Forests",
+  "accent_color": "#4D5523"
+}
+```
+
+The runner auto-extracts `chart_x`/`chart_y` from the first line chart in the story. If no line chart exists, provide them explicitly. Extra chart images are collected automatically from the story's rendered PNGs.
+
+---
+
+## Runner Pipeline
+
+The runner processes each story in this order:
+
+1. **Cover** (PNG) — `eCoverTileInstagram`
+2. **Static charts** (PNG) — bar, line, stem, donut
+3. **Copy** (text files) — captions, articles, chart notes
+4. **Poster** (PDF) — `eDataPoster` with auto-collected extra charts
+5. **Reel** (MP4) — cover_animate + chart_animate + voiceover + music
+6. **GitHub push** — all assets uploaded to repo
+
+### Data Pipeline
+
+- `_resolve_secrets()` — replaces `{{SECRET_NAME}}` with Colab userdata secrets
+- `make_df()` — tries `data_source` API first, falls back to inline `data`
+- `_post_process()` — sort, dropna, tail/head, column selection
+
+### Running
+
+```python
+from espresso_charts import *
+install_espresso_fonts()
+
+# Load config
+exec(open("config_2026_04_14.py").read())
+
+# Run everything
+run_config(config)
+
+# Run one story, charts only
+run_config(config, story_ids=[0], only='charts')
+
+# Run one specific chart
+run_config(config, story_ids=[1], chart_indices=[2])
+```
+
+---
+
+## Config Schema
+
 ```python
 config = json.loads(r'''
-{ "week": {...}, "defaults": {...}, "stories": [...] }
+{
+  "week": {"year": "2026", "month": "04", "week_start": "14"},
+  "defaults": {
+    "face_color": "#F5F0E6",
+    "dpi": 200,
+    "suptitle_font": "Playfair Display",
+    "subtitle_font": "Source Serif 4",
+    "voiceover": {"voice_name": "george", "model": "multilingual_v2", "speed": 0.95},
+    "audio_mix": {"vo_delay": 0.5, "music_volume": 0.12}
+  },
+  "stories": [
+    {
+      "id": 0,
+      "slug": "story_slug",
+      "cover": { ... },
+      "charts": [ ... ],
+      "reel": { ... },
+      "poster": { ... },
+      "story_files": [ ... ],
+      "copy": { ... }
+    }
+  ]
+}
 ''')
 ```
 
-**Output B — `weekly_pack.md`:**
-The full editorial calendar with every caption, voiceover script, Chart Note, and newsletter for Mon–Sun.
+---
 
-Save both outputs before closing the session.
+## Key Production Rules
+
+### Config Rules
+- Bar chart data must be sorted ascending (smallest first)
+- All text uses `\n` for line breaks
+- Colors as hex strings (`"#3F5B83"`) — the runner does not resolve color names in nested dicts
+- Dollar signs in matplotlib text: escape as `\\$`
+- JSON requires string keys for index-based dicts (`{"0": 4}`)
+
+### Cover Tile Rules
+- Do NOT set `suptitle_y`, `subtitle_y`, or `accent_line_y` — defaults handle layout
+- `txt_issue` is a date string (e.g. "April 14, 2026"), not an issue number
+- `suptitle_size` defaults to 86
+- `unit_size` defaults to 24
+
+### Reel Rules
+- Every reel starts with `cover_animate`, followed by one chart animation
+- `line_animate` must never include `x_ticks` or `x_tick_labels` (causes categorical converter crash)
+- `music.duration_ms` must exceed total reel duration
+- Voiceover target: 33-50 words
+
+### Writing Rules
+- No em dashes anywhere
+- No exclamation marks in analytical text
+- No emojis except single coffee emoji in sign-offs
+- Substack articles: 300-450 words (espresso length)
+- Chart notes: 2-4 sentences, real insight, no teasers
+
+### Known Bugs / Workarounds
+- ffmpeg `%` in drawtext: use `expansion=none` + `textfile=`
+- ffmpeg `[]` in font paths: copy to bracket-free temp paths
+- matplotlib PDF + variable fonts: render PNG, wrap in PDF via PIL
+- Colab runtime caching: `importlib.reload()` after uploading new `.py` files
 
 ---
 
-### Step 2: Set Up the Week's Folders (GitHub)
+## Approved Data Sources
 
-Create a folder for each story under `assets/YYYY/MM/`:
+| Domain | Sources |
+|---|---|
+| Macroeconomics | FRED, IMF, OECD, World Bank, Eurostat, BLS, BEA |
+| Energy / Climate | IEA, EIA, IRENA, Our World in Data, NOAA |
+| Demographics | UN Data, Census Bureau, Pew Research, UNESCO |
+| Science / Space | NASA, ESA, NOAA, USGS |
+| Trade | WTO, World Bank, UNCTAD, WIPO |
 
-```
-assets/2026/03/
-├── 02/   ← Story 0 (Monday Reel date)
-├── 04/   ← Story 1 (Wednesday Reel date)
-└── 06/   ← Story 2 (Friday Reel date)
-```
-
-Save the editorial calendar as `weekly_packs/2026_03_02.md`.
-
----
-
-### Step 3: Run the Notebook (Google Colab)
-
-Open `Espresso_Charts.ipynb`. Paste the config block into a new cell and run it. Then run the pipeline cell.
-
-The runner reads `config["stories"]` and executes five phases per story:
-
-| Phase | What it does | Output |
-|-------|-------------|--------|
-| **Cover** | Generates the story title card | `story_N_cover.png` |
-| **Charts** | Generates each chart in order | `story_N_chart_1.png`, `story_N_chart_2.png`, etc. |
-| **Reel** | Renders the animated chart video | `story_N_reel.mp4` |
-| **Audio** | Generates voiceover via ElevenLabs, adds music, mixes | `story_N_reel_with_voice.mp4` |
-| **Copy** | (Optional) Sends the newsletter draft to Substack API | Substack draft |
-
-**Config type → Python function mapping:**
-
-| Config `type` | Python function |
-|---------------|----------------|
-| `"bar"` | `eSingleBarChartNewInstagram()` |
-| `"line"` | `eMultiLineChartInstagram()` |
-| `"stem"` | `eStemChartNewInstagram()` |
-| `"donut"` | `eDonutChartInstagram()` |
-| `"cover_animate"` | `eCoverTileInstagram(animate=True)` |
-| `"bar_animate"` | `eSingleBarChartAnimate()` |
-| `"line_animate"` | `eMultiLineChartInstagram(animate=True)` |
-| `"stem_animate"` | `eStemChartNewInstagram(animate=True)` |
-
-Colors are stored in the config as strings (`"color_blue"`). The runner resolves them to hex before passing to chart functions.
-
----
-
-### Step 4: Review Assets
-
-Check each generated file before publishing:
-
-- **story_N_cover.png** — Headline readable, accent line visible, text well-positioned
-- **story_N_chart_N.png** — Labels not overlapping, source credit present, bars sorted correctly
-- **story_N_reel.mp4** — Cover title card present, chart animation present, headings inside the safe zone
-- **story_N_reel_with_voice.mp4** — Voiceover synced with animation, music fades correctly, total duration at least 3 seconds longer than voiceover
-
-Adjust params in the config cell and re-run any story that needs a fix.
-
----
-
-### Step 5: Push to GitHub
-
-Download from Colab and place in the story folder:
-
-```
-assets/2026/03/02/
-├── story_0_cover.png
-├── story_0_chart_1.png
-├── story_0_chart_2.png
-├── story_0_chart_3.png
-├── story_0_chart_4.png
-├── story_0_reel.mp4
-└── story_0_reel_with_voice.mp4
-```
-
-Commit and push.
-
----
-
-### Step 6: Schedule and Publish
-
-Use `weekly_pack.md` as the publishing checklist.
-
-**Instagram Reels and Carousels (via Meta Business Suite):**
-- Upload assets listed in the weekly pack entry
-- Paste caption from the weekly pack
-- Schedule within the posting window for that day
-
-**YouTube Shorts:**
-- Upload `story_N_reel_with_voice.mp4`
-- Paste the title and description from the weekly pack's `youtube_shorts` block
-- Publish or schedule within 30 minutes of the Instagram Reel
-
-**Substack Newsletter (Thursday):**
-- Create a new post in Substack
-- Paste headline, subtitle, and body from the weekly pack
-- Insert chart images at the marked positions
-- Add source links and tags
-- Schedule within the 06:00–08:00 window
-
-**Substack Chart Notes (daily):**
-- Paste Note text from the weekly pack
-- Attach the chart image listed in the Note's `Image:` line
-- Publish when ready
-
----
-
-### API Keys Required
-
-| Service | Key needed for | Where to set |
-|---------|---------------|-------------|
-| ElevenLabs | Voiceover + background music | Colab env variable |
-| FRED | Economic data pulls | Colab env variable |
-| Substack | Automated draft publishing (optional) | Colab env variable |
-
----
-
-### Quick Reference
-
-```
-Prompt Claude → paste config into Colab → run all → download assets → push to GitHub → schedule per weekly_pack.md
-```
-
----
-
-## Brand Reference
-
-| Element | Value |
-|---------|-------|
-| Background | `#F5F0E6` (Latte Cream) |
-| Primary accent | `#3F5B83` (Blue) |
-| Secondary accent | `#A14516` (Orange) |
-| Tertiary | `#4D5523` (Green) |
-| Neutral | `#CDAF7B` (Sand) |
-| Title font | DejaVu Serif |
-| Body font | DejaVu Sans |
-| Chart dimensions | 1080 × 1350 px @ 200 dpi |
-| Reel / Short format | 1080 × 1350 px (9:16 crop in app) |
-| Reel safe zone | Middle ~50% of frame (top/bottom obscured by platform UI) |
-| Reel cover `suptitle_y` | 0.65 or lower |
-| Charts per carousel | 3–5 |
-| Charts per newsletter | 2–5 |
-| Newsletter length | 600–900 words |
+No aggregators, news articles, or Wikipedia as primary sources.
