@@ -260,7 +260,11 @@ def _add_titles(fig, txt_suptitle, txt_subtitle, L,
 
 def _add_footnote(fig, txt_label, L,
                   color='#857052', font_weight='light', size=None):
-    """Place footnote at fixed position below the plot area."""
+    """Place footnote at fixed position below the plot area. Max 2 lines."""
+    if txt_label:
+        lines = txt_label.split('\n')
+        if len(lines) > 2:
+            txt_label = '\n'.join(lines[:2])
     fs = size or _FOOTNOTE_SIZE
     return fig.text(
         0.5, L['footnote_y'], txt_label,
@@ -466,6 +470,7 @@ def eSingleBarChartNewInstagram(
     zero_line_style='--', zero_line_width=1.0,
     instagram=True, px_width=1080, px_height=1350, dpi=200,
     sep_index=None, sep_color='#4b2e1a', sep_style='-', sep_width=1.5,
+    value_label_min_clearance_pts=6, value_label_force_outside=None,
     # Legacy params — accepted but ignored in v2 standardized layout
     suptitle_y_custom=None, subtitle_pad_custom=None, x_subtitle_offset=None,
 ):
@@ -473,6 +478,7 @@ def eSingleBarChartNewInstagram(
     label_custom_offset  = _int_keys(label_custom_offset)
     value_label_offset_x = _int_keys(value_label_offset_x)
     value_label_offset_y = _int_keys(value_label_offset_y)
+    value_label_force_outside = _int_keys(value_label_force_outside)
 
     # --- Standardized layout ---
     # Auto-detect if all values are negative to swap margins
@@ -563,14 +569,12 @@ def eSingleBarChartNewInstagram(
         is_pos   = (value >= 0)
 
         # Category label: always at x=0 (the axis), reading rightward.
-        # For positive bars: label sits inside the bar near its base (parchment bbox).
-        # For negative bars: label sits in the right margin (bars extend left).
         cat_extra = 0
         if isinstance(label_custom_offset, dict):
             cat_extra = label_custom_offset.get(idx, 0)
         cat_anchor = 0
         off_cat = 8 + offset_label_x + cat_extra
-        ax.annotate(
+        cat_ann = ax.annotate(
             category, xy=(cat_anchor, y_center),
             xytext=(off_cat, 0), textcoords='offset points',
             ha='left', va='center', fontsize=label_size,
@@ -578,7 +582,7 @@ def eSingleBarChartNewInstagram(
             bbox=dict(boxstyle='square,pad=0.1', facecolor=face_color,
                       edgecolor='none', alpha=0.8))
 
-        # Value label: at the tip of the bar
+        # Value label: at the tip of the bar, with collision detection
         val       = value / num_divisor
         formatted = num_format.format(val) if num_format else str(val)
         x_extra = 0
@@ -587,12 +591,42 @@ def eSingleBarChartNewInstagram(
         y_extra = 0
         if isinstance(value_label_offset_y, dict):
             y_extra = value_label_offset_y.get(idx, 0)
+
         tip = x_end if is_pos else x_start
-        ha_val  = 'left' if is_pos else 'right'
-        off_val = 8 + x_extra if is_pos else -8 - x_extra
+        ha_val = 'left' if is_pos else 'right'
+        standard_offset = 8 + x_extra if is_pos else -8 - x_extra
+        effective_offset = standard_offset
+
+        # Check force_outside override
+        force = False
+        if isinstance(value_label_force_outside, dict):
+            force = value_label_force_outside.get(idx, False)
+
+        # Smart collision detection for positive bars
+        if is_pos and not force:
+            try:
+                fig.canvas.draw()
+                renderer = fig.canvas.get_renderer()
+                cat_bbox = cat_ann.get_window_extent(renderer=renderer)
+                inv = ax.transData.inverted()
+                cat_right_data = inv.transform((cat_bbox.x1, cat_bbox.y0))[0]
+
+                xlim = ax.get_xlim()
+                ax_w = ax.get_window_extent().width
+                clearance_data = value_label_min_clearance_pts / 72 * fig.get_dpi() / ax_w * (xlim[1] - xlim[0])
+                min_val_x = cat_right_data + clearance_data
+
+                if tip + (standard_offset / 72 * fig.get_dpi() / ax_w * (xlim[1] - xlim[0])) < min_val_x:
+                    safe_data = min_val_x - tip
+                    safe_pts = safe_data / (xlim[1] - xlim[0]) * ax_w / fig.get_dpi() * 72
+                    effective_offset = max(safe_pts, standard_offset)
+            except Exception:
+                pass
+
         ax.annotate(
             formatted, xy=(tip, y_center),
-            xytext=(off_val, y_extra), textcoords='offset points',
+            xytext=(effective_offset if is_pos else -abs(effective_offset), y_extra),
+            textcoords='offset points',
             ha=ha_val, va='center',
             fontsize=label_size, color=value_label_color, zorder=6, clip_on=False,
             bbox=dict(boxstyle='square,pad=0', facecolor=face_color,
@@ -1231,12 +1265,14 @@ def eSingleBarChartAnimateInstagram(
     instagram=True, px_width=1080, px_height=1920, dpi=200,
     sep_index=None, sep_color='#4b2e1a', sep_style='-', sep_width=1.5,
     reference_bands=None, vlines=None, hlines=None,
+    value_label_min_clearance_pts=6, value_label_force_outside=None,
     # Legacy params — accepted but ignored in v2
     suptitle_y_custom=None, subtitle_pad_custom=None, x_subtitle_offset=None,
 ):
     label_custom_offset  = _int_keys(label_custom_offset)
     value_label_offset_x = _int_keys(value_label_offset_x)
     value_label_offset_y = _int_keys(value_label_offset_y)
+    value_label_force_outside = _int_keys(value_label_force_outside)
 
     ease_fn = _EASING.get(easing, _ease_out_cubic)
 
@@ -1315,6 +1351,36 @@ def eSingleBarChartAnimateInstagram(
                           fontsize=label_size, color=value_label_color, zorder=6)
         val_anns.append(ann)
 
+    # Pre-calculate collision-safe offsets using final bar widths
+    _safe_offsets = {}
+    try:
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
+        xlim = ax.get_xlim()
+        ax_w = ax.get_window_extent().width
+        for idx, ann in enumerate(cat_anns):
+            x_extra = value_label_offset_x.get(idx, 0) if isinstance(value_label_offset_x, dict) else 0
+            # Check force_outside override
+            force = False
+            if isinstance(value_label_force_outside, dict):
+                force = value_label_force_outside.get(idx, False)
+            if force or measure_vals[idx] < 0:
+                _safe_offsets[idx] = 8 + x_extra
+                continue
+            cat_bbox = ann.get_window_extent(renderer=renderer)
+            inv = ax.transData.inverted()
+            cat_right_data = inv.transform((cat_bbox.x1, cat_bbox.y0))[0]
+            clearance_data = value_label_min_clearance_pts / 72 * fig.get_dpi() / ax_w * (xlim[1] - xlim[0])
+            min_val_x = cat_right_data + clearance_data
+            x_end_full = measure_vals[idx]
+            safe_data = max(0, min_val_x - x_end_full)
+            safe_pts = safe_data / (xlim[1] - xlim[0]) * ax_w / fig.get_dpi() * 72
+            _safe_offsets[idx] = max(8 + x_extra, safe_pts)
+    except Exception:
+        for idx in range(n):
+            x_extra = value_label_offset_x.get(idx, 0) if isinstance(value_label_offset_x, dict) else 0
+            _safe_offsets[idx] = 8 + x_extra
+
     total_anim   = int(fps * duration)
     total_frames = total_anim + hold_frames
 
@@ -1331,11 +1397,9 @@ def eSingleBarChartAnimateInstagram(
             val = cur / num_divisor
             try:    formatted = num_format.format(val)
             except: formatted = str(val)
-            x_extra = 0
-            if isinstance(value_label_offset_x, dict): x_extra += value_label_offset_x.get(idx, 0)
             y_extra = 0
             if isinstance(value_label_offset_y, dict): y_extra = value_label_offset_y.get(idx, 0)
-            off = 8 + x_extra if is_pos else -8 - x_extra
+            off = _safe_offsets.get(idx, 8) if is_pos else -_safe_offsets.get(idx, 8)
             val_anns[idx].set_text(formatted)
             val_anns[idx].xy    = (x_end, y_c)
             val_anns[idx].xyann = (off, y_extra)
