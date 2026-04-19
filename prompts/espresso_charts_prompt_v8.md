@@ -55,47 +55,98 @@ If the primary hook is a macro-economic release, the story belongs to Macro Ledg
 
 ### Source Priority for Daily Stories
 
-**Tier 1 -- Check these first for daily story ideas:**
+**Tier 1 -- Primary sources for daily story ideas.** Long-run series, strong zoom-out framing, wonder-inducing numbers. Check these first every Monday research session.
 
-Our World in Data, Gapminder, NASA, NOAA, UN Data, World Bank
+|Source                           |URL                    |Domain                         |Key datasets                                                   |
+|---------------------------------|-----------------------|-------------------------------|---------------------------------------------------------------|
+|NASA                             |nasa.gov               |Space, Earth science, climate  |Earth Observatory, GISS temperature, sea level, ice mass       |
+|NOAA                             |noaa.gov               |Atmosphere, oceans, climate    |Global temperature anomalies, sea ice extent, hurricane records|
+|UN Data                          |data.un.org            |Population, development, trade |World Population Prospects, HDI components, mortality          |
+|UN Population Division           |population.un.org      |Demographics                   |Population by country, fertility, life expectancy, migration   |
+|World Bank                       |data.worldbank.org     |Development, economics, poverty|1,600+ indicators, long historical series, clean API           |
+|Global Carbon Project            |globalcarbonproject.org|CO2 emissions, carbon budgets  |Annual carbon budget, land use emissions, per-capita series    |
+|Copernicus Climate Change Service|climate.copernicus.eu  |Recent climate records         |Monthly global temperature bulletins, ERA5 reanalysis          |
+|Gapminder                        |gapminder.org          |Health, development            |Long-run per-capita series, life expectancy, child mortality   |
+|USGS                             |usgs.gov               |Geology, earthquakes, water    |Earthquake catalogue, volcano activity, land cover, water use  |
+|IUCN Red List                    |iucnredlist.org        |Biodiversity                   |Species assessments, extinction rates, habitat loss            |
 
-These sources have long historical series, clean data, and strong built-in zoom-out framing. A single dataset often contains three or four daily story ideas.
+**Tier 2 -- Domain-specific primary sources.** Use when the story is specifically in their domain.
 
-**Tier 2 -- Use for specific domain stories:**
+|Source                  |URL                         |Domain                     |Key datasets                                                          |
+|------------------------|----------------------------|---------------------------|----------------------------------------------------------------------|
+|IEA                     |iea.org                     |Energy                     |Global electricity, fossil fuels, renewables, emissions by sector     |
+|IRENA                   |irena.org                   |Renewables                 |Installed capacity by country, LCOE trends, jobs in renewables        |
+|EDGAR                   |edgar.jrc.ec.europa.eu      |Emissions                  |Country-level GHG emissions, long historical series from EU JRC       |
+|FAO / FAOSTAT           |fao.org/faostat             |Food, agriculture, land    |Crop yields, land use, food supply, deforestation, fisheries          |
+|WHO                     |who.int/data                |Global health              |Disease burden, mortality causes, vaccination coverage                |
+|UNESCO                  |uis.unesco.org              |Education, culture, science|Literacy rates, school enrolment, R&D spending, cultural heritage     |
+|Met Office Hadley Centre|metoffice.gov.uk/hadobs     |Temperature history        |HadCRUT5, global temperature from 1850, most complete long-run record |
+|UNHCR                   |unhcr.org/refugee-statistics|Displacement               |Refugees, asylum seekers, stateless persons, annual and historical    |
+|UNICEF                  |data.unicef.org             |Children                   |Child mortality, malnutrition, education access, child labour         |
+|ILO                     |ilostat.ilo.org             |Labour                     |Employment, wages, working hours, child labour, gender gaps           |
+|IPCC                    |ipcc.ch                     |Climate science            |Assessment reports, scenario data, carbon budgets                     |
 
-USGS (geology, earthquakes), IUCN Red List (biodiversity), Global Carbon Project (climate), FAO/FAOSTAT (food and land), IRENA (renewables), Copernicus Climate Change Service (recent climate records), Met Office Hadley Centre (temperature history), Pew Research (social trends)
+**Tier 3 -- Analytical and institutional sources.** Stronger for carousel deep-dives and contextual data than for daily single-chart Reels.
 
-**Tier 3 -- Use for carousel deep-dives, not daily Reels:**
+|Source      |URL                  |Domain                |Notes                                                               |
+|------------|---------------------|----------------------|--------------------------------------------------------------------|
+|IMF         |imf.org/en/Data      |Economics             |World Economic Outlook database, fiscal data, debt levels           |
+|OECD        |stats.oecd.org       |Development, economics|Education, health, productivity, inequality across member states    |
+|Eurostat    |ec.europa.eu/eurostat|European data         |EU-specific demographics, economics, environment, energy            |
+|FRED        |fred.stlouisfed.org  |US economics          |Non-macro series only for EC: long-run US historical data           |
+|EIA         |eia.gov              |US energy             |US energy production, consumption, prices, strong historical series |
+|WEF         |weforum.org/reports  |Global competitiveness|Global Risks Report, Gender Gap Index, Competitiveness Index        |
+|WIPO        |wipo.int/ipstats     |Innovation, IP        |Patent filings by country, R&D intensity, innovation indices        |
+|BLS         |bls.gov              |US labour             |Employment, wages, productivity, US-specific stories                |
+|BEA         |bea.gov              |US economics          |GDP components, non-macro use only for EC                           |
+|Pew Research|pewresearch.org      |Society, culture      |Survey data on attitudes, demographics, internet use, religion      |
+|BIS         |bis.org/statistics   |Finance, banking      |Global debt, credit, banking stability, borderline Macro Ledger     |
 
-FRED, IMF, OECD, Eurostat, BLS, BEA, IEA, WIPO, SEC EDGAR
+**Secondary sources -- discover and download only:**
 
-### Full Source Table
+|Source           |URL               |Use for                                    |Citation rule                                                        |
+|-----------------|------------------|-------------------------------------------|---------------------------------------------------------------------|
+|Our World in Data|ourworldindata.org|Discovery, clean CSV downloads, story ideas|Cite the primary source they reference, not OWID. Exception: cite OWID if they produced the metric.|
 
-|Domain                    |Sources                                                          |
-|--------------------------|-----------------------------------------------------------------|
-|**Demographics & Society**|UN Data, Census Bureau, Pew Research, UNESCO, WEF, Gapminder     |
-|**Energy & Climate**      |IEA, EIA, IRENA, Our World in Data, NOAA, Global Carbon Project, Copernicus |
-|**Science & Space**       |NASA, ESA, NOAA, USGS                                            |
-|**Natural Systems**       |NOAA, USGS, UNEP, IPCC, Our World in Data, IUCN Red List        |
-|**Food & Land**           |FAO/FAOSTAT, Our World in Data                                   |
-|**Temperature Records**   |Met Office Hadley Centre (HadCRUT5), Copernicus, NOAA            |
-|**Trade & Development**   |WTO, World Bank, UNCTAD, WIPO                                    |
-|**Regional/Country**      |ONS (UK), Destatis (DE), Eurostat, national statistical offices  |
+### Macro Ledger Boundary
+
+FRED macro series (interest rates, GDP revisions, employment releases, inflation prints) belong to **Macro Ledger**. If the primary hook is a macro-economic release (GDP, CPI, NFP, rate decision), the story belongs to Macro Ledger, not Espresso Charts.
+
+FRED remains valid for Espresso Charts when the data series is long-run and wonder-inducing rather than a current macro release, for example 200 years of US life expectancy or a century of energy consumption.
 
 ### The Our World in Data Rule
 
-Our World in Data aggregates and visualizes data from primary sources. The rule:
-
-- Use OWID for **discovery** -- find the dataset and the chart idea
-- Use OWID for **download** -- their CSVs are clean and well-formatted
-- **Cite the underlying primary source** in the chart `txt_label`, not OWID itself
-- Exception: if OWID produced the metric themselves, cite OWID directly
+Our World in Data aggregates from primary sources and cites them clearly. Every chart on OWID shows its source. Follow the chain to the primary and cite that.
 
 ```
-# Discovery and download via Our World in Data
-# Chart label cites the primary source:
-txt_label = "Source: UN World Population Prospects 2024\npopulation.un.org\n(c) Espresso Charts"
+# Discover and download via Our World in Data
+# Chart label always cites the primary source:
+txt_label = "Source: UN World Population Prospects 2024 · population.un.org\n(c) Espresso Charts"
+# Not: "Source: Our World in Data"
 ```
+
+Exception: OWID produces some composite metrics themselves. If the metric does not exist at a primary source and OWID built it, cite OWID.
+
+### Release Calendar
+
+Subscribe to mailing lists or RSS feeds for Copernicus, Our World in Data, Global Carbon Project, IEA, and IUCN. These five alone surface one to two story ideas per week from new data releases.
+
+|Source                |Release                            |Typical date             |
+|----------------------|-----------------------------------|-------------------------|
+|Copernicus            |Monthly global temperature bulletin|~5th of following month  |
+|NOAA                  |Monthly climate report             |~mid following month     |
+|IEA                   |Monthly electricity statistics     |Monthly                  |
+|Global Carbon Project |Annual carbon budget               |November, ahead of COP   |
+|IRENA                 |Renewable capacity statistics      |January-February         |
+|World Bank            |Poverty and development indicators |October                  |
+|UN Population Division|World Population Prospects         |Annual, mid-year         |
+|IUCN Red List         |Species assessments                |Quarterly                |
+|Pew Research          |New survey releases                |3-4 per month, rolling   |
+|Our World in Data     |New and updated datasets           |Rolling, several per week|
+|WEF                   |Global Risks Report                |January                  |
+|WEF                   |Gender Gap Index                   |June                     |
+|UNESCO                |Education for All report           |Annual                   |
+|ILO                   |World Employment report            |Annual                   |
 
 Every data source MUST include a direct URL link. No Wikipedia, blog posts, news articles, or social media as primary data sources.
 
@@ -187,13 +238,71 @@ Each daily story has exactly one chart. Pick the chart type that tells the story
 
 The carousel depth framework (Layers 1-5) does not apply to daily stories. It applies only to the optional carousel format.
 
+### Context Chart Rule
+
+Some numbers are self-evidently scaled. 8.1 billion people needs no denominator. 30% renewable power is already a rate. The viewer's intuition handles these without assistance.
+
+Other numbers are meaningless without a reference point. Lives saved by a vaccine means nothing without the disease burden it prevented. CO2 at 400 ppm means nothing without the pre-industrial 280 ppm. Presenting these numbers alone is not perspective, it is a number floating in space.
+
+**When the headline number requires a denominator, a rate, or a historical baseline to be meaningful, a context chart is mandatory.**
+
+**The test:** Before finalising a daily story config, ask:
+
+> "If someone sees only this number, will they have the right intuition about its scale?"
+>
+> Yes: no context chart needed.
+> No: context chart is mandatory.
+
+**Examples:**
+
+|Primary number                      |Context needed|Reason                                               |
+|------------------------------------|--------------|-----------------------------------------------------|
+|8.1 billion people on Earth         |No            |Self-evidently scaled                                |
+|30% of global power from renewables |No            |Already a rate                                       |
+|Arctic sea ice down 13% per decade  |No            |Rate in the number                                   |
+|1 in 8 people face food insecurity  |No            |Rate in the number                                   |
+|3.5 million lives saved by vaccines |Yes           |Meaningless without disease burden baseline          |
+|400 ppm CO2 in the atmosphere       |Yes           |Meaningless without pre-industrial baseline (280 ppm)|
+|50 million displaced persons        |Yes           |Meaningless without historical or population baseline|
+|2.3 million species assessed by IUCN|Yes           |Meaningless without total estimated species count    |
+
+**Hard limits:**
+
+- Maximum one context chart per daily story
+- The context chart answers exactly one follow-on question, not two, not a full breakdown
+- If the story genuinely requires more than two charts to be honest, it is a carousel story, not a daily story
+- The context chart must use the same primary data source as the main chart wherever possible
+- The context chart `txt_suptitle` must state the context number as its headline, not a topic label
+
+**Reel timing for context pair stories:**
+
+|Segment                |Duration  |
+|-----------------------|----------|
+|Cover hold             |2-3s      |
+|Primary chart animation|8-10s     |
+|Context chart animation|8-10s     |
+|Hold                   |2-3s      |
+|**Total**              |**22-28s**|
+
+Voiceover for context pairs: 40-50 words (up from 30-40 for single chart stories). Music `duration_ms`: 26000-28000.
+
+**Platform behaviour:**
+
+|Platform      |Primary chart          |Context chart                         |
+|--------------|-----------------------|--------------------------------------|
+|Instagram Reel|Animates first         |Animates second, same Reel            |
+|Substack Note |`image_asset`          |`context_image_asset`, both attached  |
+|Cover tile    |Primary number dominant|Context as `txt_context` line         |
+|Poster        |Centre panel           |Smaller inset below annotation band   |
+
 ### Data Rules
 
 - Bar chart data in **ascending order** (smallest first, largest bar at top)
 - All text uses `\n` for line breaks
 - All colors as **hex codes** (`"#3F5B83"`)
-- Source attribution: `"Source: [Name]\n[URL]\n(c) Espresso Charts"`
+- Source attribution: **maximum 2 lines.** Format: `"Source: [Name] · [URL]\n(c) Espresso Charts"`. A third line gets cut off by the renderer.
 - Dollar signs: escape as `\\$`
+- Bar chart value labels auto-detect collision with category labels and push right when needed. Use `value_label_offset_x` for manual fine-tuning on top of auto-positioning.
 
 -----
 
@@ -355,6 +464,17 @@ config = json.loads(r'''
       "params": { "...chart params..." }
     }
   ],
+  "context_chart": {
+    "required": true,
+    "question": "Saved from what baseline?",
+    "type": "bar",
+    "data": { "DimCol": ["..."], "MeasureCol": ["..."] },
+    "params": {
+      "...same chart params...",
+      "txt_suptitle": "Without vaccines: 6.1 million\ndeaths per year",
+      "bar_color": "#A14516"
+    }
+  },
   "reel": {
     "animated_charts": [
       {
@@ -406,18 +526,20 @@ config = json.loads(r'''
   "copy": {
     "instagram_reel": { "caption": "...", "hashtags": "..." },
     "youtube_shorts": { "title": "...", "description": "...", "hashtags": "..." },
-    "substack_note": { "text": "2-4 sentence insight.", "image_asset": "story_0_chart_1.png" }
+    "substack_note": { "text": "2-4 sentence insight.", "image_asset": "story_0_chart_1.png", "context_image_asset": "story_0_chart_2.png" }
   }
 }
 ```
 
-> **DAILY STORY = 1 CHART.** Each story has exactly one chart in the `charts` array. The Reel has one `cover_animate` and one chart animation. The poster auto-extracts line chart data. The copy has `instagram_reel`, `youtube_shorts`, and `substack_note` (singular, not array).
+> **DAILY STORY = 1 CHART + OPTIONAL CONTEXT CHART.** Each story has one chart in `charts`. If the primary number needs a denominator or baseline, add a `context_chart` block. The runner renders it as `_chart_2.png`. The Reel animates both sequentially.
+
+> **CONTEXT CHART:** Optional. When `"required": true` and the block is missing, the runner halts the story with an error. The `context_chart` has the same schema as a regular chart (`type`, `data`, `params`). It answers one question: what baseline makes this number meaningful?
 
 > **NO `substack_article` FOR DAILY STORIES.** The weekly digest is auto-assembled by the runner from the seven `substack_note` entries.
 
-> **COVER:** Do NOT override `suptitle_y`, `subtitle_y`, or `accent_line_y`.
+> **COVER:** Do NOT override `suptitle_y`, `subtitle_y`, or `accent_line_y`. When a context chart exists, use `txt_context` to state the baseline number on the cover.
 
-> **REEL:** Total 14-18 seconds. Cover hold 2-3s. Chart 8-12s + 2.5s hold. `music.duration_ms`: 18000-20000.
+> **REEL:** Single chart: 14-18s total, 30-40 word voiceover, `music.duration_ms`: 18000-20000. Context pair: 22-28s total, 40-50 word voiceover, `music.duration_ms`: 26000-28000.
 
 ### Chart Parameter Reference by Type
 
@@ -429,7 +551,7 @@ config = json.loads(r'''
   "col_measure": "MeasureColumn",
   "txt_suptitle": "Number-Led Headline\nWith Scale Context",
   "txt_subtitle": "Sub heading",
-  "txt_label": "Source: Name\nURL\n(c) Espresso Charts",
+  "txt_label": "Source: Name · URL\n(c) Espresso Charts",
   "num_format": "{:.0f}%",
   "bar_color": "#3F5B83",
   "suptitle_size": 26,
@@ -446,7 +568,7 @@ config = json.loads(r'''
   "col_measure_list": ["YColumn1"],
   "txt_suptitle": "Number-Led Headline",
   "txt_subtitle": "Sub heading\nwith context",
-  "txt_label": "Source: Name\nURL\n(c) Espresso Charts",
+  "txt_label": "Source: Name · URL\n(c) Espresso Charts",
   "pos_text": [-1],
   "pos_label": null,
   "show_y_axis": false,
@@ -674,6 +796,11 @@ font_mono    = 'DM Mono'
 - [ ] Every story has `poster` with `hero_number`, `hero_unit`, `insight_text`, `annotations`
 - [ ] Headline is the number, not the topic
 - [ ] Every `substack_note.text` leads with the number in the first sentence
+- [ ] Every primary number tested: "Will the viewer have the right intuition about its scale?"
+- [ ] If no: `context_chart` block present with `required: true`
+- [ ] Context chart `txt_suptitle` states the context number as headline
+- [ ] Context pair stories: voiceover 40-50 words, `music.duration_ms` 26000-28000
+- [ ] Maximum one context chart per daily story
 
 **No Em Dashes:**
 
