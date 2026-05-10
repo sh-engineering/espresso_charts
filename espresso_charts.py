@@ -1609,8 +1609,9 @@ def eMultiLineChartAnimateInstagram(
                 line_objects[li].set_data(xs2, ys2)
                 dot_objects[li].set_data([xs2[-1]], [ys2[-1]])
                 tip_x, tip_y = xs2[-1], ys2[-1]
-            # Update moving value label at the leading edge
-            if progress > 0.01:
+            # Moving tip label: visible while line is drawing; hides when animation
+            # completes so the fixed last-point label takes over cleanly.
+            if progress > 0.01 and full < n_rows:
                 val = tip_y / num_divisor
                 try:    fmt_s = num_format.format(val)
                 except: fmt_s = str(val)
@@ -1619,16 +1620,24 @@ def eMultiLineChartAnimateInstagram(
                 moving_labels[li].xy = (tip_x, tip_y)
             else:
                 moving_labels[li].set_visible(False)
-        # Fixed position value labels — hide when moving labels are active
-        # (moving labels already show the value at the leading edge)
-        if not moving_labels:
-            for vi, vt in enumerate(value_targets):
-                if vt['pos'] < reveal - 0.5:
-                    val_objs[vi].set_visible(True)
-                    val_objs[vi].set_text(vt['formatted'])
-                    val_objs[vi].xy = (vt['x'], vt['y'])
-                else:
-                    val_objs[vi].set_visible(False)
+        # Fixed pos_text labels:
+        #   pos == 0          → show from the very first frame (anchor label)
+        #   interior pos      → show once the line has drawn past that point
+        #   pos == n_rows - 1 → show when animation completes (moving label gone)
+        for vi, vt in enumerate(value_targets):
+            pos = vt['pos']
+            if pos == n_rows - 1:
+                show = full >= n_rows
+            elif pos == 0:
+                show = progress > 0.01
+            else:
+                show = pos < reveal - 0.5
+            if show:
+                val_objs[vi].set_visible(True)
+                val_objs[vi].set_text(vt['formatted'])
+                val_objs[vi].xy = (vt['x'], vt['y'])
+            else:
+                val_objs[vi].set_visible(False)
         if shade_patch is not None:
             shade_patch.set_visible(progress >= 0.99)
         return line_objects + dot_objects + moving_labels + val_objs
