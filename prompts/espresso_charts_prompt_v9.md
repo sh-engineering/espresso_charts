@@ -276,17 +276,15 @@ Other numbers are meaningless without a reference point. Lives saved by a vaccin
 - The context chart must use the same primary data source as the main chart wherever possible
 - The context chart `txt_suptitle` must state the context number as its headline, not a topic label
 
-**Reel timing for context pair stories:**
+**Reel timing for context pair stories (`start_with_chart: true`):**
 
 |Segment                |Duration  |
 |-----------------------|----------|
-|Cover hold             |2-3s      |
-|Primary chart animation|8-10s     |
-|Context chart animation|8-10s     |
-|Hold                   |2-3s      |
-|**Total**              |**22-28s**|
+|Primary chart animation|12s + 4s hold = 16s|
+|Context chart animation|12s + 4s hold = 16s|
+|**Total**              |**~32s**  |
 
-Voiceover for context pairs: 40-50 words (up from 30-40 for single chart stories). Music `duration_ms`: 26000-28000.
+Voiceover for context pairs: 40-50 words. Music `duration_ms`: 33000.
 
 **Platform behaviour:**
 
@@ -332,7 +330,7 @@ Every story gets a number-led cover tile (B template). No exceptions.
 
 Do NOT set `suptitle_y`, `subtitle_y`, or `accent_line_y`. The defaults handle layout.
 
-The cover is the Reel thumbnail on the Instagram grid and frame 0 of the video. It must be legible at grid size.
+The cover PNG is the Instagram Reel thumbnail and the YouTube Shorts thumbnail. It must be legible at grid size. When `start_with_chart: true` (the default for all new stories), the cover PNG is never a video frame -- it is thumbnail-only.
 
 -----
 
@@ -340,23 +338,45 @@ The cover is the Reel thumbnail on the Instagram grid and frame 0 of the video. 
 
 Each story needs one Reel. Same video file for Instagram and YouTube Shorts.
 
-**Voiceover:** 30-40 words maximum. One fact, one implication, done. No setup, no background context. Start with the number. If the script needs more than two sentences of context before the main fact, the hook is in the wrong place.
+**Voiceover:** 30-40 words. Single chart story. 40-50 words. Two chart story (context pair). One fact, one implication, done. No setup, no background context.
+
+**Voiceover first-word rule.** The first word of the voiceover script must be the number or the data fact. Never the topic name.
+
+- Good: "Seventy-three percent of global energy still comes from fossil fuels."
+- Bad: "Today we are looking at the global energy mix."
+
+The voiceover starts on frame 0 simultaneously with the chart animation. No cover hold. No setup sentences. The number is the opening word.
 
 **Music:** `lofi_coffee`, `upbeat_data`, or `editorial_minimal`
 
-**Structure:**
+**Structure -- `start_with_chart: true` (default for all new stories):**
 
-1. **`cover_animate`** -- Cover hold. 2-3 seconds maximum. The number is already on screen.
-2. **One chart animation** -- 8-12 seconds. `bar_animate`, `line_animate`, `stem_animate`, or `donut_animate`.
+Set `"start_with_chart": true` on the `reel` object. The Reel begins on frame 0 with the chart animation. No cover hold plays as video. The cover PNG is still generated as the Instagram and YouTube Shorts thumbnail.
 
-**Timing:**
+1. **First chart animation** -- starts on frame 0. `bar_animate`, `line_animate`, `stem_animate`, or `donut_animate`.
+2. **Second chart animation** (context pair only) -- follows directly after the first.
 
-- Cover: `duration: 2.0`, `hold_duration: 1.0` (3s total)
+**Legacy structure (backward-compatible, do not use for new stories):**
+
+Omit `start_with_chart` (or set it `false`) and include `cover_animate` as the first entry in `animated_charts`. Existing configs are unaffected.
+
+**Timing -- `start_with_chart: true`:**
+
 - Chart: `duration: 12`, `hold_frames: 120` (16s total)
-- Total reel: ~19 seconds (single chart), ~35 seconds (context pair)
+- Total reel: ~16 seconds (single chart), ~32 seconds (context pair)
 - `music.duration_ms`: 22000 (single chart), 33000 (context pair)
 
-The extra hold (`hold_frames: 120` = 4s) is required buffer so the voiceover never gets cut before the last word.
+The extra hold (`hold_frames: 120` = 4s) ensures the voiceover is never cut before the last word.
+
+**Reel chart type reference:**
+
+| Type | Function | Use case |
+|------|----------|----------|
+| `bar_animate` | `eSingleBarChartAnimateInstagram` | Rankings, comparisons, single-year breakdowns |
+| `line_animate` | `eMultiLineChartAnimateInstagram` | Time series, trends, historical arcs |
+| `stem_animate` | `eStemChartAnimateInstagram` | Year-by-year magnitudes, decade comparisons |
+| `donut_animate` | `eDonutChartAnimateInstagram` | Part-to-whole, energy mix, share breakdowns |
+| `cover_animate` | `eCoverTileAnimateInstagram` | Legacy only -- not used when `start_with_chart: true` |
 
 **Value-label persistence rule (line charts).**
 The first data-point label (`pos_text[0]`) must be visible from frame 1 of the animation — it anchors the viewer before the line draws rightward. The last data-point label appears when the animation finishes, replacing the moving tip label. The library implements this automatically; you only need to keep `pos_text: [0, -1]` (or `[0, peak_idx, -1]` when there is a true interior peak). Do not add any other indices for narrative emphasis.
@@ -491,25 +511,11 @@ config = json.loads(r'''
     }
   },
   "reel": {
+    "start_with_chart": true,
     "animated_charts": [
       {
-        "type": "cover_animate",
-        "params": {
-          "txt_suptitle": "46%",
-          "txt_subtitle": "Nearly half of all trees that existed\nwhen humans arrived are gone.",
-          "txt_unit": "of the world's trees, cut",
-          "txt_eyebrow": "Global Forests . FAO 2025",
-          "txt_issue": "April 14, 2026",
-          "suptitle_size": 86,
-          "accent_line_color": "#4D5523",
-          "show_corner_mark": true,
-          "duration": 2.0,
-          "hold_duration": 1.0
-        }
-      },
-      {
         "type": "bar_animate",
-        "data": {"..."},
+        "data": {"DimCol": ["..."], "MeasureCol": ["..."]},
         "params": {
           "...chart params...",
           "duration": 12,
@@ -517,7 +523,7 @@ config = json.loads(r'''
         }
       }
     ],
-    "voiceover": { "text": "30-40 word voiceover." },
+    "voiceover": { "text": "30-40 word voiceover. First word is the number." },
     "music": { "preset": "lofi_coffee", "duration_ms": 22000 }
   },
   "story_files": [
@@ -554,7 +560,7 @@ config = json.loads(r'''
 
 > **COVER:** Do NOT override `suptitle_y`, `subtitle_y`, or `accent_line_y`. When a context chart exists, use `txt_context` to state the baseline number on the cover.
 
-> **REEL:** Single chart: ~19s total, 30-40 word voiceover, `music.duration_ms`: 22000. Context pair: ~35s total, 40-50 word voiceover, `music.duration_ms`: 33000.
+> **REEL:** Always set `"start_with_chart": true`. Single chart: ~16s total, 30-40 word voiceover, `music.duration_ms`: 22000. Context pair: ~32s total, 40-50 word voiceover, `music.duration_ms`: 33000. Voiceover first word is the number.
 
 ### Chart Parameter Reference by Type
 
@@ -643,7 +649,33 @@ Practical: `[0, -1]` is the default. `[0, max_idx, -1]` only when there is a tru
 
 > Always set `pct_colors`. Use `#FFFFFF` on dark segments, `#4b2e1a` on light.
 
-**`cover_animate` params:**
+**`donut_animate` params:**
+
+```json
+{
+  "col_value": "ValueColumn",
+  "col_label": "LabelColumn",
+  "txt_suptitle": "73% of global energy\nstill from fossil fuels",
+  "txt_subtitle": "Primary energy mix, 2024",
+  "txt_label": "Source: IEA 2024 · iea.org\n© Espresso Charts",
+  "num_format": "{:.0f}%",
+  "colors": ["#A14516", "#3F5B83", "#4D5523"],
+  "pct_colors": ["#FFFFFF", "#FFFFFF", "#FFFFFF"],
+  "wedge_width": 0.4,
+  "center_text": "73%",
+  "suptitle_y": 0.97,
+  "subtitle_y": 0.90,
+  "instagram_format": "9x16",
+  "px": 1080,
+  "duration": 8,
+  "hold_frames": 90,
+  "easing": "cubic"
+}
+```
+
+> `donut_animate` takes `col_value` and `col_label` directly in params (same as static `donut`). Always set `instagram_format: "9x16"` and `px: 1080` for Reel segments.
+
+**`cover_animate` params (legacy -- do not use when `start_with_chart: true`):**
 
 ```json
 {
@@ -819,10 +851,12 @@ font_mono    = 'DM Mono'
 - [ ] `copy` has: `instagram_reel`, `youtube_shorts`, `substack_note` (no `substack_article`)
 - [ ] Bar chart data sorted ascending
 - [ ] All text uses `\n` for line breaks, all colors as hex codes
-- [ ] Voiceover 30-40 words each
-- [ ] Every reel has `cover_animate` (duration 2.0, hold 1.0) + 1 chart animation (duration 12, hold 120)
+- [ ] Voiceover 30-40 words (single chart) or 40-50 words (context pair)
+- [ ] Voiceover first word is the number or data fact -- never the topic name
+- [ ] Every reel has `"start_with_chart": true` set on the reel object
+- [ ] No `cover_animate` entry in `animated_charts` (new stories use `start_with_chart: true`)
+- [ ] Chart animation: `duration: 12`, `hold_frames: 120`
 - [ ] `music.duration_ms`: 22000 (single chart), 33000 (context pair)
-- [ ] `cover_animate` does NOT override `suptitle_y`, `subtitle_y`, or `accent_line_y`
 - [ ] Every story has `poster` with `hero_number`, `hero_unit`, `insight_text`, `annotations`
 - [ ] Headline is the number, not the topic
 - [ ] Every `substack_note.text` leads with the number in the first sentence
