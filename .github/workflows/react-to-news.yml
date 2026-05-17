@@ -1,0 +1,119 @@
+name: React to News
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Trigger: manually via GitHub UI (Actions → React to News → Run workflow)
+#
+# Inputs:
+#   topic        — news headline, URL, or free-text description
+#   reel         — also render the animated MP4 (slower, ~5-10 min)
+#   publish      — post a Substack draft immediately after generation
+#   push_github  — commit the chart PNGs to espresso_charts_stories
+#
+# Secrets required (set in repo Settings → Secrets → Actions):
+#   ANTHROPIC_API_KEY      — Claude API key
+#   GH_STORIES_TOKEN       — fine-grained PAT with write access to espresso_charts_stories
+#   SUBSTACK_URL           — https://yourpub.substack.com  (optional)
+#   SUBSTACK_EMAIL         — (optional)
+#   SUBSTACK_PASSWORD      — (optional)
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: "News headline, URL, or description to react to"
+        required: true
+        type: string
+      reel:
+        description: "Also render animated MP4 reel (adds ~5-10 min)"
+        type: boolean
+        default: false
+      publish:
+        description: "Post Substack draft after generation"
+        type: boolean
+        default: false
+      push_github:
+        description: "Push chart PNG + config to espresso_charts_stories repo"
+        type: boolean
+        default: true
+
+jobs:
+  react:
+    name: Generate chart from news
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ── 1. Checkout ────────────────────────────────────────────────────────
+      - name: Checkout espresso_charts
+        uses: actions/checkout@v4
+
+      # ── 2. Python ─────────────────────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      # ── 3. System deps (ffmpeg for reel, fonts for matplotlib) ────────────
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            ffmpeg \
+            fonts-dejavu \
+            fontconfig
+
+      # ── 4. Python deps ─────────────────────────────────────────────────────
+      - name: Install Python dependencies
+        run: |
+          pip install --quiet --upgrade pip
+          pip install --quiet \
+            anthropic \
+            pandas \
+            matplotlib \
+            numpy \
+            requests \
+            Pillow
+
+      # ── 5. Fonts (non-fatal — falls back to system fonts in CI) ───────────
+      - name: Install Espresso fonts
+        run: |
+          python -c "
+          import sys
+          sys.path.insert(0, 'espresso_charts')
+          from espresso_charts import install_espresso_fonts
+          install_espresso_fonts()
+          print('Fonts installed.')
+          " || echo "Font install skipped (non-fatal in CI — system fonts used)."
+
+      # ── 6. Generate chart ──────────────────────────────────────────────────
+      - name: Generate chart
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN:      ${{ secrets.GH_STORIES_TOKEN }}
+          GITHUB_OWNER:      ${{ github.repository_owner }}
+          GITHUB_REPO:       espresso_charts_stories
+          SUBSTACK_URL:      ${{ secrets.SUBSTACK_URL }}
+          SUBSTACK_EMAIL:    ${{ secrets.SUBSTACK_EMAIL }}
+          SUBSTACK_PASSWORD: ${{ secrets.SUBSTACK_PASSWORD }}
+        run: |
+          REEL_FLAG=""
+          PUBLISH_FLAG=""
+          PUSH_FLAG=""
+          [[ "${{ inputs.reel }}"         == "true" ]] && REEL_FLAG="--reel"
+          [[ "${{ inputs.publish }}"      == "true" ]] && PUBLISH_FLAG="--publish"
+          [[ "${{ inputs.push_github }}"  == "true" ]] && PUSH_FLAG="--push"
+
+          python espresso_charts/espresso_reactor.py \
+            --topic "${{ inputs.topic }}" \
+            $REEL_FLAG $PUBLISH_FLAG $PUSH_FLAG
+
+      # ── 7. Upload artifacts (chart PNG + config) ───────────────────────────
+      - name: Upload chart artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: espresso-reaction-${{ github.run_number }}
+          path: reactor_output/
+          retention-days: 30

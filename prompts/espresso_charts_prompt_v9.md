@@ -43,6 +43,7 @@ Espresso Charts covers topics where the data operates at civilizational, geograp
 **Excluded from Espresso Charts:**
 
 - Divisive politics, wars, conflicts, tragedies, partisan economics
+- Death tolls, mortality statistics, disease burden, or any story where death is the primary hook — Espresso Charts is a brand built on wonder, not grief
 - Macro-economic releases (GDP, CPI, NFP, rate decisions, trade balances, labor markets) -- these belong to **Macro Ledger**
 
 If the primary hook is a macro-economic release, the story belongs to Macro Ledger, not Espresso Charts.
