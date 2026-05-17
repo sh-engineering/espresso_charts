@@ -235,10 +235,16 @@ Start with the number, not the topic. Browse Tier 1 sources for a data point tha
 
 Each daily story has exactly one chart. Pick the chart type that tells the story most clearly:
 
-- `bar` -- Rankings, comparisons
-- `line` -- Trends over time
-- `stem` -- Magnitude with categorical x-axis
-- `donut` -- Part-to-whole (3-5 slices max)
+- `bar` -- Rankings, comparisons, decade-by-decade snapshots
+- `line` -- Trends over time, long historical arcs
+- `stem` -- Year-by-year magnitudes, periodic counts, discrete events
+- `donut` -- Part-to-whole (2-5 slices max), share breakdowns, global splits
+
+**Archetype variety rule — across a 7-day week, use all four archetypes.**
+
+No archetype should appear more than 4 times. If the natural best-fit for a story is a fourth `line`, reconsider: ask whether the data could be reframed as a stem (year-by-year count) or a bar (decade snapshots). Do not force a chart type that distorts the data, but do actively seek variety before defaulting to `line` again.
+
+Target mix per week: 3-4 `line`, 1-2 `bar`, 1 `stem`, 1 `donut`.
 
 The carousel depth framework (Layers 1-5) does not apply to daily stories. It applies only to the optional carousel format.
 
@@ -662,17 +668,56 @@ Practical: `[0, -1]` is the default. `[0, max_idx, -1]` only when there is a tru
 {
   "col_dim": "XColumn",
   "col_measure_a": "YColumn",
+  "txt_suptitle": "Plain-language headline\n2-3 lines, story hook",
+  "txt_subtitle": "Unit/measure label, 1 line",
+  "txt_label": "Source: Agency Name · agency.org\n© Espresso Charts",
   "num_format": "{:.0f}",
   "color_a": "#4D5523",
   "rotate_labels": false,
   "y_min": 0,
-  "y_max": 260,
-  "value_label_offset_pts": 12,
-  "marker_size": 5,
-  "line_width": 2.2,
-  "line_format_a": "-"
+  "y_max": 300,
+  "value_label_offset_pts": 8,
+  "marker_size": 6,
+  "line_width": 2.5,
+  "line_format_a": "-",
+  "px_width": 1080,
+  "px_height": 1350,
+  "suptitle_size": 20,
+  "subtitle_size": 12
 }
 ```
+
+**`stem_animate` params:**
+
+```json
+{
+  "col_dim": "XColumn",
+  "col_measure_a": "YColumn",
+  "txt_suptitle": "Plain-language headline\n2-3 lines, story hook",
+  "txt_subtitle": "Unit/measure label, 1 line",
+  "txt_label": "Source: Agency Name\n© Espresso Charts",
+  "num_format": "{:.0f}",
+  "color_a": "#4D5523",
+  "rotate_labels": false,
+  "y_min": 0,
+  "y_max": 300,
+  "value_label_offset_pts": 8,
+  "marker_size": 6,
+  "line_width": 2.5,
+  "line_format_a": "-",
+  "px_width": 1080,
+  "px_height": 1920,
+  "suptitle_size": 20,
+  "subtitle_size": 12,
+  "tw_subtitle_start": 0.0,
+  "tw_subtitle_end": 0.2,
+  "duration": 12,
+  "hold_frames": 120,
+  "loop_preview_frames": 30
+}
+```
+
+> `stem_animate` uses `px_width`/`px_height` (not `instagram_format`). Always set `px_width: 1080`, `px_height: 1920` for reels.
 
 **`donut` params:**
 
@@ -680,14 +725,24 @@ Practical: `[0, -1]` is the default. `[0, max_idx, -1]` only when there is a tru
 {
   "col_value": "ValueColumn",
   "col_label": "LabelColumn",
+  "txt_suptitle": "Plain-language headline\n2-3 lines, story hook",
+  "txt_subtitle": "Unit/measure label, 1 line",
+  "txt_label": "Source: Agency Name · agency.org\n© Espresso Charts",
   "num_format": "{:.0f}%",
-  "wedge_width": 0.4,
+  "colors": ["#3F5B83", "#D9D0C1"],
   "pct_colors": ["#FFFFFF", "#4b2e1a"],
-  "colors": ["#3F5B83", "#CDAF7B"]
+  "wedge_width": 0.4,
+  "center_text": "1 in 3",
+  "center_text_size": 28,
+  "center_text_weight": "bold",
+  "px": 1080,
+  "instagram_format": "4x5",
+  "suptitle_size": 20,
+  "subtitle_size": 12
 }
 ```
 
-> Always set `pct_colors`. Use `#FFFFFF` on dark segments, `#4b2e1a` on light.
+> Always set `pct_colors`. Use `#FFFFFF` on dark segments, `#4b2e1a` on light segments. Use `center_text` for the most resonant number (e.g. "1 in 3", "73%").
 
 **`donut_animate` params:**
 
@@ -695,25 +750,30 @@ Practical: `[0, -1]` is the default. `[0, max_idx, -1]` only when there is a tru
 {
   "col_value": "ValueColumn",
   "col_label": "LabelColumn",
-  "txt_suptitle": "73% of global energy\nstill from fossil fuels",
-  "txt_subtitle": "Primary energy mix, 2024",
-  "txt_label": "Source: IEA 2024 · iea.org\n© Espresso Charts",
+  "txt_suptitle": "Plain-language headline\n2-3 lines, story hook",
+  "txt_subtitle": "Unit/measure label, 1 line",
+  "txt_label": "Source: Agency Name\n© Espresso Charts",
   "num_format": "{:.0f}%",
-  "colors": ["#A14516", "#3F5B83", "#4D5523"],
-  "pct_colors": ["#FFFFFF", "#FFFFFF", "#FFFFFF"],
+  "colors": ["#3F5B83", "#D9D0C1"],
+  "pct_colors": ["#FFFFFF", "#4b2e1a"],
   "wedge_width": 0.4,
-  "center_text": "73%",
-  "suptitle_y": 0.97,
-  "subtitle_y": 0.90,
-  "instagram_format": "9x16",
+  "center_text": "1 in 3",
+  "center_text_size": 28,
+  "center_text_weight": "bold",
   "px": 1080,
+  "instagram_format": "9x16",
+  "suptitle_size": 20,
+  "subtitle_size": 12,
+  "tw_subtitle_start": 0.0,
+  "tw_subtitle_end": 0.2,
   "duration": 8,
   "hold_frames": 90,
+  "loop_preview_frames": 30,
   "easing": "cubic"
 }
 ```
 
-> `donut_animate` takes `col_value` and `col_label` directly in params (same as static `donut`). Always set `instagram_format: "9x16"` and `px: 1080` for Reel segments.
+> `donut_animate` takes `col_value` and `col_label` directly in params (same as static `donut`). Always set `instagram_format: "9x16"` and `px: 1080` for Reel segments. Do NOT set `suptitle_y` or `subtitle_y` — the standardised layout handles placement automatically.
 
 **`cover_animate` params (legacy -- do not use when `start_with_chart: true`):**
 
@@ -738,9 +798,14 @@ Practical: `[0, -1]` is the default. `[0, max_idx, -1]` only when there is a tru
 
 ```json
 {
-  "...static chart params...",
+  "...static chart params (use px_width/px_height, not instagram_format)...",
+  "px_width": 1080,
+  "px_height": 1920,
+  "tw_subtitle_start": 0.0,
+  "tw_subtitle_end": 0.2,
   "duration": 12,
-  "hold_frames": 120
+  "hold_frames": 120,
+  "loop_preview_frames": 30
 }
 ```
 
@@ -751,8 +816,11 @@ Practical: `[0, -1]` is the default. `[0, max_idx, -1]` only when there is a tru
   "...static line params minus x_ticks/x_tick_labels...",
   "px": 1080,
   "py": 1920,
+  "tw_subtitle_start": 0.0,
+  "tw_subtitle_end": 0.2,
   "duration": 12,
-  "hold_frames": 120
+  "hold_frames": 120,
+  "loop_preview_frames": 30
 }
 ```
 
