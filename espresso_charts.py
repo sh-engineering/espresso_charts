@@ -15,9 +15,9 @@ fig.suptitle(), line charts used ax.text(transform=ax.transAxes), etc.
 
 LAYOUT ZONES (figure coordinates, y=0 bottom, y=1 top):
   ┌─────────────────────────┐ y = 1.0
-  │  suptitle (26pt, ≤2 ln) │ y ≈ 0.955 (4:5) / 0.965 (9:16)
-  │  subtitle (14pt, ≤2 ln) │ y ≈ 0.890 (4:5) / 0.920 (9:16)
-  ├─────────────────────────┤ plot_top ≈ 0.815 / 0.870
+  │  suptitle (20pt, 2-3 ln)│ y ≈ 0.960 (4:5) / 0.870 (9:16)  plain-language hook
+  │  subtitle (12pt, 1 ln)  │ y ≈ 0.800 (4:5) / 0.754 (9:16)  unit/measure label
+  ├─────────────────────────┤ plot_top ≈ 0.760 / 0.723
   │                         │
   │       PLOT AREA         │
   │                         │
@@ -156,39 +156,46 @@ font_mono    = 'DM Mono'            # labels, ticks, source lines, data values
 # If titles are shorter, the extra space becomes clean whitespace above the plot.
 
 _LAYOUT = {
-    # Computed from font metrics:
-    #   suptitle 26pt × 2 lines × 1.2 ls = 57.2pt block
-    #   subtitle 14pt × 2 lines × 1.2 ls = 30.8pt block
+    # Layout v3 — hybrid headline system:
+    #   suptitle 20pt × 2-3 lines × 1.2 ls = max 72pt block  (plain-language story hook)
+    #   subtitle 12pt × 1 line  × 1.2 ls = 14.4pt block      (unit/measure reference)
     #   footnote  9pt × 2 lines × 1.2 ls = 19.8pt block
-    #   gap between elements = 0.015 fig units
     #
-    # 4:5 figure = 6.75 in tall → suptitle block = 0.118, subtitle block = 0.063
-    # 9:16 figure = 9.6 in tall → suptitle block = 0.083, subtitle block = 0.045
+    # 4:5 figure = 1350px @ 200dpi = 6.75 in = 486pt
+    #   suptitle block: 72pt / 486pt ≈ 0.148 fig
+    #   subtitle block: 14.4pt / 486pt ≈ 0.030 fig
+    #   subtitle_y = 0.960 - 0.148 - 0.012 (gap) = 0.800
+    #   plot_top   = 0.800 - 0.030 - 0.010 (gap) = 0.760
+    #
+    # 9:16 figure = 1920px @ 200dpi = 9.6 in = 691pt
+    #   suptitle block: 72pt / 691pt ≈ 0.104 fig
+    #   subtitle block: 14.4pt / 691pt ≈ 0.021 fig
+    #   subtitle_y = 0.870 - 0.104 - 0.012 = 0.754
+    #   plot_top   = 0.754 - 0.021 - 0.010 = 0.723
     '4x5': {
         'figsize_px': (1080, 1350),
-        'suptitle_y':  0.960,   # top of suptitle text block
-        'subtitle_y':  0.827,   # = 0.960 - 0.118 (sup block) - 0.015 (gap)
-        'plot_top':    0.749,   # = 0.827 - 0.063 (sub block) - 0.015 (gap)
+        'suptitle_y':  0.960,   # top of suptitle (plain-language hook, 2-3 lines)
+        'subtitle_y':  0.800,   # top of 1-line unit label
+        'plot_top':    0.760,   # below subtitle with gap
         'plot_bottom': 0.085,   # axes bottom edge
         'footnote_y':  0.045,   # top of footnote text block
     },
     '9x16': {
         # Instagram Reel safe zones: top ~250px, bottom ~200px are covered by UI.
         # Content must stay within y=0.104 to y=0.870 (in figure coords).
-        # Top:  250px / 1920 = 0.130 buffer → content ceiling at 0.870
-        # Bottom: 200px / 1920 = 0.104 buffer → content floor at 0.104
         'figsize_px': (1080, 1920),
         'suptitle_y':  0.870,   # right at the top safe edge
-        'subtitle_y':  0.772,   # = 0.870 - 0.083 (sup block) - 0.015 (gap)
-        'plot_top':    0.712,   # = 0.772 - 0.045 (sub block) - 0.015 (gap)
+        'subtitle_y':  0.754,   # 1-line unit label
+        'plot_top':    0.723,   # below subtitle with gap
         'plot_bottom': 0.185,   # extra space for x-axis tick labels
         'footnote_y':  0.120,   # just above bottom safe zone (floor = 0.104)
     },
 }
 
-# Font defaults
-_SUPTITLE_SIZE = 26
-_SUBTITLE_SIZE = 14
+# Font defaults — suptitle 20pt for 2-3 line plain-language headlines;
+# subtitle 12pt for 1-line unit/measure label (skipped when txt_subtitle="")
+_SUPTITLE_SIZE = 20
+_SUBTITLE_SIZE = 12
 _FOOTNOTE_SIZE = 9
 _SUPTITLE_FONT = 'Playfair Display'
 _SUBTITLE_FONT = 'Source Serif 4'
@@ -234,9 +241,10 @@ def _add_titles(fig, txt_suptitle, txt_subtitle, L,
                 suptitle_font=None, subtitle_font=None,
                 suptitle_font_weight='normal', subtitle_font_weight='normal',
                 suptitle_size=None, subtitle_size=None):
-    """Place suptitle and subtitle at fixed positions using fig.text().
+    """Place suptitle (and optionally subtitle) using fig.text().
 
-    Returns (suptitle_obj, subtitle_obj) for animation use.
+    When txt_subtitle is empty or None the subtitle text object is not created.
+    Returns (suptitle_obj, subtitle_obj_or_None) for animation use.
     """
     sf = suptitle_font or _SUPTITLE_FONT
     tf = subtitle_font or _SUBTITLE_FONT
@@ -249,12 +257,14 @@ def _add_titles(fig, txt_suptitle, txt_subtitle, L,
         fontweight=suptitle_font_weight, fontfamily=sf,
         ha='center', va='top', linespacing=1.2,
     )
-    sub = fig.text(
-        0.5, L['subtitle_y'], txt_subtitle,
-        fontsize=ts, color=subtitle_color,
-        fontweight=subtitle_font_weight, fontfamily=tf,
-        ha='center', va='top', linespacing=1.2,
-    )
+    sub = None
+    if txt_subtitle:
+        sub = fig.text(
+            0.5, L['subtitle_y'], txt_subtitle,
+            fontsize=ts, color=subtitle_color,
+            fontweight=subtitle_font_weight, fontfamily=tf,
+            ha='center', va='top', linespacing=1.2,
+        )
     return sup, sub
 
 
@@ -1241,7 +1251,7 @@ def _typewriter(full_text, progress, start=0.0, end=0.95):
 # ============================================================================
 def eSingleBarChartAnimateInstagram(
     df_chart, col_dim, col_measure, txt_suptitle, txt_subtitle, txt_label,
-    duration=8, fps=30, hold_frames=120,
+    duration=8, fps=30, hold_frames=120, loop_preview_frames=0,
     output_file="espresso_bar_animated.mp4", easing='cubic',
     tw_suptitle_start=0.0, tw_suptitle_end=0.5,
     tw_subtitle_start=0.5, tw_subtitle_end=0.95,
@@ -1382,10 +1392,19 @@ def eSingleBarChartAnimateInstagram(
             _safe_offsets[idx] = 8 + x_extra
 
     total_anim   = int(fps * duration)
-    total_frames = total_anim + hold_frames
+    # loop_preview_frames: show the completed chart at the start so that when
+    # Instagram loops the reel, the last hold frame (full chart) transitions
+    # seamlessly into the first preview frame (also full chart).
+    total_frames = loop_preview_frames + total_anim + hold_frames
 
     def update(frame):
-        progress = 1.0 if frame >= total_anim else ease_fn(frame / total_anim)
+        if loop_preview_frames > 0 and frame < loop_preview_frames:
+            progress = 1.0
+        elif frame >= loop_preview_frames + total_anim:
+            progress = 1.0
+        else:
+            anim_frame = frame - loop_preview_frames
+            progress = ease_fn(anim_frame / total_anim) if total_anim > 0 else 1.0
         sup_obj.set_text(_typewriter(txt_suptitle, progress, tw_suptitle_start, tw_suptitle_end))
         sub_obj.set_text(_typewriter(txt_subtitle, progress, tw_subtitle_start, tw_subtitle_end))
         for idx, bar in enumerate(bars):
@@ -1419,7 +1438,7 @@ def eSingleBarChartAnimateInstagram(
 # ============================================================================
 def eMultiLineChartAnimateInstagram(
     df_chart, col_dim, col_measure_list, txt_suptitle, txt_subtitle, txt_label, pos_text,
-    duration=8, fps=30, hold_frames=120,
+    duration=8, fps=30, hold_frames=120, loop_preview_frames=0,
     output_file="espresso_line_animated.mp4", easing='cubic',
     tw_suptitle_start=0.0, tw_suptitle_end=0.5,
     tw_subtitle_start=0.5, tw_subtitle_end=0.95,
@@ -1582,11 +1601,17 @@ def eMultiLineChartAnimateInstagram(
         shade_patch.set_visible(False)
 
     total_anim   = int(fps * duration)
-    total_frames = total_anim + hold_frames
+    total_frames = loop_preview_frames + total_anim + hold_frames
     x_arr        = np.arange(n_rows, dtype=float)
 
     def update(frame):
-        progress = 1.0 if frame >= total_anim else ease_fn(frame / total_anim)
+        if loop_preview_frames > 0 and frame < loop_preview_frames:
+            progress = 1.0
+        elif frame >= loop_preview_frames + total_anim:
+            progress = 1.0
+        else:
+            anim_frame = frame - loop_preview_frames
+            progress = ease_fn(anim_frame / total_anim) if total_anim > 0 else 1.0
         sup_obj.set_text(_typewriter(txt_suptitle, progress, tw_suptitle_start, tw_suptitle_end))
         sub_obj.set_text(_typewriter(txt_subtitle,  progress, tw_subtitle_start,  tw_subtitle_end))
         reveal = progress * n_rows
@@ -1655,7 +1680,7 @@ def eMultiLineChartAnimateInstagram(
 # ============================================================================
 def eStemChartAnimateInstagram(
     df_chart, col_dim, col_measure_a,
-    duration=8, fps=30, hold_frames=120,
+    duration=8, fps=30, hold_frames=120, loop_preview_frames=0,
     output_file="espresso_stem_animated.mp4", easing='cubic',
     tw_suptitle_start=0.0, tw_suptitle_end=0.5,
     tw_subtitle_start=0.5, tw_subtitle_end=0.95,
@@ -1783,10 +1808,16 @@ def eStemChartAnimateInstagram(
     if aspect_ratio is not None: ax.set_box_aspect(aspect_ratio)
 
     total_anim   = int(fps * duration)
-    total_frames = total_anim + hold_frames
+    total_frames = loop_preview_frames + total_anim + hold_frames
 
     def update(frame):
-        progress = 1.0 if frame >= total_anim else ease_fn(frame / total_anim)
+        if loop_preview_frames > 0 and frame < loop_preview_frames:
+            progress = 1.0
+        elif frame >= loop_preview_frames + total_anim:
+            progress = 1.0
+        else:
+            anim_frame = frame - loop_preview_frames
+            progress = ease_fn(anim_frame / total_anim) if total_anim > 0 else 1.0
         sup_obj.set_text(_typewriter(txt_suptitle, progress, tw_suptitle_start, tw_suptitle_end))
         sub_obj.set_text(_typewriter(txt_subtitle,  progress, tw_subtitle_start,  tw_subtitle_end))
         for i in range(n):
@@ -1812,7 +1843,7 @@ def eStemChartAnimateInstagram(
 # ANIMATED: DONUT  (9:16 Reels)
 # ============================================================================
 def eDonutChartAnimateInstagram(
-    df_chart, col_value, duration=8, fps=30, hold_frames=120,
+    df_chart, col_value, duration=8, fps=30, hold_frames=120, loop_preview_frames=0,
     output_file="espresso_donut_animated.mp4", easing='cubic',
     tw_suptitle_start=0.0, tw_suptitle_end=0.5, tw_subtitle_start=0.5, tw_subtitle_end=0.95,
     col_label=None, col_inner=None, txt_suptitle="", txt_subtitle="", txt_label="",
@@ -1876,13 +1907,19 @@ def eDonutChartAnimateInstagram(
         except: return f"{pct:.0f}%"
 
     total_anim   = int(fps * duration)
-    total_frames = total_anim + hold_frames
+    total_frames = loop_preview_frames + total_anim + hold_frames
 
     def update(frame):
         ax.clear(); ax.set_facecolor(face_color); ax.set_aspect("equal", adjustable="box")
         for side in ['top','right','left','bottom']: ax.spines[side].set_linewidth(0)
         ax.set_xticks([]); ax.set_yticks([])
-        progress = 1.0 if frame >= total_anim else ease_fn(frame / total_anim)
+        if loop_preview_frames > 0 and frame < loop_preview_frames:
+            progress = 1.0
+        elif frame >= loop_preview_frames + total_anim:
+            progress = 1.0
+        else:
+            anim_frame = frame - loop_preview_frames
+            progress = ease_fn(anim_frame / total_anim) if total_anim > 0 else 1.0
         sup_obj.set_text(_typewriter(txt_suptitle, progress, tw_suptitle_start, tw_suptitle_end))
         sub_obj.set_text(_typewriter(txt_subtitle,  progress, tw_subtitle_start,  tw_subtitle_end))
         cur_start = start_angle; drawn = []

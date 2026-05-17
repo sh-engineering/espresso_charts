@@ -221,11 +221,13 @@ All times CET (Berlin). One story per day, seven stories per week.
 
 Start with the number, not the topic. Browse Tier 1 sources for a data point that changes your sense of scale. The number is the story. Everything else is context.
 
-**Headline rule:** The headline IS the number. "46% of the world's trees, cut" not "Global Deforestation." The topic lives in the subtitle and eyebrow. The viewer knows the scale before they read anything else.
+**Headline rule:** The headline IS the story. The suptitle carries the number, the unit, the direction of change, and the timeframe — all in 2-3 lines. There is no subtitle. The viewer must understand what they are seeing without reading anything else on screen.
 
-**Good:** `"8.1 billion people"` / `"30% renewables"` / `"-2.1C since 1979"` / `"46% of trees, cut"`
+**Good:** `"Cereal yield tripled\nfrom 1,353 to 4,250 kg/ha\nsince 1961"` / `"Solar cost fell 90%\nfrom $381 to $44 per MWh\nbetween 2010 and 2023"` / `"44,016 species\nface extinction threat\nIUCN Red List 2024"`
 
-**Bad:** `"World Population"` / `"The Energy Transition"` / `"Arctic Sea Ice"` / `"Deforestation"`
+**Bad (number alone without context):** `"3×\nsince 1961"` / `"-90%"` / `"44,016 species"` — these are meaningless without a subtitle that no longer exists.
+
+**Bad (topic label):** `"World Population"` / `"The Energy Transition"` / `"Arctic Sea Ice"` / `"Deforestation"`
 
 -----
 
@@ -304,10 +306,42 @@ Voiceover for context pairs: 40-50 words. Music `duration_ms`: 33000.
 - Dollar signs: escape as `\\$`
 - Bar chart value labels auto-detect collision with category labels and push right when needed. Use `value_label_offset_x` for manual fine-tuning on top of auto-positioning.
 
-**Heading character limits — HARD CONSTRAINT.**
-`txt_suptitle`: max 2 lines, max 20 characters per line.
-`txt_subtitle`: max 2 lines, max 30 characters per line.
-Applies to cover tiles, all chart types (static and animated), and all reel scenes. Count the characters before writing the line break, not after.
+**Headline system — two-tier, hybrid.**
+
+Every chart uses two text lines above the plot:
+
+| Field | Role | Font | Lines | Max chars/line |
+|---|---|---|---|---|
+| `txt_suptitle` | Story hook — plain language, resonant | Playfair Display 20pt | 2-3 | 28 |
+| `txt_subtitle` | Unit/measure label — 1 line only | Source Serif 4 12pt | 1 | 35 |
+
+**`txt_suptitle` rule — plain language, not raw technical units.**
+
+The headline must land with a general audience. If the number requires expert knowledge to interpret, restate it in human terms. Never put raw technical units (ppb, Gt, GW, km², °C anomaly, Sv, etc.) as the only content of a headline — most viewers have no intuition for those scales.
+
+| Unit in data | Plain language instead |
+|---|---|
+| `"1,942 ppb"` of methane | `"Methane hit its highest\nlevel in 800,000 years\n2.7× pre-industrial"` |
+| `"9,580 Gt"` glacier loss | `"Glaciers lost an ice block\nthe size of Germany\n25 meters thick, since 1975"` |
+| `"62% to 74%"` coverage | `"2.2 billion more people\nhave safe water today\nthan in the year 2000"` |
+| `"9.1 billion"` subscriptions | `"9.1 billion phones for\n8.2 billion people\nfrom 11 million in 1990"` |
+
+When the number IS self-evident (billions of people, 1 in 3, percentage of a common thing), keep the number in the headline. The test: would a curious non-expert understand the scale in 3 seconds?
+
+**Suptitle writing rules:**
+- Line 1: what happened or what the number represents
+- Line 2: the scale, direction, or comparison
+- Line 3 (optional): the timeframe or historical baseline
+- 2 lines minimum, 3 lines maximum
+- No line longer than 28 characters
+
+**`txt_subtitle` rule — unit label only, always 1 line.**
+
+The subtitle provides the technical measurement context for the suptitle. Write it as a short data label, not a sentence. Omit if the chart's own value labels already make the unit obvious.
+
+Good: `"Atmospheric methane, parts per billion"` / `"Safely managed drinking water, %"` / `"Maternal deaths per year, thousands"`
+Bad: `"Methane concentration in the atmosphere has risen"` (sentence, not a label)
+Bad: `"Cereal yield rose from 1,353 to 4,250 kg/hectare"` (values belong on the chart, not here)
 
 **Parameters must exist in the deployed library.**
 Only use keyword arguments present in the current `espresso_charts.py`. The animation functions (`eMultiLineChartAnimateInstagram`, `eStemChartAnimateInstagram`, `eSingleBarChartAnimateInstagram`) do not accept `renderer_hints`, `persistent_value_indices`, or any other parameter not defined in their signatures. When in doubt, omit.
@@ -362,11 +396,13 @@ Omit `start_with_chart` (or set it `false`) and include `cover_animate` as the f
 
 **Timing -- `start_with_chart: true`:**
 
-- Chart: `duration: 12`, `hold_frames: 120` (16s total)
+- Chart: `duration: 12`, `hold_frames: 120`, `loop_preview_frames: 30` (16s total)
 - Total reel: ~16 seconds (single chart), ~32 seconds (context pair)
 - `music.duration_ms`: 22000 (single chart), 33000 (context pair)
 
 The extra hold (`hold_frames: 120` = 4s) ensures the voiceover is never cut before the last word.
+
+**`loop_preview_frames: 30`** — always set on every reel chart. The animation opens with 1 second of the completed chart before wiping to frame 0 and animating. When Instagram loops the reel, the final hold frame and the opening preview frame are both the full chart, making the loop seam invisible.
 
 **Reel chart type reference:**
 
@@ -506,7 +542,8 @@ config = json.loads(r'''
     "data": { "DimCol": ["..."], "MeasureCol": ["..."] },
     "params": {
       "...same chart params...",
-      "txt_suptitle": "Without vaccines: 6.1 million\ndeaths per year",
+      "txt_suptitle": "Without vaccines: 6.1 million\ndeaths per year avoided\nby immunization globally",
+      "txt_subtitle": "",
       "bar_color": "#A14516"
     }
   },
@@ -519,7 +556,8 @@ config = json.loads(r'''
         "params": {
           "...chart params...",
           "duration": 12,
-          "hold_frames": 120
+          "hold_frames": 120,
+          "loop_preview_frames": 30
         }
       }
     ],
@@ -560,7 +598,7 @@ config = json.loads(r'''
 
 > **COVER:** Do NOT override `suptitle_y`, `subtitle_y`, or `accent_line_y`. When a context chart exists, use `txt_context` to state the baseline number on the cover.
 
-> **REEL:** Always set `"start_with_chart": true`. Single chart: ~16s total, 30-40 word voiceover, `music.duration_ms`: 22000. Context pair: ~32s total, 40-50 word voiceover, `music.duration_ms`: 33000. Voiceover first word is the number.
+> **REEL:** Always set `"start_with_chart": true`. Always set `loop_preview_frames: 30` on each animated chart so the reel loops seamlessly on Instagram. Single chart: ~16s total, 30-40 word voiceover, `music.duration_ms`: 22000. Context pair: ~32s total, 40-50 word voiceover, `music.duration_ms`: 33000. Voiceover first word is the number.
 
 ### Chart Parameter Reference by Type
 
@@ -570,13 +608,13 @@ config = json.loads(r'''
 {
   "col_dim": "DimColumn",
   "col_measure": "MeasureColumn",
-  "txt_suptitle": "Number-Led Headline\nWith Scale Context",
-  "txt_subtitle": "Sub heading",
+  "txt_suptitle": "Plain-language hook\n2-3 lines, no raw units\ntimeframe or comparison",
+  "txt_subtitle": "Unit/measure label, 1 line",
   "txt_label": "Source: Name · URL\n(c) Espresso Charts",
   "num_format": "{:.0f}%",
   "bar_color": "#3F5B83",
-  "suptitle_size": 26,
-  "subtitle_size": 14,
+  "suptitle_size": 20,
+  "subtitle_size": 12,
   "label_size": 10
 }
 ```
@@ -587,10 +625,10 @@ config = json.loads(r'''
 {
   "col_dim": "XColumn",
   "col_measure_list": ["YColumn1"],
-  "txt_suptitle": "Number-Led Headline",
-  "txt_subtitle": "Sub heading\nwith context",
+  "txt_suptitle": "Plain-language hook\n2-3 lines, no raw units\ntimeframe or comparison",
+  "txt_subtitle": "Unit/measure label, 1 line",
   "txt_label": "Source: Name · URL\n(c) Espresso Charts",
-  "pos_text": [-1],
+  "pos_text": [0, -1],
   "pos_label": null,
   "show_y_axis": false,
   "bottom_note_size": 9,
@@ -600,7 +638,9 @@ config = json.loads(r'''
   "x_ticks": [2000, 2010, 2020],
   "x_tick_labels": ["2000", "2010", "Now"],
   "px": 1080,
-  "py": 1350
+  "py": 1350,
+  "suptitle_size": 20,
+  "subtitle_size": 12
 }
 ```
 
@@ -796,10 +836,14 @@ No manual writing required.
 - Lead with the number. The data is the hook.
 - Name sources by institutional name
 
-**Subtitle composition.** The subtitle names what the chart measures and (optionally) the unit. It does not state the values — those belong in the value labels on the chart.
+**Suptitle:** plain-language story hook. The viewer must understand the finding without any expert knowledge. No raw units (ppb, Gt, GW, etc.) as the sole content. 2-3 lines, ≤28 chars each.
 
-Good: `"Cereal yield, kg/hectare"`
-Bad: `"Cereal yield rose from 1,353 to 4,250 kg/hectare"`
+**Subtitle:** one-line unit/measure label. Names what the chart axis measures and the unit. Never a sentence. Never repeats values already on the chart.
+
+Good suptitle: `"Methane hit its highest\nlevel in 800,000 years\n2.7× pre-industrial"`
+Good subtitle: `"Atmospheric methane, parts per billion"`
+
+Bad: `"1,942 ppb"` as the entire suptitle — meaningless to a general audience.
 
 ### Do NOT use -- EVER
 
@@ -855,7 +899,7 @@ font_mono    = 'DM Mono'
 - [ ] Voiceover first word is the number or data fact -- never the topic name
 - [ ] Every reel has `"start_with_chart": true` set on the reel object
 - [ ] No `cover_animate` entry in `animated_charts` (new stories use `start_with_chart: true`)
-- [ ] Chart animation: `duration: 12`, `hold_frames: 120`
+- [ ] Chart animation: `duration: 12`, `hold_frames: 120`, `loop_preview_frames: 30`
 - [ ] `music.duration_ms`: 22000 (single chart), 33000 (context pair)
 - [ ] Every story has `poster` with `hero_number`, `hero_unit`, `insight_text`, `annotations`
 - [ ] Headline is the number, not the topic
@@ -865,11 +909,10 @@ font_mono    = 'DM Mono'
 - [ ] Context chart `txt_suptitle` states the context number as headline
 - [ ] Context pair stories: voiceover 40-50 words, `music.duration_ms` 33000
 - [ ] Maximum one context chart per daily story
-- [ ] `txt_suptitle` every line ≤ 20 chars, max 2 lines (count before inserting `\n`)
-- [ ] `txt_subtitle` every line ≤ 30 chars, max 2 lines (count before inserting `\n`)
+- [ ] `txt_suptitle` is plain-language: 2-3 lines, ≤28 chars each, no raw technical units as sole content
+- [ ] `txt_subtitle` is a 1-line unit/measure label, ≤35 chars, never a sentence
 - [ ] No `data_source` block without a complete fetch config (`url` + format fields); omit if provenance-only
 - [ ] Line chart `pos_text` = `[0, -1]` by default; `[0, max_idx, -1]` only when a true interior peak exists
-- [ ] Subtitles name the measure and unit only — no values stated in subtitle text
 - [ ] No params used that are absent from `espresso_charts.py` signatures (no `renderer_hints`, `persistent_value_indices`, etc.)
 
 **No Em Dashes:**
