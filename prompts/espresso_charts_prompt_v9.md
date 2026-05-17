@@ -221,9 +221,9 @@ All times CET (Berlin). One story per day, seven stories per week.
 
 Start with the number, not the topic. Browse Tier 1 sources for a data point that changes your sense of scale. The number is the story. Everything else is context.
 
-**Headline rule:** The headline IS the story. The suptitle carries the number, the unit, the direction of change, and the timeframe — all in 2-3 lines. There is no subtitle. The viewer must understand what they are seeing without reading anything else on screen.
+**Headline rule:** The headline IS the story. The suptitle carries the number, the finding, the direction of change, or the comparison — all in exactly 2 lines. The subtitle provides the unit/measure label on a single line below. Together they must let the viewer understand what they are seeing without expert knowledge.
 
-**Good:** `"Cereal yield tripled\nfrom 1,353 to 4,250 kg/ha\nsince 1961"` / `"Solar cost fell 90%\nfrom $381 to $44 per MWh\nbetween 2010 and 2023"` / `"44,016 species\nface extinction threat\nIUCN Red List 2024"`
+**Good:** `"Cereal yield tripled\nsince 1961"` / `"Solar cost fell 90%\nbetween 2010 and 2023"` / `"44,016 species face\nextinction threat today"`
 
 **Bad (number alone without context):** `"3×\nsince 1961"` / `"-90%"` / `"44,016 species"` — these are meaningless without a subtitle that no longer exists.
 
@@ -318,7 +318,7 @@ Every chart uses two text lines above the plot:
 
 | Field | Role | Font | Lines | Max chars/line |
 |---|---|---|---|---|
-| `txt_suptitle` | Story hook — plain language, resonant | Playfair Display 20pt | 2-3 | 28 |
+| `txt_suptitle` | Story hook — plain language, resonant | Playfair Display 20pt | **2 exactly** | **30** |
 | `txt_subtitle` | Unit/measure label — 1 line only | Source Serif 4 12pt | 1 | 35 |
 
 **`txt_suptitle` rule — plain language, not raw technical units.**
@@ -327,19 +327,19 @@ The headline must land with a general audience. If the number requires expert kn
 
 | Unit in data | Plain language instead |
 |---|---|
-| `"1,942 ppb"` of methane | `"Methane hit its highest\nlevel in 800,000 years\n2.7× pre-industrial"` |
-| `"9,580 Gt"` glacier loss | `"Glaciers lost an ice block\nthe size of Germany\n25 meters thick, since 1975"` |
-| `"62% to 74%"` coverage | `"2.2 billion more people\nhave safe water today\nthan in the year 2000"` |
-| `"9.1 billion"` subscriptions | `"9.1 billion phones for\n8.2 billion people\nfrom 11 million in 1990"` |
+| `"1,942 ppb"` of methane | `"Methane hit its highest\nlevel in 800,000 years"` |
+| `"9,580 Gt"` glacier loss | `"Glaciers lost an ice block\nthe size of Germany since 1975"` |
+| `"62% to 74%"` coverage | `"2.2 billion more people\nhave safe water than in 2000"` |
+| `"9.1 billion"` subscriptions | `"9.1 billion phones for\n8.2 billion people today"` |
 
 When the number IS self-evident (billions of people, 1 in 3, percentage of a common thing), keep the number in the headline. The test: would a curious non-expert understand the scale in 3 seconds?
 
 **Suptitle writing rules:**
 - Line 1: what happened or what the number represents
-- Line 2: the scale, direction, or comparison
-- Line 3 (optional): the timeframe or historical baseline
-- 2 lines minimum, 3 lines maximum
-- No line longer than 28 characters
+- Line 2: the scale, direction, comparison, or timeframe
+- **Exactly 2 lines — no more, no fewer**
+- No line longer than 30 characters
+- If a third thought is essential, fold it into the subtitle
 
 **`txt_subtitle` rule — unit label only, always 1 line.**
 
@@ -614,7 +614,7 @@ config = json.loads(r'''
 {
   "col_dim": "DimColumn",
   "col_measure": "MeasureColumn",
-  "txt_suptitle": "Plain-language hook\n2-3 lines, no raw units\ntimeframe or comparison",
+  "txt_suptitle": "Plain-language hook\n2 lines, ≤30 chars each",
   "txt_subtitle": "Unit/measure label, 1 line",
   "txt_label": "Source: Name · URL\n(c) Espresso Charts",
   "num_format": "{:.0f}%",
@@ -631,7 +631,7 @@ config = json.loads(r'''
 {
   "col_dim": "XColumn",
   "col_measure_list": ["YColumn1"],
-  "txt_suptitle": "Plain-language hook\n2-3 lines, no raw units\ntimeframe or comparison",
+  "txt_suptitle": "Plain-language hook\n2 lines, ≤30 chars each",
   "txt_subtitle": "Unit/measure label, 1 line",
   "txt_label": "Source: Name · URL\n(c) Espresso Charts",
   "pos_text": [0, -1],
@@ -668,7 +668,7 @@ Practical: `[0, -1]` is the default. `[0, max_idx, -1]` only when there is a tru
 {
   "col_dim": "XColumn",
   "col_measure_a": "YColumn",
-  "txt_suptitle": "Plain-language headline\n2-3 lines, story hook",
+  "txt_suptitle": "Plain-language headline\n2 lines, ≤30 chars each",
   "txt_subtitle": "Unit/measure label, 1 line",
   "txt_label": "Source: Agency Name · agency.org\n© Espresso Charts",
   "num_format": "{:.0f}",
@@ -693,7 +693,7 @@ Practical: `[0, -1]` is the default. `[0, max_idx, -1]` only when there is a tru
 {
   "col_dim": "XColumn",
   "col_measure_a": "YColumn",
-  "txt_suptitle": "Plain-language headline\n2-3 lines, story hook",
+  "txt_suptitle": "Plain-language headline\n2 lines, ≤30 chars each",
   "txt_subtitle": "Unit/measure label, 1 line",
   "txt_label": "Source: Agency Name\n© Espresso Charts",
   "num_format": "{:.0f}",
@@ -725,7 +725,7 @@ Practical: `[0, -1]` is the default. `[0, max_idx, -1]` only when there is a tru
 {
   "col_value": "ValueColumn",
   "col_label": "LabelColumn",
-  "txt_suptitle": "Plain-language headline\n2-3 lines, story hook",
+  "txt_suptitle": "Plain-language headline\n2 lines, ≤30 chars each",
   "txt_subtitle": "Unit/measure label, 1 line",
   "txt_label": "Source: Agency Name · agency.org\n© Espresso Charts",
   "num_format": "{:.0f}%",
@@ -750,7 +750,7 @@ Practical: `[0, -1]` is the default. `[0, max_idx, -1]` only when there is a tru
 {
   "col_value": "ValueColumn",
   "col_label": "LabelColumn",
-  "txt_suptitle": "Plain-language headline\n2-3 lines, story hook",
+  "txt_suptitle": "Plain-language headline\n2 lines, ≤30 chars each",
   "txt_subtitle": "Unit/measure label, 1 line",
   "txt_label": "Source: Agency Name\n© Espresso Charts",
   "num_format": "{:.0f}%",
@@ -904,7 +904,7 @@ No manual writing required.
 - Lead with the number. The data is the hook.
 - Name sources by institutional name
 
-**Suptitle:** plain-language story hook. The viewer must understand the finding without any expert knowledge. No raw units (ppb, Gt, GW, etc.) as the sole content. 2-3 lines, ≤28 chars each.
+**Suptitle:** plain-language story hook. The viewer must understand the finding without any expert knowledge. No raw units (ppb, Gt, GW, etc.) as the sole content. Exactly 2 lines, ≤30 chars each.
 
 **Subtitle:** one-line unit/measure label. Names what the chart axis measures and the unit. Never a sentence. Never repeats values already on the chart.
 
@@ -977,7 +977,7 @@ font_mono    = 'DM Mono'
 - [ ] Context chart `txt_suptitle` states the context number as headline
 - [ ] Context pair stories: voiceover 40-50 words, `music.duration_ms` 33000
 - [ ] Maximum one context chart per daily story
-- [ ] `txt_suptitle` is plain-language: 2-3 lines, ≤28 chars each, no raw technical units as sole content
+- [ ] `txt_suptitle` is plain-language: exactly 2 lines, ≤30 chars each, no raw technical units as sole content
 - [ ] `txt_subtitle` is a 1-line unit/measure label, ≤35 chars, never a sentence
 - [ ] No `data_source` block without a complete fetch config (`url` + format fields); omit if provenance-only
 - [ ] Line chart `pos_text` = `[0, -1]` by default; `[0, max_idx, -1]` only when a true interior peak exists

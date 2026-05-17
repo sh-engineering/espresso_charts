@@ -15,9 +15,9 @@ fig.suptitle(), line charts used ax.text(transform=ax.transAxes), etc.
 
 LAYOUT ZONES (figure coordinates, y=0 bottom, y=1 top):
   ┌─────────────────────────┐ y = 1.0
-  │  suptitle (20pt, 2-3 ln)│ y ≈ 0.960 (4:5) / 0.870 (9:16)  plain-language hook
-  │  subtitle (12pt, 1 ln)  │ y ≈ 0.800 (4:5) / 0.754 (9:16)  unit/measure label
-  ├─────────────────────────┤ plot_top ≈ 0.760 / 0.723
+  │  suptitle (20pt, 2 ln)  │ y ≈ 0.960 (4:5) / 0.870 (9:16)  plain-language hook
+  │  subtitle (12pt, 1 ln)  │ y ≈ 0.849 (4:5) / 0.789 (9:16)  unit/measure label
+  ├─────────────────────────┤ plot_top ≈ 0.809 / 0.758
   │                         │
   │       PLOT AREA         │
   │                         │
@@ -156,27 +156,27 @@ font_mono    = 'DM Mono'            # labels, ticks, source lines, data values
 # If titles are shorter, the extra space becomes clean whitespace above the plot.
 
 _LAYOUT = {
-    # Layout v3 — hybrid headline system:
-    #   suptitle 20pt × 2-3 lines × 1.2 ls = max 72pt block  (plain-language story hook)
-    #   subtitle 12pt × 1 line  × 1.2 ls = 14.4pt block      (unit/measure reference)
-    #   footnote  9pt × 2 lines × 1.2 ls = 19.8pt block
+    # Layout v4 — 2-line suptitle cap:
+    #   suptitle 20pt × 2 lines  × 1.2 ls = 48pt block  (plain-language story hook)
+    #   subtitle 12pt × 1 line   × 1.2 ls = 14.4pt block (unit/measure reference)
+    #   footnote  9pt × 2 lines  × 1.2 ls = 19.8pt block
     #
     # 4:5 figure = 1350px @ 200dpi = 6.75 in = 486pt
-    #   suptitle block: 72pt / 486pt ≈ 0.148 fig
+    #   suptitle block: 48pt / 486pt ≈ 0.099 fig
     #   subtitle block: 14.4pt / 486pt ≈ 0.030 fig
-    #   subtitle_y = 0.960 - 0.148 - 0.012 (gap) = 0.800
-    #   plot_top   = 0.800 - 0.030 - 0.010 (gap) = 0.760
+    #   subtitle_y = 0.960 - 0.099 - 0.012 (gap) = 0.849
+    #   plot_top   = 0.849 - 0.030 - 0.010 (gap) = 0.809
     #
     # 9:16 figure = 1920px @ 200dpi = 9.6 in = 691pt
-    #   suptitle block: 72pt / 691pt ≈ 0.104 fig
+    #   suptitle block: 48pt / 691pt ≈ 0.069 fig
     #   subtitle block: 14.4pt / 691pt ≈ 0.021 fig
-    #   subtitle_y = 0.870 - 0.104 - 0.012 = 0.754
-    #   plot_top   = 0.754 - 0.021 - 0.010 = 0.723
+    #   subtitle_y = 0.870 - 0.069 - 0.012 = 0.789
+    #   plot_top   = 0.789 - 0.021 - 0.010 = 0.758
     '4x5': {
         'figsize_px': (1080, 1350),
-        'suptitle_y':  0.960,   # top of suptitle (plain-language hook, 2-3 lines)
-        'subtitle_y':  0.800,   # top of 1-line unit label
-        'plot_top':    0.760,   # below subtitle with gap
+        'suptitle_y':  0.960,   # top of suptitle (plain-language hook, 2 lines max)
+        'subtitle_y':  0.849,   # top of 1-line unit label
+        'plot_top':    0.809,   # below subtitle with gap
         'plot_bottom': 0.085,   # axes bottom edge
         'footnote_y':  0.045,   # top of footnote text block
     },
@@ -185,14 +185,14 @@ _LAYOUT = {
         # Content must stay within y=0.104 to y=0.870 (in figure coords).
         'figsize_px': (1080, 1920),
         'suptitle_y':  0.870,   # right at the top safe edge
-        'subtitle_y':  0.754,   # 1-line unit label
-        'plot_top':    0.723,   # below subtitle with gap
+        'subtitle_y':  0.789,   # 1-line unit label
+        'plot_top':    0.758,   # below subtitle with gap
         'plot_bottom': 0.185,   # extra space for x-axis tick labels
         'footnote_y':  0.120,   # just above bottom safe zone (floor = 0.104)
     },
 }
 
-# Font defaults — suptitle 20pt for 2-3 line plain-language headlines;
+# Font defaults — suptitle 20pt for 2-line plain-language headlines (max 30 chars/line);
 # subtitle 12pt for 1-line unit/measure label (skipped when txt_subtitle="")
 _SUPTITLE_SIZE = 20
 _SUBTITLE_SIZE = 12
