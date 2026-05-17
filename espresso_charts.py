@@ -1278,6 +1278,7 @@ def eSingleBarChartAnimateInstagram(
     value_label_min_clearance_pts=6, value_label_force_outside=None,
     # Legacy params — accepted but ignored in v2
     suptitle_y_custom=None, subtitle_pad_custom=None, x_subtitle_offset=None,
+    **_,  # absorb unknown params — forward/backward compat across versions
 ):
     label_custom_offset  = _int_keys(label_custom_offset)
     value_label_offset_x = _int_keys(value_label_offset_x)
@@ -1461,6 +1462,7 @@ def eMultiLineChartAnimateInstagram(
     reference_bands=None, vlines=None, hlines=None,
     # Legacy params — accepted but ignored in v2
     suptitle_y=None, subtitle_y=None,
+    **_,  # absorb unknown params — forward/backward compat across versions
 ):
     ease_fn = _EASING.get(easing, _ease_out_cubic)
 
@@ -1708,6 +1710,7 @@ def eStemChartAnimateInstagram(
     reference_bands=None, vlines=None, hlines=None,
     # Legacy params
     suptitle_y=None, subtitle_y=None, subtitle_pad=None, labelpad=None,
+    **_,  # absorb unknown params — forward/backward compat across versions
 ):
     value_label_offset_y      = _int_keys(value_label_offset_y)
     value_label_offset_x      = _int_keys(value_label_offset_x)
@@ -1862,6 +1865,7 @@ def eDonutChartAnimateInstagram(
     figsize=(8,8), dpi=200, px=1080, instagram=True, instagram_format='9x16',
     # Legacy params
     suptitle_y=None, subtitle_y=None, label_y=None,
+    **_,  # absorb unknown params — forward/backward compat across versions
 ):
     ease_fn = _EASING.get(easing, _ease_out_cubic)
 

@@ -357,21 +357,7 @@ Only use keyword arguments present in the current `espresso_charts.py`. The anim
 
 ### STEP 3: COVER TILE
 
-Every story gets a number-led cover tile (B template). No exceptions.
-
-**Elements:**
-
-- `txt_issue` -- Publication date (e.g. "April 14, 2026")
-- `txt_eyebrow` -- Topic + year (e.g. "Global Forests . FAO 2025")
-- `txt_suptitle` -- The Lead Number (e.g. "46%")
-- `txt_unit` -- What the number measures (e.g. "of the world's trees, cut")
-- `txt_subtitle` -- One-sentence insight, the finding not the topic
-- `accent_line_color` -- Brand color accent
-- `show_corner_mark` -- true
-
-Do NOT set `suptitle_y`, `subtitle_y`, or `accent_line_y`. The defaults handle layout.
-
-The cover PNG is the Instagram Reel thumbnail and the YouTube Shorts thumbnail. It must be legible at grid size. When `start_with_chart: true` (the default for all new stories), the cover PNG is never a video frame -- it is thumbnail-only.
+**Covers are no longer generated.** Do not include a `cover` key in story objects. Do not include a `poster` key. The pipeline now starts directly with the chart; the first completed-chart frame is the thumbnail.
 
 -----
 
@@ -392,7 +378,7 @@ The voiceover starts on frame 0 simultaneously with the chart animation. No cove
 
 **Structure -- `start_with_chart: true` (default for all new stories):**
 
-Set `"start_with_chart": true` on the `reel` object. The Reel begins on frame 0 with the chart animation. No cover hold plays as video. The cover PNG is still generated as the Instagram and YouTube Shorts thumbnail.
+Set `"start_with_chart": true` on the `reel` object. The Reel begins on frame 0 with the chart animation. The first completed-chart frame is used as the Instagram and YouTube Shorts thumbnail.
 
 1. **First chart animation** -- starts on frame 0. `bar_animate`, `line_animate`, `stem_animate`, or `donut_animate`.
 2. **Second chart animation** (context pair only) -- follows directly after the first.
@@ -525,16 +511,6 @@ config = json.loads(r'''
 {
   "id": 0,
   "slug": "global_trees_46pct",
-  "cover": {
-    "txt_suptitle": "46%",
-    "txt_subtitle": "Nearly half of all trees that existed\nwhen humans arrived are gone.",
-    "txt_unit": "of the world's trees, cut",
-    "txt_eyebrow": "Global Forests . FAO 2025",
-    "txt_issue": "April 14, 2026",
-    "suptitle_size": 86,
-    "accent_line_color": "#4D5523",
-    "show_corner_mark": true
-  },
   "charts": [
     {
       "type": "bar",
@@ -572,7 +548,6 @@ config = json.loads(r'''
     "music": { "preset": "lofi_coffee", "duration_ms": 22000 }
   },
   "story_files": [
-    [0, 0, "story_0_cover", "png"],
     [0, 1, "story_0_chart_1", "png"]
   ],
   "poster": {
@@ -960,7 +935,7 @@ font_mono    = 'DM Mono'
 
 - [ ] Valid JSON inside `config = json.loads(r''' ... ''')`
 - [ ] 7 stories with unique `id` (0-6) and `slug`
-- [ ] Each story has: `cover`, `charts` (1 chart), `reel`, `poster`, `copy`
+- [ ] Each story has: `charts` (1 chart), `reel`, `copy` — no `cover`, no `poster`
 - [ ] `copy` has: `instagram_reel`, `youtube_shorts`, `substack_note` (no `substack_article`)
 - [ ] Bar chart data sorted ascending
 - [ ] All text uses `\n` for line breaks, all colors as hex codes
@@ -970,7 +945,7 @@ font_mono    = 'DM Mono'
 - [ ] No `cover_animate` entry in `animated_charts` (new stories use `start_with_chart: true`)
 - [ ] Chart animation: `duration: 12`, `hold_frames: 120`, `loop_preview_frames: 30`
 - [ ] `music.duration_ms`: 22000 (single chart), 33000 (context pair)
-- [ ] Every story has `poster` with `hero_number`, `hero_unit`, `insight_text`, `annotations`
+- [ ] No `cover` or `poster` keys present in any story object
 - [ ] Headline is the number, not the topic
 - [ ] Every `substack_note.text` leads with the number in the first sentence
 - [ ] Every primary number tested: "Will the viewer have the right intuition about its scale?"
