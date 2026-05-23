@@ -16,8 +16,8 @@ fig.suptitle(), line charts used ax.text(transform=ax.transAxes), etc.
 LAYOUT ZONES (figure coordinates, y=0 bottom, y=1 top):
   ┌─────────────────────────┐ y = 1.0
   │  suptitle (20pt, 2 ln)  │ y ≈ 0.960 (4:5) / 0.870 (9:16)  plain-language hook
-  │  subtitle (12pt, 1 ln)  │ y ≈ 0.849 (4:5) / 0.789 (9:16)  unit/measure label
-  ├─────────────────────────┤ plot_top ≈ 0.809 / 0.758
+  │  subtitle (12pt, 1 ln)  │ y derived from suptitle lines/size (see _resolve_title_layout)
+  ├─────────────────────────┤ plot_top derived from subtitle block
   │                         │
   │       PLOT AREA         │
   │                         │
@@ -200,10 +200,43 @@ _FOOTNOTE_SIZE = 9
 _SUPTITLE_FONT = 'Playfair Display'
 _SUBTITLE_FONT = 'Source Serif 4'
 _BODY_FONT     = 'DM Mono'
+_TITLE_GAP = 0.012          # suptitle bottom → subtitle top (figure coords)
+_SUBTITLE_PLOT_GAP = 0.010  # subtitle bottom → plot top
+_LINE_SPACING = 1.2
+
+
+def _text_block_height_fig(n_lines, fontsize, fig_height_pt, linespacing=_LINE_SPACING):
+    """Multiline text block height in figure coordinates (va='top')."""
+    return (fontsize * linespacing * max(1, n_lines)) / fig_height_pt
+
+
+def _resolve_title_layout(L, txt_suptitle, txt_subtitle=None,
+                          suptitle_size=None, subtitle_size=None, dpi=200):
+    """Derive subtitle_y and plot_top from suptitle/subtitle line counts and sizes."""
+    L = dict(L)
+    _, px_h = L['figsize_px']
+    fig_height_pt = (px_h / dpi) * 72
+    ss = suptitle_size if suptitle_size is not None else _SUPTITLE_SIZE
+    ts = subtitle_size if subtitle_size is not None else _SUBTITLE_SIZE
+
+    n_sup = max(1, str(txt_suptitle or '').count('\n') + 1)
+    sup_block = _text_block_height_fig(n_sup, ss, fig_height_pt)
+
+    if txt_subtitle:
+        n_sub = max(1, str(txt_subtitle).count('\n') + 1)
+        sub_block = _text_block_height_fig(n_sub, ts, fig_height_pt)
+        L['subtitle_y'] = L['suptitle_y'] - sup_block - _TITLE_GAP
+        L['plot_top'] = L['subtitle_y'] - sub_block - _SUBTITLE_PLOT_GAP
+    else:
+        L['plot_top'] = L['suptitle_y'] - sup_block - _SUBTITLE_PLOT_GAP
+
+    return L
 
 
 def _setup_chart(layout='4x5', face_color='#F5F0E6', dpi=200,
-                 plot_left=0.10, plot_right=0.90):
+                 plot_left=0.10, plot_right=0.90,
+                 txt_suptitle=None, txt_subtitle=None,
+                 suptitle_size=None, subtitle_size=None):
     """Create figure + axes with standardized layout zones.
 
     Parameters
@@ -212,6 +245,8 @@ def _setup_chart(layout='4x5', face_color='#F5F0E6', dpi=200,
     face_color : background color
     dpi : resolution
     plot_left, plot_right : horizontal margins (chart-type specific)
+    txt_suptitle, txt_subtitle : when provided, subtitle_y and plot_top are
+        computed from line counts and font sizes (avoids title overlap).
 
     Returns
     -------
@@ -220,7 +255,11 @@ def _setup_chart(layout='4x5', face_color='#F5F0E6', dpi=200,
     plt.rcdefaults()
     plt.rcParams['font.family'] = _BODY_FONT
 
-    L = _LAYOUT[layout]
+    L = dict(_LAYOUT[layout])
+    if txt_suptitle is not None:
+        L = _resolve_title_layout(
+            L, txt_suptitle, txt_subtitle, suptitle_size, subtitle_size, dpi,
+        )
     px_w, px_h = L['figsize_px']
     figsize = (px_w / dpi, px_h / dpi)
     fig, ax = plt.subplots(figsize=figsize, dpi=dpi, facecolor=face_color)
@@ -502,6 +541,8 @@ def eSingleBarChartNewInstagram(
     fig, ax, L = _setup_chart(
         layout='4x5', face_color=face_color, dpi=dpi,
         plot_left=p_left, plot_right=p_right,
+        txt_suptitle=txt_suptitle, txt_subtitle=txt_subtitle,
+        suptitle_size=suptitle_size, subtitle_size=subtitle_size,
     )
     _add_titles(fig, txt_suptitle, txt_subtitle, L,
                 suptitle_color=suptitle_color, subtitle_color=subtitle_color,
@@ -686,6 +727,8 @@ def eMultiLineChartInstagram(
     fig, ax, L = _setup_chart(
         layout='4x5', face_color=face_color, dpi=dpi,
         plot_left=0.10, plot_right=0.90,
+        txt_suptitle=txt_suptitle, txt_subtitle=txt_subtitle,
+        suptitle_size=suptitle_size, subtitle_size=subtitle_size,
     )
     _add_titles(fig, txt_suptitle, txt_subtitle, L,
                 suptitle_color=suptitle_color, subtitle_color=subtitle_color,
@@ -870,6 +913,8 @@ def eStemChartNewInstagram(
     fig, ax, L = _setup_chart(
         layout='4x5', face_color=face_color, dpi=dpi,
         plot_left=0.12, plot_right=0.92,
+        txt_suptitle=txt_suptitle, txt_subtitle=txt_subtitle,
+        suptitle_size=suptitle_size, subtitle_size=subtitle_size,
     )
     _add_titles(fig, txt_suptitle, txt_subtitle, L,
                 suptitle_color=suptitle_color, subtitle_color=subtitle_color,
@@ -1015,6 +1060,8 @@ def eDonutChartInstagram(
     fig, ax, L = _setup_chart(
         layout='4x5', face_color=face_color, dpi=dpi,
         plot_left=0.05, plot_right=0.95,  # donut needs wide axes for labels
+        txt_suptitle=txt_suptitle, txt_subtitle=txt_subtitle,
+        suptitle_size=suptitle_size, subtitle_size=subtitle_size,
     )
     _add_titles(fig, txt_suptitle, txt_subtitle, L,
                 suptitle_color=suptitle_color, subtitle_color=subtitle_color,
@@ -1291,6 +1338,8 @@ def eSingleBarChartAnimateInstagram(
     fig, ax, L = _setup_chart(
         layout='9x16', face_color=face_color, dpi=dpi,
         plot_left=0.10, plot_right=0.80,
+        txt_suptitle=txt_suptitle, txt_subtitle=txt_subtitle,
+        suptitle_size=suptitle_size, subtitle_size=subtitle_size,
     )
     # Titles start blank for typewriter animation
     sup_obj = fig.text(
@@ -1470,6 +1519,8 @@ def eMultiLineChartAnimateInstagram(
     fig, ax, L = _setup_chart(
         layout='9x16', face_color=face_color, dpi=dpi,
         plot_left=0.10, plot_right=0.90,
+        txt_suptitle=txt_suptitle, txt_subtitle=txt_subtitle,
+        suptitle_size=suptitle_size, subtitle_size=subtitle_size,
     )
     sup_obj = fig.text(
         0.5, L['suptitle_y'], "",
@@ -1722,6 +1773,8 @@ def eStemChartAnimateInstagram(
     fig, ax, L = _setup_chart(
         layout='9x16', face_color=face_color, dpi=dpi,
         plot_left=0.12, plot_right=0.92,
+        txt_suptitle=txt_suptitle, txt_subtitle=txt_subtitle,
+        suptitle_size=suptitle_size, subtitle_size=subtitle_size,
     )
     sup_obj = fig.text(
         0.5, L['suptitle_y'], "",
@@ -1873,6 +1926,8 @@ def eDonutChartAnimateInstagram(
     fig, ax, L = _setup_chart(
         layout='9x16', face_color=face_color, dpi=dpi,
         plot_left=0.05, plot_right=0.95,
+        txt_suptitle=txt_suptitle, txt_subtitle=txt_subtitle,
+        suptitle_size=suptitle_size, subtitle_size=subtitle_size,
     )
     ax.set_aspect("equal", adjustable="box")
 
