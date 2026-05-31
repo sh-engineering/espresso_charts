@@ -234,18 +234,43 @@ Start with the number, not the topic. Browse Tier 1 sources for a data point tha
 
 ### STEP 2: ONE CHART
 
-Each daily story has exactly one chart. Pick the chart type that tells the story most clearly:
+Each daily story has exactly one chart. Four primary archetypes:
 
 - `bar` -- Rankings, comparisons, decade-by-decade snapshots
 - `line` -- Trends over time, long historical arcs
 - `stem` -- Year-by-year magnitudes, periodic counts, discrete events
 - `donut` -- Part-to-whole (2-5 slices max), share breakdowns, global splits
 
-**Archetype variety rule — across a 7-day week, use all four archetypes.**
+**Weekly chart-type roster (mandatory — assign before choosing topics).**
 
-No archetype should appear more than 4 times. If the natural best-fit for a story is a fourth `line`, reconsider: ask whether the data could be reframed as a stem (year-by-year count) or a bar (decade snapshots). Do not force a chart type that distorts the data, but do actively seek variety before defaulting to `line` again.
+Do **not** pick seven `line` stories because the data is convenient. Build the week like a visual playlist: each day should feel different in the feed.
 
-Target mix per week: 3-4 `line`, 1-2 `bar`, 1 `stem`, 1 `donut`.
+**Step 2a — Lock the roster (Mon-Sun, stories `id` 0-6):**
+
+1. Write seven slots: Mon, Tue, Wed, Thu, Fri, Sat, Sun.
+2. Assign each slot one of `bar`, `line`, `stem`, `donut` so that:
+   - **All four** archetypes appear at least once in the week.
+   - **No archetype appears more than twice** (never three `line` days in one week).
+   - **No two consecutive days** use the same primary chart `type` (Mon/Tue, Tue/Wed, … Sat/Sun must all differ).
+   - With seven days and four types, the only valid counts are **three archetypes ×2 and one archetype ×1** (e.g. bar×2, line×2, stem×2, donut×1). Verify the roster sums to seven before proceeding.
+3. Optional rotation (vary week to week): `Mon bar → Tue line → Wed stem → Thu donut → Fri bar → Sat line → Sun stem`, then swap which archetype gets the single appearance next week. Any roster that passes the three bullets above is valid.
+
+**Step 2b — Find stories that fit the slot, not the other way around.**
+
+For each day, the assigned `type` is fixed. Hunt Tier 1 data that honestly fits that archetype:
+
+| Assigned type | Reframe when tempted to cheat |
+|---------------|------------------------------|
+| `bar` | Compare decades, regions, or categories at one point in time |
+| `line` | Continuous time series with a clear trend |
+| `stem` | One value per year or discrete period (annual counts, yearly totals) |
+| `donut` | Shares or composition with 2-5 slices |
+
+If no honest story exists for a slot, swap that day’s type with another day’s **only if** the swap preserves all roster rules (still four types represented, max two each, no consecutive duplicates). Do not change the roster to “all `line`” because sourcing is easier.
+
+**Context charts:** When a `context_chart` is required, prefer a **different** `type` than the primary chart when the data supports it (e.g. primary `line`, context `bar` for a baseline snapshot). Same-type context pairs are allowed only when a different type would mislead.
+
+**Weekly pack:** In every Mon-Sat entry (and Sun if it has a chart), include **`Chart type:`** `bar` | `line` | `stem` | `donut` and a one-line note if the story was reframed to satisfy the roster.
 
 The carousel depth framework (Layers 1-5) does not apply to daily stories. It applies only to the optional carousel format.
 
@@ -310,6 +335,11 @@ Voiceover for context pairs: 40-50 words. Music `duration_ms`: 33000.
 - All text uses `\n` for line breaks
 - All colors as **hex codes** (`"#3F5B83"`)
 - Source attribution: **maximum 2 lines.** Format: `"Source: [Name] · [URL]\n(c) Espresso Charts"`. A third line gets cut off by the renderer.
+- **No posting dates on rendered assets (mandatory).** Chart PNGs and Reels must never show when you plan to publish. The posting schedule can change; calendar dates baked into images do not.
+  - **Never set `txt_issue`.** It draws a date in the top-left header (cover tiles only). Omit the key entirely on all chart types.
+  - **Never put calendar dates** in `txt_suptitle`, `txt_subtitle`, `txt_label`, `txt_eyebrow`, or `txt_context`. Forbidden patterns: `"May 21, 2026"`, `"April 14, 2026"`, `"2026-05-21"`, `"Posted May 2026"`.
+  - **Allowed:** data time ranges and source vintages tied to the dataset — `"since 1961"`, `"2000–2024"`, `"FAO 2025"`, `"UN World Population Prospects 2024"`, axis years on the chart itself.
+  - **`week` metadata** (`year`, `month`, `week_start`) is for folder paths and the editorial calendar only — never copy those values into on-chart text fields.
 - Dollar signs: escape as `\\$`
 - Bar chart value labels auto-detect collision with category labels and push right when needed. Use `value_label_offset_x` for manual fine-tuning on top of auto-positioning.
 
@@ -759,7 +789,6 @@ Practical: `[0, -1]` is the default. `[0, max_idx, -1]` only when there is a tru
   "txt_subtitle": "Nearly half of all trees that existed\nwhen humans arrived are gone.",
   "txt_unit": "of the world's trees, cut",
   "txt_eyebrow": "Global Forests . FAO 2025",
-  "txt_issue": "April 14, 2026",
   "suptitle_size": 86,
   "accent_line_color": "#4D5523",
   "show_corner_mark": true,
@@ -817,6 +846,7 @@ Output `weekly_pack.md` covering Mon-Sun.
 ```markdown
 ## [DAY] [DATE] -- 09-11 -- INSTAGRAM REEL + YOUTUBE SHORT (Story N)
 
+**Chart type:** `bar` | `line` | `stem` | `donut` (must match roster; no same type as previous day)
 **Asset:** `story_N_reel_with_voice.mp4`
 **Chart:** `story_N_chart_1.png`
 **Poster:** `story_N_poster.pdf`
@@ -935,10 +965,12 @@ font_mono    = 'DM Mono'
 
 - [ ] Valid JSON inside `config = json.loads(r''' ... ''')`
 - [ ] 7 stories with unique `id` (0-6) and `slug`
+- [ ] **Chart-type roster:** all four of `bar`, `line`, `stem`, `donut` used at least once; no type more than twice; no consecutive days share the same primary `charts[0].type`
 - [ ] Each story has: `charts` (1 chart), `reel`, `copy` — no `cover`, no `poster`
 - [ ] `copy` has: `instagram_reel`, `youtube_shorts`, `substack_note` (no `substack_article`)
 - [ ] Bar chart data sorted ascending
 - [ ] All text uses `\n` for line breaks, all colors as hex codes
+- [ ] No `txt_issue` on any story; no calendar posting dates in `txt_suptitle`, `txt_subtitle`, `txt_label`, `txt_eyebrow`, or `txt_context` (data years and source vintages only)
 - [ ] Voiceover 30-40 words (single chart) or 40-50 words (context pair)
 - [ ] Voiceover first word is the number or data fact -- never the topic name
 - [ ] Every reel has `"start_with_chart": true` set on the reel object
@@ -966,6 +998,7 @@ font_mono    = 'DM Mono'
 **Weekly Pack:**
 
 - [ ] Covers Mon-Sun
+- [ ] Mon-Sat entries include **Chart type:** matching config; consecutive days differ
 - [ ] 6 Reels + 6 YouTube Shorts (Mon-Sat) + 6 Notes + Sunday Digest
 - [ ] Full captions included, not summaries
 - [ ] Every Note ends with subscribe CTA

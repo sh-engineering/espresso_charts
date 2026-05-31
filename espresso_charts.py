@@ -36,7 +36,7 @@ Helpers:         save_chart, fetch_fred_series, add_custom_annotations,
                  add_lines, add_text, add_reference_bands, add_vlines, eConcatenateMP4
 """
 
-import os, io, subprocess, tempfile, warnings
+import os, io, re, subprocess, tempfile, warnings
 from decimal import Decimal
 from io import StringIO
 from urllib.request import urlopen
@@ -333,6 +333,65 @@ def _int_keys(d):
         return {int(k): v for k, v in d.items()}
     except (ValueError, TypeError):
         return d
+
+
+# Calendar posting dates must not appear on chart PNGs or Reels (posting schedule is flexible).
+_CALENDAR_DATE_RE = re.compile(
+    r"\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|"
+    r"Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|"
+    r"Dec(?:ember)?)\s+\d{1,2},?\s+\d{4}\b",
+    re.IGNORECASE,
+)
+_ISO_DATE_RE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
+_RENDER_TEXT_KEYS = (
+    "txt_suptitle", "txt_subtitle", "txt_label", "txt_eyebrow",
+    "txt_issue", "txt_context", "txt_unit",
+)
+
+
+def _strip_calendar_dates(text):
+    """Remove calendar-style dates from on-image copy; preserve data years in prose."""
+    text = _CALENDAR_DATE_RE.sub("", text)
+    text = _ISO_DATE_RE.sub("", text)
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    text = re.sub(r" *\n *", "\n", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def find_posting_dates_in_params(params):
+    """Return human-readable warnings for posting-date text in chart params."""
+    issues = []
+    if params.get("txt_issue"):
+        issues.append("txt_issue (publication date in header) — omit entirely")
+    for key in _RENDER_TEXT_KEYS:
+        val = params.get(key)
+        if not isinstance(val, str):
+            continue
+        if _CALENDAR_DATE_RE.search(val):
+            issues.append(f"{key} contains a calendar date (e.g. May 21, 2026)")
+        elif _ISO_DATE_RE.search(val):
+            issues.append(f"{key} contains an ISO calendar date (YYYY-MM-DD)")
+    return issues
+
+
+def sanitize_chart_text_params(params, slug=None):
+    """Drop txt_issue and strip calendar dates from text rendered on charts/Reels."""
+    out = dict(params)
+    if out.pop("txt_issue", None):
+        where = f"story '{slug}'" if slug else "chart params"
+        warnings.warn(
+            f"Dropped txt_issue from {where} — posting dates are not shown on assets.",
+            stacklevel=2,
+        )
+    for key in _RENDER_TEXT_KEYS:
+        val = out.get(key)
+        if not isinstance(val, str):
+            continue
+        cleaned = _strip_calendar_dates(val)
+        if cleaned != val.strip():
+            out[key] = cleaned
+    return out
 
 
 def save_chart(fig, path, dpi=200):

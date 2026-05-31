@@ -132,7 +132,9 @@ def render_story(story: dict, out_dir: Path, ec, dpi: int = 200,
             continue
 
         df     = pd.DataFrame(chart["data"])
-        params = resolve_colors(chart.get("params", {}))
+        params = ec.sanitize_chart_text_params(
+            resolve_colors(chart.get("params", {})), slug=slug,
+        )
         out_f  = out_dir / f"story{sid}_chart{ci}.png"
 
         print(f"    [chart {ci}] {fn_name}")
@@ -158,7 +160,9 @@ def render_story(story: dict, out_dir: Path, ec, dpi: int = 200,
                 continue
 
             df     = pd.DataFrame(ac["data"])
-            params = resolve_colors(ac.get("params", {}))
+            params = ec.sanitize_chart_text_params(
+                resolve_colors(ac.get("params", {})), slug=slug,
+            )
             out_f  = out_dir / f"story{sid}_reel{ai}.mp4"
             params.setdefault("output_file", str(out_f))
 
@@ -193,7 +197,7 @@ Hard rules:
 - The static chart (in "charts") is mandatory — it produces the PNG image.
 - Choose the chart archetype that best fits the data (bar / line / stem / donut).
 - Use all current headline rules: exactly 2 suptitle lines, ≤30 chars each.
-- Set today's date in txt_issue and the week fields.
+- Set week fields from today's date for asset paths only. Never set txt_issue or calendar posting dates on chart text fields.
 """
 
 
