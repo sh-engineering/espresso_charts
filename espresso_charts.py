@@ -3200,3 +3200,387 @@ def eDataPoster(
 
     print(f"Poster saved -> {output_file}  ({paper_width_in:.1f}x{paper_height_in:.1f}in @ {dpi}dpi)")
     return output_file
+
+
+# ============================================================================
+# PINTEREST PINS (2:3 PNG — multi-chart, carousel-ready)
+# ============================================================================
+
+def _pinterest_load_chart(path, target_w_px, target_h_px):
+    """Load a chart PNG and letterbox-resize to fit a slot (RGBA)."""
+    from PIL import Image as PILImage
+    img = PILImage.open(path).convert("RGBA")
+    iw, ih = img.size
+    scale = min(target_w_px / iw, target_h_px / ih)
+    nw, nh = max(1, int(iw * scale)), max(1, int(ih * scale))
+    img = img.resize((nw, nh), PILImage.LANCZOS)
+    canvas = PILImage.new("RGBA", (target_w_px, target_h_px), (245, 240, 230, 255))
+    ox, oy = (target_w_px - nw) // 2, (target_h_px - nh) // 2
+    canvas.paste(img, (ox, oy), img if img.mode == "RGBA" else None)
+    return canvas
+
+
+def _pinterest_save_fig(fig, path, dpi, facecolor):
+    """Save a matplotlib figure as PNG and close."""
+    fig.savefig(path, dpi=dpi, facecolor=facecolor, bbox_inches=None, pad_inches=0)
+    plt.close(fig)
+
+
+def ePinterestPin(
+    chart_images,
+    chart_labels=None,
+    hook_lines=None,
+    insight_text="",
+    lead_number=None,
+    lead_unit=None,
+    source_line="",
+    cta_line="Subscribe · espressocharts.substack.com",
+    accent_color="#3F5B83",
+    output_file="pinterest_pin.png",
+    width_px=1000,
+    height_px=1500,
+    dpi=150,
+):
+    """Composite Pinterest pin (2:3) stacking hero copy + multiple chart PNGs.
+
+    chart_images : list of str
+        Paths to rendered chart PNGs (primary first, then context/extras).
+    """
+    from PIL import Image as PILImage
+
+    fc = "#F5F0E6"
+    ink = "#2A1F14"
+    ink_muted = "#79664a"
+    ink_faint = "#9e8b76"
+    rule_color = "#C8BBA8"
+    ml, mr = 0.07, 0.93
+
+    paths = [p for p in (chart_images or []) if p and os.path.isfile(p)]
+    if not paths:
+        raise ValueError("ePinterestPin: no valid chart_images paths")
+
+    labels = list(chart_labels or [])
+    while len(labels) < len(paths):
+        labels.append(None)
+
+    fig = plt.figure(figsize=(width_px / dpi, height_px / dpi), dpi=dpi, facecolor=fc)
+
+    # ── Header: brand + hook ──
+    fig.text(ml, 0.985, "ESPRESSO CHARTS",
+             fontfamily="DM Mono", fontsize=8, fontweight=300,
+             color=ink_faint, ha="left", va="top")
+    fig.add_artist(plt.Line2D([ml, mr], [0.972, 0.972],
+                              color=rule_color, linewidth=0.5, transform=fig.transFigure))
+
+    header_bottom = 0.97
+    if lead_number:
+        fig.text(ml, 0.955, str(lead_number),
+                 fontfamily="Playfair Display", fontsize=72, fontweight=700,
+                 fontstyle="italic", color=accent_color, ha="left", va="top")
+        header_bottom = 0.86
+        if lead_unit:
+            fig.text(ml, header_bottom, lead_unit,
+                     fontfamily="Playfair Display", fontsize=18, fontstyle="italic",
+                     color=ink_muted, ha="left", va="top")
+            header_bottom -= 0.045
+
+    if hook_lines:
+        if isinstance(hook_lines, str):
+            hook_lines = [ln.strip() for ln in hook_lines.split("\n") if ln.strip()]
+        hook_text = "\n".join(hook_lines[:2])
+        fig.text(ml, header_bottom, hook_text,
+                 fontfamily="Playfair Display", fontsize=22, fontweight=400,
+                 fontstyle="italic", color=ink, ha="left", va="top", linespacing=1.25)
+        n_hook = min(2, hook_text.count("\n") + 1)
+        header_bottom -= 0.028 * n_hook + 0.02
+
+    fig.add_artist(plt.Line2D([ml, ml + 0.08], [header_bottom, header_bottom],
+                              color=accent_color, linewidth=2.5, solid_capstyle="round",
+                              transform=fig.transFigure))
+
+    # ── Chart stack ──
+    footer_top = 0.19 if insight_text else 0.14
+    chart_top = header_bottom - 0.025
+    n_charts = len(paths)
+    gap = 0.012
+    total_h = chart_top - footer_top - gap * (n_charts - 1)
+    each_h = total_h / n_charts
+    slot_w_px = int((mr - ml) * width_px)
+
+    tmp_paths = []
+    for i, img_path in enumerate(paths):
+        y1 = chart_top - i * (each_h + gap)
+        y0 = y1 - each_h
+        slot_h_px = max(80, int(each_h * height_px))
+        slot_img = _pinterest_load_chart(img_path, slot_w_px, slot_h_px)
+        tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+        slot_img.save(tmp.name)
+        tmp_paths.append(tmp.name)
+
+        ax = fig.add_axes([ml, y0, mr - ml, each_h])
+        ax.imshow(plt.imread(tmp.name), aspect="auto")
+        ax.set_xticks([]); ax.set_yticks([])
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+
+        if labels[i]:
+            fig.text(ml, y1 + 0.004, labels[i],
+                     fontfamily="DM Mono", fontsize=8, fontweight=300,
+                     color=ink_faint, ha="left", va="bottom")
+
+    # ── Footer: insight + source + CTA ──
+    cursor = footer_top
+    if insight_text:
+        fig.text(ml, cursor, insight_text,
+                 fontfamily="Source Serif 4", fontsize=14, fontweight=400,
+                 color=ink_muted, ha="left", va="top", linespacing=1.45)
+        n_ins = max(1, insight_text.count("\n") + 1)
+        cursor -= 0.022 * n_ins + 0.02
+
+    fig.add_artist(plt.Line2D([ml, mr], [cursor, cursor],
+                              color=rule_color, linewidth=0.5, transform=fig.transFigure))
+    cursor -= 0.018
+
+    if source_line:
+        fig.text(ml, cursor, source_line,
+                 fontfamily="DM Mono", fontsize=7, fontweight=300,
+                 color=ink_faint, ha="left", va="top")
+    fig.text(mr, cursor, cta_line,
+             fontfamily="DM Mono", fontsize=7, fontweight=300,
+             color=ink_muted, ha="right", va="top")
+
+    _pinterest_save_fig(fig, output_file, dpi, fc)
+    for t in tmp_paths:
+        try:
+            os.unlink(t)
+        except OSError:
+            pass
+    print(f"Pinterest pin saved -> {output_file}  ({width_px}x{height_px}px)")
+    return output_file
+
+
+def ePinterestCarouselSlides(
+    chart_images,
+    chart_labels=None,
+    hook_lines=None,
+    lead_number=None,
+    lead_unit=None,
+    insight_text="",
+    source_line="",
+    cta_line="Subscribe · espressocharts.substack.com",
+    accent_color="#3F5B83",
+    output_prefix="story0_pinterest",
+    width_px=1000,
+    height_px=1500,
+    dpi=150,
+):
+    """Generate separate 2:3 PNG slides for Pinterest multi-image pins.
+
+    Slide 1: hero typography (stop-the-scroll).
+    Slides 2..N: one chart per slide, full width.
+    Final slide: insight + CTA (when insight_text is set).
+    """
+    fc = "#F5F0E6"
+    ink = "#2A1F14"
+    ink_muted = "#79664a"
+    ink_faint = "#9e8b76"
+    rule_color = "#C8BBA8"
+    ml, mr = 0.08, 0.92
+
+    paths = [p for p in (chart_images or []) if p and os.path.isfile(p)]
+    if not paths:
+        raise ValueError("ePinterestCarouselSlides: no valid chart_images paths")
+
+    labels = list(chart_labels or [])
+    while len(labels) < len(paths):
+        labels.append(None)
+
+    if isinstance(hook_lines, str):
+        hook_lines = [ln.strip() for ln in hook_lines.split("\n") if ln.strip()]
+
+    has_cta = bool(insight_text or source_line)
+    total_slides = 1 + len(paths) + (1 if has_cta else 0)
+    out_files = []
+    slide_idx = 1
+
+    # ── Slide 1: hero ──
+    fig = plt.figure(figsize=(width_px / dpi, height_px / dpi), dpi=dpi, facecolor=fc)
+    fig.text(ml, 0.94, "ESPRESSO CHARTS",
+             fontfamily="DM Mono", fontsize=8, color=ink_faint, ha="left", va="top")
+    if lead_number:
+        fig.text(0.5, 0.72, str(lead_number),
+                 fontfamily="Playfair Display", fontsize=96, fontweight=700,
+                 fontstyle="italic", color=accent_color, ha="center", va="center")
+    if lead_unit:
+        fig.text(0.5, 0.58, lead_unit,
+                 fontfamily="Playfair Display", fontsize=22, fontstyle="italic",
+                 color=ink_muted, ha="center", va="center")
+    if hook_lines:
+        fig.text(0.5, 0.42, "\n".join(hook_lines[:2]),
+                 fontfamily="Playfair Display", fontsize=26, fontstyle="italic",
+                 color=ink, ha="center", va="center", linespacing=1.3)
+    fig.add_artist(plt.Line2D([0.35, 0.65], [0.32, 0.32],
+                              color=accent_color, linewidth=3, solid_capstyle="round",
+                              transform=fig.transFigure))
+    fig.text(0.5, 0.12, "Swipe for the chart →",
+             fontfamily="DM Mono", fontsize=9, color=ink_faint, ha="center", va="center")
+    path1 = f"{output_prefix}_{slide_idx:02d}.png"
+    _pinterest_save_fig(fig, path1, dpi, fc)
+    out_files.append(path1)
+    slide_idx += 1
+
+    # ── Chart slides ──
+    slot_w_px = int((mr - ml) * width_px)
+    slot_h_px = int(0.78 * height_px)
+    for i, img_path in enumerate(paths):
+        fig = plt.figure(figsize=(width_px / dpi, height_px / dpi), dpi=dpi, facecolor=fc)
+        cap = labels[i] or ""
+        if cap:
+            fig.text(ml, 0.96, cap,
+                     fontfamily="Playfair Display", fontsize=18, fontstyle="italic",
+                     color=ink, ha="left", va="top", linespacing=1.2)
+        y0, h = 0.06, 0.86 if cap else 0.90
+        slot_img = _pinterest_load_chart(img_path, slot_w_px, int(h * height_px))
+        tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+        slot_img.save(tmp.name)
+        ax = fig.add_axes([ml, y0, mr - ml, h])
+        ax.imshow(plt.imread(tmp.name), aspect="auto")
+        ax.set_xticks([]); ax.set_yticks([])
+        for spine in ax.spines.values():
+            spine.set_visible(False)
+        fig.text(mr, 0.03, f"{slide_idx} / {total_slides}",
+                 fontfamily="DM Mono", fontsize=7, color=ink_faint, ha="right", va="bottom")
+        outp = f"{output_prefix}_{slide_idx:02d}.png"
+        _pinterest_save_fig(fig, outp, dpi, fc)
+        os.unlink(tmp.name)
+        out_files.append(outp)
+        slide_idx += 1
+
+    # ── CTA slide ──
+    if insight_text or source_line:
+        fig = plt.figure(figsize=(width_px / dpi, height_px / dpi), dpi=dpi, facecolor=fc)
+        fig.text(ml, 0.94, "ESPRESSO CHARTS",
+                 fontfamily="DM Mono", fontsize=8, color=ink_faint, ha="left", va="top")
+        if insight_text:
+            fig.text(0.5, 0.62, insight_text,
+                     fontfamily="Source Serif 4", fontsize=20, color=ink_muted,
+                     ha="center", va="center", linespacing=1.5)
+        fig.add_artist(plt.Line2D([0.25, 0.75], [0.45, 0.45],
+                                  color=accent_color, linewidth=2.5,
+                                  transform=fig.transFigure))
+        fig.text(0.5, 0.32, cta_line,
+                 fontfamily="Playfair Display", fontsize=16, fontstyle="italic",
+                 color=ink, ha="center", va="center")
+        if source_line:
+            fig.text(0.5, 0.12, source_line,
+                     fontfamily="DM Mono", fontsize=8, color=ink_faint,
+                     ha="center", va="top")
+        outp = f"{output_prefix}_{slide_idx:02d}.png"
+        _pinterest_save_fig(fig, outp, dpi, fc)
+        out_files.append(outp)
+
+    print(f"Pinterest carousel -> {len(out_files)} slides: {output_prefix}_*.png")
+    return out_files
+
+
+def ePinterestAssets(
+    chart_images,
+    chart_labels=None,
+    hook_lines=None,
+    insight_text="",
+    lead_number=None,
+    lead_unit=None,
+    source_line="",
+    accent_color="#3F5B83",
+    output_pin="pinterest_pin.png",
+    output_slides_prefix=None,
+    width_px=1000,
+    height_px=1500,
+    dpi=150,
+):
+    """Build composite pin plus optional carousel slides from chart PNGs."""
+    pin = ePinterestPin(
+        chart_images=chart_images,
+        chart_labels=chart_labels,
+        hook_lines=hook_lines,
+        insight_text=insight_text,
+        lead_number=lead_number,
+        lead_unit=lead_unit,
+        source_line=source_line,
+        accent_color=accent_color,
+        output_file=output_pin,
+        width_px=width_px,
+        height_px=height_px,
+        dpi=dpi,
+    )
+    slides = []
+    if output_slides_prefix:
+        slides = ePinterestCarouselSlides(
+            chart_images=chart_images,
+            chart_labels=chart_labels,
+            hook_lines=hook_lines,
+            lead_number=lead_number,
+            lead_unit=lead_unit,
+            insight_text=insight_text,
+            source_line=source_line,
+            accent_color=accent_color,
+            output_prefix=output_slides_prefix,
+            width_px=width_px,
+            height_px=height_px,
+            dpi=dpi,
+        )
+    return {"pin": pin, "slides": slides}
+
+
+def build_pinterest_params_from_story(story, chart_paths):
+    """Derive Pinterest copy from story config when ``pinterest`` block is omitted."""
+    pinterest = dict(story.get("pinterest") or {})
+    charts = story.get("charts") or []
+    primary_params = (charts[0].get("params") or {}) if charts else {}
+
+    suptitle = primary_params.get("txt_suptitle", "")
+    hook = pinterest.get("hook_lines")
+    if not hook and suptitle:
+        hook = [ln.strip() for ln in suptitle.split("\n") if ln.strip()][:2]
+
+    labels = pinterest.get("chart_labels")
+    if not labels:
+        labels = []
+        for p in chart_paths:
+            labels.append(None)
+        if suptitle:
+            labels[0] = suptitle.split("\n")[0][:40] if labels else None
+        ctx = story.get("context_chart") or {}
+        ctx_sup = (ctx.get("params") or {}).get("txt_suptitle", "")
+        if len(labels) > 1 and ctx_sup:
+            labels[1] = ctx_sup.split("\n")[0][:40]
+
+    source = pinterest.get("source_line")
+    if not source:
+        lbl = primary_params.get("txt_label", "")
+        source = lbl.split("\n")[0][:80] if lbl else ""
+
+    insight = pinterest.get("insight_text", "")
+    if not insight:
+        note = (story.get("copy") or {}).get("substack_note", {})
+        insight = (note.get("text") or "")[:220]
+
+    lead_number = pinterest.get("lead_number")
+    if not lead_number and suptitle:
+        lead_number = suptitle.split("\n")[0].strip()[:32]
+
+    return {
+        "chart_images": chart_paths,
+        "chart_labels": labels,
+        "hook_lines": hook,
+        "insight_text": insight,
+        "lead_number": lead_number,
+        "lead_unit": pinterest.get("lead_unit") or primary_params.get("txt_subtitle", ""),
+        "source_line": source,
+        "accent_color": pinterest.get("accent_color", "#3F5B83"),
+        "output_pin": pinterest.get("output_pin"),
+        "output_slides_prefix": pinterest.get("output_slides_prefix"),
+        "width_px": pinterest.get("width_px", 1000),
+        "height_px": pinterest.get("height_px", 1500),
+        "dpi": pinterest.get("dpi", 150),
+    }

@@ -19,7 +19,7 @@ Daily single-chart stories published across Instagram Reels, YouTube Shorts, and
 
 ### Daily Model
 
-One story per day (Mon-Sat). Each story = one number + one chart + one Reel + one Note + one poster. Sunday = auto-assembled weekly digest. No multi-chart carousels or long-form articles in the daily cadence.
+One story per day (Mon-Sat). Each story = one number + one chart (+ optional context chart) + one Reel + one Note + Pinterest PNGs. Sunday = auto-assembled weekly digest.
 
 ---
 
@@ -45,11 +45,12 @@ One story per day (Mon-Sat). Each story = one number + one chart + one Reel + on
 | `eDonutChartAnimateInstagram` | Wedges sweep open |
 | `eCoverTileAnimateInstagram` | Frame 0 = complete (thumbnail). Frame 1+ = elements animate in |
 
-### Poster
+### Pinterest
 
 | Function | Notes |
 |---|---|
-| `eDataPoster` | A3 PDF. Hero 120pt, insight headline 28pt, hero chart + extra charts, annotations. |
+| `ePinterestAssets` | 1000×1500 PNG pin + carousel slides from chart PNGs (multi-chart). |
+| `eDataPoster` | *(legacy)* A3 PDF — use Pinterest PNGs for social upload instead. |
 
 ### Audio
 
@@ -110,9 +111,14 @@ Number-led editorial layout (B template). 12 visual layers: background, top rule
 
 ---
 
-## Data Poster
+## Pinterest Assets
 
-A3 PDF at 300 DPI. Layout: hero number 120pt, insight headline 28pt, hero chart with first/last value labels (no Y axis), extra chart images side-by-side, annotation band, context, footer. PDF rendered via PIL (no reportlab needed).
+Runner phase `pinterest` (on by default) builds:
+
+- **`story_N_pinterest_pin.png`** — composite 2:3 pin with hero hook + all chart PNGs stacked
+- **`story_N_pinterest_01.png` …** — carousel slides (hero → one chart per slide → CTA)
+
+Requires chart PNGs first (`charts` phase). Context charts render as `story_N_chart2.png` automatically.
 
 ---
 

@@ -2,7 +2,7 @@
 
 ## Model
 
-One story per day, six days a week. Each story is one chart, one Reel, one Substack Note, one poster. Sunday is the weekly digest (auto-assembled).
+One story per day, six days a week. Each story is one chart (plus optional context chart), one Reel, one Substack Note, and Pinterest PNGs. Sunday is the weekly digest (auto-assembled).
 
 All times CET (Berlin).
 
@@ -38,7 +38,7 @@ Each daily story produces:
 | YouTube description | `story{N}_youtube_description.txt` | Text |
 | Substack Note | `story{N}_substack_note.md` | Markdown |
 
-Total per week: 7 charts, 6 videos, 7 PDFs, ~20 text files.
+Total per week: 7–14 chart PNGs (with context pairs), 6 videos, 6 Pinterest pins + carousel slides, ~20 text files.
 
 ---
 

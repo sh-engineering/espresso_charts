@@ -387,7 +387,7 @@ Only use keyword arguments present in the current `espresso_charts.py`. The anim
 
 ### STEP 3: COVER TILE
 
-**Covers are no longer generated.** Do not include a `cover` key in story objects. Do not include a `poster` key. The pipeline now starts directly with the chart; the first completed-chart frame is the thumbnail.
+**Covers are no longer generated.** Do not include a `cover` key in story objects. Do not include a `poster` key (PDF posters are deprecated). The pipeline starts directly with the chart; the first completed-chart frame is the Reel thumbnail.
 
 -----
 
@@ -468,13 +468,42 @@ Every Reel caption and every Note ends with the subscribe CTA.
 
 -----
 
-### STEP 6: POSTER
+### STEP 6: PINTEREST (PNG — not PDF)
 
-Every story gets a print-quality A3 PDF poster (300 DPI).
+Every story gets **Pinterest-ready PNGs** (1000×1500, 2:3). The runner builds them from rendered chart PNGs — no separate layout work when you omit the block below.
 
-The poster uses the story's Lead Number as the hero, the chart data (auto-extracted from the story's chart if it's a line chart), the insight text, and 2-3 annotation milestones. Extra chart images from the story are included automatically.
+**Outputs per story:**
 
-If the story has no line chart, provide `chart_x` and `chart_y` arrays explicitly in the poster config.
+| File | Use |
+|------|-----|
+| `story_N_pinterest_pin.png` | Single composite pin: hero hook + **all charts stacked** (primary + context) |
+| `story_N_pinterest_01.png` … | Carousel slides for multi-image Pinterest pins |
+
+**Carousel structure (auto-generated):**
+
+1. **Slide 1** — Hero number + hook (stop-the-scroll typography)
+2. **Slides 2…N** — One chart per slide (primary, then context if present)
+3. **Final slide** — Insight sentence + Substack CTA + source line
+
+**More charts = richer Pinterest.** When the story has a `context_chart`, the runner renders `story_N_chart2.png` and includes it on the composite pin and as its own carousel slide. Do not squeeze multiple datasets into one matplotlib chart — use separate charts.
+
+**Optional `pinterest` block** (override auto-derived copy):
+
+```json
+"pinterest": {
+  "lead_number": "46%",
+  "lead_unit": "of the world's trees, cut",
+  "hook_lines": ["Nearly half of all trees", "are gone since humans arrived"],
+  "insight_text": "An estimated 3.04 trillion trees remain today.",
+  "chart_labels": ["Global forest cover today", "Trees lost since agriculture"],
+  "source_line": "Source: FAO Global Forest Assessment 2025",
+  "accent_color": "#4D5523"
+}
+```
+
+If omitted, the runner derives hook/insight/labels from `charts[0].params`, `context_chart.params`, and `copy.substack_note`.
+
+**Pinterest copy rules:** Same as charts — no calendar posting dates. Lead with the number. One concrete insight on the CTA slide. Source line = institution + vintage (`FAO 2025`), not `May 21, 2026`.
 
 -----
 
@@ -578,20 +607,18 @@ config = json.loads(r'''
     "music": { "preset": "lofi_coffee", "duration_ms": 22000 }
   },
   "story_files": [
-    [0, 1, "story_0_chart_1", "png"]
+    [0, 1, "story_0_chart_1", "png"],
+    [0, 2, "story_0_chart_2", "png"],
+    [0, 0, "story_0_pinterest_pin", "png"],
+    [0, 0, "story_0_pinterest_01", "png"]
   ],
-  "poster": {
-    "hero_number": "46%",
-    "hero_unit": "of the world's trees, cut",
-    "hero_eyebrow": "GLOBAL FORESTS, FAO 2025",
-    "insight_text": "Nearly half of all trees that existed\nwhen humans arrived are gone.",
-    "insight_context": "An estimated 3.04 trillion trees remain.\nBefore human civilization, the number was 5.6 trillion.",
-    "annotations": [
-      {"year": "10,000 BC", "value": "5.6 trillion", "desc": "Before agriculture", "color": "#4D5523"}
-    ],
-    "source_lines": ["SOURCE: FAO Global Forest Assessment 2025", "fao.org"],
-    "issue_number": "015",
-    "issue_topic": "Global Forests",
+  "pinterest": {
+    "lead_number": "46%",
+    "lead_unit": "of the world's trees, cut",
+    "hook_lines": ["Nearly half of all trees", "are gone since humans arrived"],
+    "insight_text": "An estimated 3.04 trillion trees remain today.",
+    "chart_labels": ["Forest cover today", "Historical tree loss"],
+    "source_line": "Source: FAO Global Forest Assessment 2025",
     "accent_color": "#4D5523"
   },
   "copy": {
@@ -849,7 +876,7 @@ Output `weekly_pack.md` covering Mon-Sun.
 **Chart type:** `bar` | `line` | `stem` | `donut` (must match roster; no same type as previous day)
 **Asset:** `story_N_reel_with_voice.mp4`
 **Chart:** `story_N_chart_1.png`
-**Poster:** `story_N_poster.pdf`
+**Pinterest:** `story_N_pinterest_pin.png` + `story_N_pinterest_01.png` … (carousel slides)
 
 **Voiceover script:**
 [30-40 words]
@@ -978,6 +1005,7 @@ font_mono    = 'DM Mono'
 - [ ] Chart animation: `duration: 12`, `hold_frames: 120`, `loop_preview_frames: 30`
 - [ ] `music.duration_ms`: 22000 (single chart), 33000 (context pair)
 - [ ] No `cover` or `poster` keys present in any story object
+- [ ] Context-pair stories: `context_chart` present; runner will produce `chart_2.png` + multi-slide Pinterest assets
 - [ ] Headline is the number, not the topic
 - [ ] Every `substack_note.text` leads with the number in the first sentence
 - [ ] Every primary number tested: "Will the viewer have the right intuition about its scale?"
