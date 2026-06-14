@@ -246,7 +246,7 @@ All times CET (Berlin). One story per day, seven stories per week.
 
 **Sunday Digest:** The runner auto-assembles the weekly newsletter from the seven daily Notes. No article writing required. Total digest length: 300-400 words.
 
-**Story Log:** Each published story is logged to `story_history.md` (title, date, source, lead number). This log is injected into weekly prompts to avoid topic repetition.
+**Story Log:** Each published story is logged to **`story_history.md`** at repo root (authoritative). `prompts/story_log.md` is an optional weekly summary index — do not maintain conflicting entries. Inject `story_history.md` into weekly prompts to avoid topic repetition.
 
 -----
 
